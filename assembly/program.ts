@@ -1,4 +1,4 @@
-import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
+import { Args, Arguments, DECODERS, REQUIRED_BYTES, encodeI32 } from "./arguments";
 import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 
@@ -36,6 +36,33 @@ export function lowerBytes(data: Uint8Array): u8[] {
   return r;
 }
 
+/** Turn given bytecode into a valid program. Add JumpTable and Mask. */
+export function wrapAsProgram(bytecode: Uint8Array): Uint8Array {
+  const jumpTableLength: u8 = 0;
+  const jumpTableItemLength: u8 = 0;
+  const codeLength = bytecode.length;
+  const mask = buildMask(bytecode);
+  const codeLengthBytes = encodeI32(codeLength);
+
+  const data = new Uint8Array(1 + 1 + codeLengthBytes.length + codeLength + mask.length);
+  data[0] = jumpTableLength;
+  data[1] = jumpTableItemLength;
+  let offset = 2;
+  for (let i = 0; i < codeLengthBytes.length; i++) {
+    data[offset] = codeLengthBytes[i];
+    offset++;
+  }
+  for (let i = 0; i < bytecode.length; i++) {
+    data[offset] = bytecode[i];
+    offset++;
+  }
+  for (let i = 0; i < mask.length; i++) {
+    data[offset] = mask[i];
+    offset++;
+  }
+  return data;
+}
+
 export function decodeProgram(program: Uint8Array): Program {
   const decoder = new Decoder(program);
 
@@ -58,6 +85,35 @@ export function decodeProgram(program: Uint8Array): Program {
   const basicBlocks = new BasicBlocks(rawCode, mask);
 
   return new Program(rawCode, mask, jumpTable, basicBlocks);
+}
+
+function buildMask(bytecode: Uint8Array): u8[] {
+  const mask = new StaticArray<boolean>(bytecode.length);
+  for (let i = 0; i < bytecode.length; i++) {
+    const instruction = bytecode[i];
+    const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
+    // We don't know exactly how many bytes would be read...
+    const _args = decodeArguments(iData.kind, bytecode.subarray(i + 1));
+    // TODO [ToDr] We could possibly encode the arguments back to see how much bytes they would take?
+    const skipBytes = REQUIRED_BYTES[iData.kind];
+    mask[i] = true;
+    i += skipBytes;
+  }
+  // pack mask
+  const packed: u8[] = [];
+  for (let i = 0; i < mask.length; i += 8) {
+    let byte = 0;
+    // TODO [ToDr] Check, might need to go in the other order
+    for (let j = i; j < i + 8; j++) {
+      if (j < mask.length) {
+        byte |= mask[j] ? 1 : 0; 
+      } else {
+        byte |= 1;
+      }
+      byte << 1;
+    }
+  }
+  return packed;
 }
 
 export class Mask {

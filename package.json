@@ -23,6 +23,8 @@
 	"description": "",
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@jazzer.js/core": "^2.1.0",
+		"@typeberry/pvm-debugger-adapter": "^0.0.1-09fe4ca",
 		"assemblyscript": "^0.27.31"
 	},
 	"type": "module",

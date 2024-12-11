@@ -152,6 +152,16 @@ function decodeI32(data: Uint8Array): u32 {
   return num;
 }
 
+export function encodeI32(input: i32): u8[] {
+  const data: u8[] = [];
+  let num = u32(input);
+  while (num > 0) {
+    data.push(u8(num));
+    num >>= 8;
+  }
+  return data;
+}
+
 function decodeU32(data: Uint8Array): u32 {
   let num = u32(data[0]);
   num |= u32(data[1]) << 8;

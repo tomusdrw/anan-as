@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from 'node:fs';
 import { InputKind, disassemble } from "../build/release.js";
 
