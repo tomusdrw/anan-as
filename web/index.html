@@ -89,8 +89,8 @@ function execute(shouldRun = false) {
   }
 
   try {
-    runProgram(program, kind);
-    $out.innerHTML += `\n\n Run OK!`;
+    const out = runProgram(program, kind);
+    $out.innerHTML += `\n\n Run OK! Status: ${out.status}, PC: ${out.pc}`;
   } catch (e) {
     console.error(e);
     $out.innerHTML += `\n\n Run error: ${e}`;

@@ -1,5 +1,5 @@
-import { Args, Arguments, DECODERS, REQUIRED_BYTES, encodeI32 } from "./arguments";
-import { Decoder } from "./codec";
+import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
+import { Decoder, encodeVarU32 } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 
 export type ProgramCounter = u32;
@@ -42,7 +42,7 @@ export function wrapAsProgram(bytecode: Uint8Array): Uint8Array {
   const jumpTableItemLength: u8 = 0;
   const codeLength = bytecode.length;
   const mask = buildMask(bytecode);
-  const codeLengthBytes = encodeI32(codeLength);
+  const codeLengthBytes = encodeVarU32(codeLength);
 
   const data = new Uint8Array(1 + 1 + codeLengthBytes.length + codeLength + mask.length);
   data[0] = jumpTableLength;
@@ -102,7 +102,7 @@ function buildMask(bytecode: Uint8Array): u8[] {
   // pack mask
   const packed: u8[] = [];
   for (let i = 0; i < mask.length; i += 8) {
-    let byte = 0;
+    let byte: u8 = 0;
     // TODO [ToDr] Check, might need to go in the other order
     for (let j = i; j < i + 8; j++) {
       if (j < mask.length) {
@@ -112,6 +112,7 @@ function buildMask(bytecode: Uint8Array): u8[] {
       }
       byte << 1;
     }
+    packed.push(byte);
   }
   return packed;
 }

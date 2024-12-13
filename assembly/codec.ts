@@ -34,7 +34,7 @@ export class Decoder {
 
   varU32(): u32 {
     this.ensureBytes(1);
-    const v = readVarU32(this.source.subarray(this.offset));
+    const v = decodeVarU32(this.source.subarray(this.offset));
     this.offset += v.offset;
     return v.value;
   }
@@ -90,7 +90,7 @@ export class ValOffset<T> {
 }
 
 /** Read variable-length u32 and return number of bytes read. */
-export function readVarU32(data: Uint8Array): ValOffset<u32> {
+export function decodeVarU32(data: Uint8Array): ValOffset<u32> {
   const length = i32(variableLength(data[0]));
   const first = u32(data[0]);
   if (length === 0) {
@@ -109,4 +109,46 @@ export function readVarU32(data: Uint8Array): ValOffset<u32> {
   number += msb;
 
   return new ValOffset(number, 1 + length);
+}
+
+export function encodeVarU32(v: u64): Uint8Array {
+  if (v === 0) {
+    return new Uint8Array(1);
+  }
+
+  // handle the biggest case
+  let maxEncoded = u64(2 ** (7 * 8));
+  if (v >= maxEncoded) {
+    const dest = new Uint8Array(9);
+    dest[0] = 0xff;
+    const dataView = new DataView(dest.buffer);
+    dataView.setUint64(1, v, true);
+    return dest;
+  }
+
+  // let's look for the correct range
+  let minEncoded = maxEncoded >> 7;
+  for (let l = 7; l >= 0; l -= 1) {
+    if (v >= minEncoded) {
+      const dest = new Uint8Array(l + 1);
+
+      // encode the first byte
+      const maxVal = 2 ** (8 * l);
+      const byte = (2 ** 8 - 2 ** (8 - l)) + v / maxVal;
+      dest[0] = u8(byte);
+
+      // now encode the rest of bytes of len `l`
+      let rest = v % maxVal;
+      for (let i = 1; i < 1 + l; i += 1) {
+        dest[i] = u8(rest);
+        rest >>= 8;
+      }
+      return dest;
+    }
+    // move one power down
+    maxEncoded = minEncoded;
+    minEncoded >>= 7;
+  }
+
+  throw new Error(`Unhandled number encoding: ${v}`);
 }

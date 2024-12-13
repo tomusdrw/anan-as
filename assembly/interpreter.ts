@@ -1,5 +1,5 @@
 import { GasCounter, gasCounter } from "./gas";
-import { INSTRUCTIONS } from "./instructions";
+import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions-outcome";
 import { Memory, MemoryBuilder } from "./memory";
@@ -60,11 +60,16 @@ export class Interpreter {
     }
 
     const instruction = this.program.code[pc];
-    const iData = INSTRUCTIONS[instruction];
+    const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
 
     // check gas (might be done for each block instead).
     if (this.gas.sub(iData.gas)) {
       this.status = Status.OOG;
+      return false;
+    }
+
+    if (iData === MISSING_INSTRUCTION) {
+      this.status = Status.PANIC;
       return false;
     }
 
