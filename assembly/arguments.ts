@@ -40,7 +40,7 @@ type ArgsDecoder = (data: Uint8Array) => Args;
 
 function twoImm(data: Uint8Array): Args {
   const n = nibbles(data[0]);
-  const split = n.low + 1;
+  const split = <i32>Math.min(4, n.low) + 1; 
   const first = decodeI32(data.subarray(1, split));
   const second = decodeI32(data.subarray(split));
   return asArgs(first, second, 0, 0);
@@ -74,16 +74,16 @@ export const DECODERS: ArgsDecoder[] = [
   },
   //DECODERS[Arguments.OneRegTwoImm] =
   (data: Uint8Array) => {
-    const first = nibbles(data[0]);
-    const split = first.hig + 1;
+    const n = nibbles(data[0]);
+    const split = <i32>Math.min(4, n.hig) + 1;
     const immA = decodeI32(data.subarray(1, split));
     const immB = decodeI32(data.subarray(split));
-    return asArgs(first.low, immA, immB, 0);
+    return asArgs(n.low, immA, immB, 0);
   },
   // DECODERS[Arguments.OneRegOneImmOneOff] =
   (data: Uint8Array) => {
     const n = nibbles(data[0]);
-    const split = n.hig + 1;
+    const split = <i32>Math.min(4, n.hig) + 1;
     const immA = decodeI32(data.subarray(1, split));
     const offs = decodeI32(data.subarray(split));
     return asArgs(n.low, immA, offs, 0);
@@ -135,7 +135,7 @@ export function nibbles(byte: u8): Nibbles {
 
 //@inline
 function decodeI32(data: Uint8Array): u32 {
-  const len = <u32>data.length;
+  const len = <u32>Math.min(4, data.length);
   let num = 0;
   for (let i: u32 = 0; i < len; i++) {
     num |= u32(data[i]) << (i * 8);

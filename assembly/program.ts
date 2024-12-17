@@ -95,7 +95,6 @@ function buildMask(bytecode: Uint8Array): u8[] {
     mask[i] = true;
 
     const requiredBytes = REQUIRED_BYTES[iData.kind];
-    console.log(`kind: ${iData.kind}, required: ${requiredBytes}, left: ${bytecode.length - i - 1}`);
     if (i + 1 + requiredBytes <= bytecode.length) {
       const skip = skipBytes(iData.kind, bytecode.subarray(i + 1));
       i += skip;

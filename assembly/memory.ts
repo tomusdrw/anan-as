@@ -61,6 +61,7 @@ export class Memory {
     private readonly arena: Arena,
     public readonly pages: Map<PageIndex, Page> = new Map(),
     private sbrkAddress: u32 = 0,
+    private lastAllocatedPage: i32 = -1,
   ) {}
 
   pageDump(index: PageIndex): Uint8Array | null {
@@ -79,13 +80,22 @@ export class Memory {
   }
 
   sbrk(amount: u32): u32 {
-    const newSbrk = this.sbrkAddress + amount;
+    if (amount === 0) {
+      return this.sbrkAddress;
+    }
+
+    const newSbrk = u32(this.sbrkAddress + amount);
     if (newSbrk < this.sbrkAddress) {
       console.log("Run out of memory!");
     }
     this.sbrkAddress = newSbrk;
 
     const pageIdx = u32(newSbrk >> PAGE_SIZE_SHIFT);
+    if (pageIdx === this.lastAllocatedPage) {
+      return newSbrk;
+    }
+
+    this.lastAllocatedPage = pageIdx;
     const page = this.arena.acquire();
     this.pages.set(pageIdx, new Page(Access.Write, page));
     return newSbrk;
