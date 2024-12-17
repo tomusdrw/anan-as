@@ -80,7 +80,12 @@ export class Interpreter {
       this.status = Status.PANIC;
       return false;
     }
+
     const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1, end));
+    if (args === null) {
+      this.status = Status.PANIC;
+      return false;
+    }
 
     const exe = RUN[instruction];
     const outcome = exe(args, this.registers, this.memory);

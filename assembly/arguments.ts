@@ -17,7 +17,7 @@ export enum Arguments {
 /** How many numbers in `Args` is relevant for given `Arguments`. */
 export const RELEVANT_ARGS = [<i32>0, 1, 2, 1, 2, 3, 3, 3, 2, 3, 3, 4, 3];
 /** How many bytes is required by given `Arguments`. */
-export const REQUIRED_BYTES = [<i32>0, 0, 0, 0, 1, 9, 1, 1, 1, 1, 1, 1, 2];
+export const REQUIRED_BYTES = [<i32>0, 0, 1, 0, 1, 9, 1, 1, 1, 1, 1, 2, 2];
 
 // @unmanaged
 export class Args {
@@ -39,9 +39,6 @@ function asArgs(a: u32, b: u32, c: u32, d: u32): Args {
 type ArgsDecoder = (data: Uint8Array) => Args;
 
 function twoImm(data: Uint8Array): Args {
-  if (data.length === 0) {
-    return asArgs(0, 0, 0, 0);
-  }
   const n = nibbles(data[0]);
   const split = n.low + 1;
   const first = decodeI32(data.subarray(1, split));
@@ -127,7 +124,7 @@ class Nibbles {
 }
 
 // @inline
-function nibbles(byte: u8): Nibbles {
+export function nibbles(byte: u8): Nibbles {
   const low = byte & 0xf;
   const hig = byte >> 4;
   const n = new Nibbles();

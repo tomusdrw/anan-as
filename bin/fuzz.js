@@ -34,9 +34,15 @@ export function fuzz(data) {
     // assert(pvm.getProgramCounter(), output.pc, 'pc');
   } catch (e) {
     console.log(program);
+    console.log(linkTo(program));
     console.log(disassemble(Array.from(program), InputKind.Generic));
     throw e;
   }
+}
+
+function linkTo(program) {
+  const programHex = Array.from(program).map(x => x.toString(16).padStart(2, '0')).join('');
+  return `https://deploy-preview-244--pvm-debugger.netlify.app/?program=0x${programHex}`;
 }
 
 function normalizeStatus(status) {

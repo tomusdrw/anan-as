@@ -1,4 +1,4 @@
-import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
+import { Args, Arguments, DECODERS, REQUIRED_BYTES, nibbles } from "./arguments";
 import { Decoder, encodeVarU32 } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 
@@ -92,12 +92,14 @@ function buildMask(bytecode: Uint8Array): u8[] {
   for (let i = 0; i < bytecode.length; i++) {
     const instruction = bytecode[i];
     const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
-    // We don't know exactly how many bytes would be read...
-    const _args = decodeArguments(iData.kind, bytecode.subarray(i + 1));
-    // TODO [ToDr] We could possibly encode the arguments back to see how much bytes they would take?
-    const skipBytes = REQUIRED_BYTES[iData.kind];
     mask[i] = true;
-    i += skipBytes;
+
+    const requiredBytes = REQUIRED_BYTES[iData.kind];
+    console.log(`kind: ${iData.kind}, required: ${requiredBytes}, left: ${bytecode.length - i - 1}`);
+    if (i + 1 + requiredBytes <= bytecode.length) {
+      const skip = skipBytes(iData.kind, bytecode.subarray(i + 1));
+      i += skip;
+    }
   }
   // pack mask
   const packed: u8[] = [];
@@ -253,9 +255,59 @@ export class Program {
   }
 }
 
-export function decodeArguments(kind: Arguments, data: Uint8Array): Args {
+export function decodeArguments(kind: Arguments, data: Uint8Array): Args | null {
   if (data.length < REQUIRED_BYTES[kind]) {
-    return new Args();
+    return null;
   }
   return DECODERS[kind](data);
+}
+
+function immBytes(dataLength: i32, required: i32): i32 {
+  if (dataLength < required) {
+    return 0;
+  }
+  return i32(Math.min(4, dataLength - required));
+}
+export function skipBytes(kind: Arguments, data: Uint8Array): i32 {
+  switch (kind) {
+    case Arguments.Zero:
+      return 0;
+    case Arguments.OneImm:
+      return immBytes(data.length, 0);
+    case Arguments.TwoImm: {
+      const n = nibbles(data[0]);
+      const split = n.low + 1;
+      return 1 + split + immBytes(data.length, split + 1);
+    }
+    case Arguments.OneOff:
+      return immBytes(data.length, 0);
+    case Arguments.OneRegOneImm:
+      return 1 + immBytes(data.length, 1);
+    case Arguments.OneRegOneExtImm:
+      return 9;
+    case Arguments.OneRegTwoImm: {
+      const n = nibbles(data[0]);
+      const split = n.hig + 1;
+      return 1 + split + immBytes(data.length, 1 + split);
+    }
+    case Arguments.OneRegOneImmOneOff: {
+      const n = nibbles(data[0]);
+      const split = n.hig + 1;
+      return 1 + split + immBytes(data.length, 1 + split);
+    }
+    case Arguments.TwoReg:
+      return 1;
+    case Arguments.TwoRegOneImm:
+      return 1 + i32(Math.min(4, data.length));
+    case Arguments.TwoRegOneOff:
+      return 1 + i32(Math.min(4, data.length));
+    case Arguments.TwoRegTwoImm:
+      const n = nibbles(data[1]);
+      const split = n.low + 1;
+      return 2 + split + immBytes(data.length, 2 + split);
+    case Arguments.ThreeReg:
+      return 2;
+    default:
+      throw new Error(`Unhandled arguments kind: ${kind}`);
+  }
 }

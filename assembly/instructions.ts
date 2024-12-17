@@ -46,7 +46,7 @@ export const INSTRUCTIONS: Instruction[] = [
   MISSING_INSTRUCTION,
 
   // 20
-  instruction("LOAD_IMM_64", Arguments.OneRegOneImmOneOff, 1),
+  instruction("LOAD_IMM_64", Arguments.OneRegOneExtImm, 1),
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,

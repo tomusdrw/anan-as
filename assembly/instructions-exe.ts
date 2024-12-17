@@ -530,14 +530,14 @@ export const RUN: InstructionRun[] = [
   // CMOV_IZ_IMM
   (args, registers) => {
     if (registers[reg(args.a)] === 0) {
-      registers[reg(args.b)] = args.c;
+      registers[reg(args.b)] = u32SignExtend(args.c);
     }
     return ok();
   },
   // CMOV_NZ_IMM
   (args, registers) => {
     if (registers[reg(args.a)] !== 0) {
-      registers[reg(args.b)] = args.c;
+      registers[reg(args.b)] = u32SignExtend(args.c);
     }
     return ok();
   },
@@ -593,7 +593,7 @@ export const RUN: InstructionRun[] = [
   // SHAR_R_IMM_ALT
   (args, registers) => {
     const shift = u32(registers[reg(args.a)] % MAX_SHIFT_64);
-    registers[reg(args.b)] = i64(args.c) >> shift;
+    registers[reg(args.b)] = u32SignExtend(u32(i64(args.c) >> shift));
     return ok();
   },
   INVALID,
