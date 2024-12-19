@@ -26,7 +26,7 @@ export function fuzz(data) {
       memory: [],
       gas,
       program,
-    });
+    }, true);
 
     assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
     assert(pvm.getGasLeft(), output.gas, 'gas');

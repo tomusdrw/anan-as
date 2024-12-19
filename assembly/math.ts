@@ -12,10 +12,10 @@
  * So `0xfffffffe` is returned.
  */
 export function mulUpperUnsigned(a: u64, b: u64): u64 {
-  const aHigh = a >> 32;
-  const aLow = a & 0xffff_ffff;
-  const bHigh = b >> 32;
-  const bLow = b & 0xffff_ffff;
+  const aHigh: u64 = a >> 32;
+  const aLow: u64 = a & 0xffff_ffff;
+  const bHigh: u64 = b >> 32;
+  const bLow: u64 = b & 0xffff_ffff;
 
   const lowLow = aLow * bLow;
   const lowHigh = aLow * bHigh;
@@ -23,7 +23,7 @@ export function mulUpperUnsigned(a: u64, b: u64): u64 {
   const highHigh = aHigh * bHigh;
   const carry = (lowLow >> 32) + (lowHigh & 0xffff_ffff) + (highLow & 0xffff_ffff);
 
-  return highHigh + (lowLow >> 32) + (highLow >> 32) + (carry >> 32);
+  return highHigh + (lowHigh >> 32) + (highLow >> 32) + (carry >> 32);
 }
 
 /**

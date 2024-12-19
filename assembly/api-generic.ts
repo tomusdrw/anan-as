@@ -96,9 +96,11 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
     if (logs) console.log(`PC = ${int.pc}`);
     if (logs) console.log(`STATUS = ${int.status}`);
     if (logs) console.log(`REGISTERS = ${registers.join(", ")}`);
-    if (logs && int.pc < u32(int.program.code.length)) {
-      const name = changetype<string>(INSTRUCTIONS[int.program.code[int.pc]].namePtr);
-      console.log(`INSTRUCTION = ${name} (${int.program.code[int.pc]})`);
+    if (logs) {
+      const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
+      const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
+      const name = changetype<string>(iData.namePtr); 
+      console.log(`INSTRUCTION = ${name} (${instruction})`);
     }
 
     isOk = int.nextStep();
