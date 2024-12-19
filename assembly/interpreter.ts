@@ -54,8 +54,12 @@ export class Interpreter {
     const pc = this.pc;
     // check if we are at the right location
     if (!this.program.mask.isInstruction(pc)) {
-      this.gas.sub(1);
-      this.status = Status.PANIC;
+      // TODO [ToDr] Potential edge case here?
+      if (this.gas.sub(1)) {
+        this.status = Status.OOG; 
+      } else {
+        this.status = Status.PANIC;
+      }
       return false;
     }
 

@@ -19,6 +19,7 @@ export function fuzz(data) {
     );
     pvm.run(100);
 
+    const printDebugInfo = false;
     const output = runVm({
       registers: Array(13).join(',').split(',').map(() => BigInt(0)),
       pc,
@@ -26,7 +27,7 @@ export function fuzz(data) {
       memory: [],
       gas,
       program,
-    }, true);
+    }, printDebugInfo);
 
     assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
     assert(pvm.getGasLeft(), output.gas, 'gas');

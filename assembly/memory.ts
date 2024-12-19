@@ -84,6 +84,7 @@ export class Memory {
       return this.sbrkAddress;
     }
 
+    const freeMemoryStart = this.sbrkAddress;
     const newSbrk = u32(this.sbrkAddress + amount);
     if (newSbrk < this.sbrkAddress) {
       console.log("Run out of memory!");
@@ -92,13 +93,13 @@ export class Memory {
 
     const pageIdx = u32(newSbrk >> PAGE_SIZE_SHIFT);
     if (pageIdx === this.lastAllocatedPage) {
-      return newSbrk;
+      return freeMemoryStart;
     }
 
     this.lastAllocatedPage = pageIdx;
     const page = this.arena.acquire();
     this.pages.set(pageIdx, new Page(Access.Write, page));
-    return newSbrk;
+    return freeMemoryStart;
   }
 
   getU8(address: u32): Result {

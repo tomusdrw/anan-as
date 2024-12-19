@@ -1,6 +1,8 @@
-import { Args, Arguments, DECODERS, REQUIRED_BYTES, nibbles } from "./arguments";
-import { Decoder, encodeVarU32 } from "./codec";
+import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
+import { Decoder} from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
+import {reg, u32SignExtend} from "./math";
+import {Registers} from "./registers";
 
 export type ProgramCounter = u32;
 
@@ -36,33 +38,6 @@ export function lowerBytes(data: Uint8Array): u8[] {
   return r;
 }
 
-/** Turn given bytecode into a valid program. Add JumpTable and Mask. */
-export function wrapAsProgram(bytecode: Uint8Array): Uint8Array {
-  const jumpTableLength: u8 = 0;
-  const jumpTableItemLength: u8 = 0;
-  const codeLength = bytecode.length;
-  const mask = buildMask(bytecode);
-  const codeLengthBytes = encodeVarU32(codeLength);
-
-  const data = new Uint8Array(1 + 1 + codeLengthBytes.length + codeLength + mask.length);
-  data[0] = jumpTableLength;
-  data[1] = jumpTableItemLength;
-  let offset = 2;
-  for (let i = 0; i < codeLengthBytes.length; i++) {
-    data[offset] = codeLengthBytes[i];
-    offset++;
-  }
-  for (let i = 0; i < bytecode.length; i++) {
-    data[offset] = bytecode[i];
-    offset++;
-  }
-  for (let i = 0; i < mask.length; i++) {
-    data[offset] = mask[i];
-    offset++;
-  }
-  return data;
-}
-
 export function decodeProgram(program: Uint8Array): Program {
   const decoder = new Decoder(program);
 
@@ -85,37 +60,6 @@ export function decodeProgram(program: Uint8Array): Program {
   const basicBlocks = new BasicBlocks(rawCode, mask);
 
   return new Program(rawCode, mask, jumpTable, basicBlocks);
-}
-
-function buildMask(bytecode: Uint8Array): u8[] {
-  const mask = new StaticArray<boolean>(bytecode.length);
-  for (let i = 0; i < bytecode.length; i++) {
-    const instruction = bytecode[i];
-    const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
-    mask[i] = true;
-
-    const requiredBytes = REQUIRED_BYTES[iData.kind];
-    if (i + 1 + requiredBytes <= bytecode.length) {
-      const skip = skipBytes(iData.kind, bytecode.subarray(i + 1));
-      i += skip;
-    }
-  }
-  // pack mask
-  const packed: u8[] = [];
-  for (let i = 0; i < mask.length; i += 8) {
-    let byte: u8 = 0;
-    // TODO [ToDr] Check, might need to go in the other order
-    for (let j = i; j < i + 8; j++) {
-      if (j < mask.length) {
-        byte |= mask[j] ? 1 : 0; 
-      } else {
-        byte |= 1;
-      }
-      byte << 1;
-    }
-    packed.push(byte);
-  }
-  return packed;
 }
 
 export class Mask {
@@ -261,51 +205,83 @@ export function decodeArguments(kind: Arguments, data: Uint8Array): Args | null 
   return DECODERS[kind](data);
 }
 
-function immBytes(dataLength: i32, required: i32): i32 {
-  if (dataLength < required) {
-    return 0;
-  }
-  return i32(Math.min(4, dataLength - required));
+class ResolvedArguments {
+  a: i64 = 0;
+  b: i64 = 0;
+  c: i64 = 0;
+  d: i64 = 0;
+  decoded: Args = new Args;
 }
-export function skipBytes(kind: Arguments, data: Uint8Array): i32 {
+
+export function resolveArguments(
+  kind: Arguments,
+  data: Uint8Array,
+  registers: Registers,
+): ResolvedArguments | null {
+  const args = decodeArguments(kind, data);
+  if (args === null) {
+    return null;
+  }
+
+  const resolved = new ResolvedArguments();
+  resolved.decoded = args;
+
   switch (kind) {
     case Arguments.Zero:
-      return 0;
+      return resolved;
     case Arguments.OneImm:
-      return immBytes(data.length, 0);
-    case Arguments.TwoImm: {
-      const n = nibbles(data[0]);
-      const split = n.low + 1;
-      return 1 + split + immBytes(data.length, split + 1);
-    }
+      resolved.a = u32SignExtend(args.a);
+      return resolved;
+    case Arguments.TwoImm:
+      resolved.a = u32SignExtend(args.a);
+      resolved.b = u32SignExtend(args.b);
+      return resolved;
     case Arguments.OneOff:
-      return immBytes(data.length, 0);
+      resolved.a = u32SignExtend(args.a);
+      return resolved;
     case Arguments.OneRegOneImm:
-      return 1 + immBytes(data.length, 1);
+      resolved.a = registers[reg(args.a)];
+      resolved.b = u32SignExtend(args.b);
+      return resolved;
     case Arguments.OneRegOneExtImm:
-      return 9;
-    case Arguments.OneRegTwoImm: {
-      const n = nibbles(data[0]);
-      const split = n.hig + 1;
-      return 1 + split + immBytes(data.length, 1 + split);
-    }
-    case Arguments.OneRegOneImmOneOff: {
-      const n = nibbles(data[0]);
-      const split = n.hig + 1;
-      return 1 + split + immBytes(data.length, 1 + split);
-    }
+      resolved.a = registers[reg(args.a)];
+      resolved.b = (u64(args.a) << 32) + u64(args.b);
+      return resolved;
+    case Arguments.OneRegTwoImm:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = u32SignExtend(args.b);
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
+    case Arguments.OneRegOneImmOneOff:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = u32SignExtend(args.b);
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
     case Arguments.TwoReg:
-      return 1;
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      return resolved;
     case Arguments.TwoRegOneImm:
-      return 1 + i32(Math.min(4, data.length));
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
     case Arguments.TwoRegOneOff:
-      return 1 + i32(Math.min(4, data.length));
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
     case Arguments.TwoRegTwoImm:
-      const n = nibbles(data[1]);
-      const split = n.low + 1;
-      return 2 + split + immBytes(data.length, 2 + split);
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = u32SignExtend(args.c);
+      resolved.d = u32SignExtend(args.d);
+      return resolved;
     case Arguments.ThreeReg:
-      return 2;
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = registers[reg(args.c)];
+      return resolved;
     default:
       throw new Error(`Unhandled arguments kind: ${kind}`);
   }

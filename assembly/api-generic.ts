@@ -3,7 +3,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
-import { Program, decodeArguments, decodeProgram, liftBytes } from "./program";
+import { Program, decodeArguments, decodeProgram, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
 export class InitialPage {
@@ -101,6 +101,18 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
       const name = changetype<string>(iData.namePtr); 
       console.log(`INSTRUCTION = ${name} (${instruction})`);
+      const args = resolveArguments(
+        iData.kind,
+        int.program.code.subarray(int.pc + 1),
+        int.registers
+      );
+      if (args !== null) {
+        console.log(`ARGUMENTS:
+  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
+  ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
+  ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
+  ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
+      }
     }
 
     isOk = int.nextStep();

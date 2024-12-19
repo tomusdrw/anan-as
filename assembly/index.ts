@@ -3,7 +3,7 @@ import { decodeProgram, decodeSpi, liftBytes } from "./program";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
-export { wrapAsProgram } from "./program";
+export { wrapAsProgram } from "./program-build";
 
 export enum InputKind {
   Generic = 0,

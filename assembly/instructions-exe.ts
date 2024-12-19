@@ -1,22 +1,10 @@
 import { Args } from "./arguments";
 import { OutcomeData, dJump, hostCall, ok, okOrFault, panic, staticJump } from "./instructions-outcome";
-import { mulUpperSigned, mulUpperUnsigned } from "./math";
+import { MAX_SHIFT_32, MAX_SHIFT_64, mulUpperSigned, mulUpperUnsigned, reg, u32SignExtend } from "./math";
 import { Memory } from "./memory";
-import { NO_OF_REGISTERS, Registers } from "./registers";
+import { Registers } from "./registers";
 
 type InstructionRun = (args: Args, registers: Registers, memory: Memory) => OutcomeData;
-
-function u32SignExtend(v: u32): i64 {
-  return i64(i32(v));
-}
-
-// @inline
-function reg(v: u64): u32 {
-  return v >= u64(NO_OF_REGISTERS) ? NO_OF_REGISTERS - 1 : u32(v);
-}
-
-const MAX_SHIFT_64 = 64;
-const MAX_SHIFT_32 = 32;
 
 const INVALID: InstructionRun = () => panic();
 
@@ -227,7 +215,7 @@ export const RUN: InstructionRun[] = [
   // STORE_IMM_IND_U64
   (args, registers, memory) => {
     const address = u32(registers[reg(args.a)] + u32SignExtend(args.b));
-    const pageFault = memory.setU64(address, args.c);
+    const pageFault = memory.setU64(address, u32SignExtend(args.c));
     return okOrFault(pageFault);
   },
   INVALID,
@@ -245,42 +233,48 @@ export const RUN: InstructionRun[] = [
   },
   // BRANCH_EQ_IMM
   (args, registers) => {
-    if (registers[reg(args.a)] === args.b) {
+    const b = u64(u32SignExtend(args.b));
+    if (registers[reg(args.a)] === b) {
       return staticJump(args.c);
     }
     return ok();
   },
   // BRANCH_NE_IMM
   (args, registers) => {
-    if (registers[reg(args.a)] !== args.b) {
+    const b = u64(u32SignExtend(args.b));
+    if (registers[reg(args.a)] !== b) {
       return staticJump(args.c);
     }
     return ok();
   },
   // BRANCH_LT_U_IMM
   (args, registers) => {
-    if (registers[reg(args.a)] < args.b) {
+    const b = u64(u32SignExtend(args.b));
+    if (registers[reg(args.a)] < b) {
       return staticJump(args.c);
     }
     return ok();
   },
   // BRANCH_LE_U_IMM
   (args, registers) => {
-    if (registers[reg(args.a)] <= args.b) {
+    const b = u64(u32SignExtend(args.b));
+    if (registers[reg(args.a)] <= b) {
       return staticJump(args.c);
     }
     return ok();
   },
   // BRANCH_GE_U_IMM
   (args, registers) => {
-    if (registers[reg(args.a)] >= args.b) {
+    const b = u64(u32SignExtend(args.b));
+    if (registers[reg(args.a)] >= b) {
       return staticJump(args.c);
     }
     return ok();
   },
   // BRANCH_GT_U_IMM
   (args, registers) => {
-    if (registers[reg(args.a)] > args.b) {
+    const b = u64(u32SignExtend(args.b));
+    if (registers[reg(args.a)] > b) {
       return staticJump(args.c);
     }
     return ok();
@@ -464,24 +458,28 @@ export const RUN: InstructionRun[] = [
   },
   // SET_LT_U_IMM
   (args, registers) => {
-    registers[reg(args.b)] = registers[reg(args.a)] < args.c ? 1 : 0;
+    const cond = registers[reg(args.a)] < u64(u32SignExtend(args.c));
+    registers[reg(args.b)] = cond ? 1 : 0;
     return ok();
   },
   // SET_LT_S_IMM
   (args, registers) => {
-    registers[reg(args.b)] = i64(registers[reg(args.a)]) < u32SignExtend(args.c) ? 1 : 0;
+    const cond = i64(registers[reg(args.a)]) < u32SignExtend(args.c);
+    registers[reg(args.b)] = cond ? 1 : 0;
     return ok();
   },
   // SHLO_L_IMM_32
   (args, registers) => {
     const shift = u32(args.c % MAX_SHIFT_32);
-    registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)]) << shift);
+    const value = u32(registers[reg(args.a)]);
+    registers[reg(args.b)] = u32SignExtend(value << shift);
     return ok();
   },
   // SHLO_R_IMM_32
   (args, registers) => {
     const shift = u32(args.c % MAX_SHIFT_32);
-    registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)]) >>> shift);
+    const value = u32(registers[reg(args.a)]);
+    registers[reg(args.b)] = u32SignExtend(value >>> shift);
     return ok();
   },
 
@@ -489,7 +487,8 @@ export const RUN: InstructionRun[] = [
   // SHAR_R_IMM_32
   (args, registers) => {
     const shift = u32(args.c % MAX_SHIFT_32);
-    registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)])) >> shift;
+    const value = u32SignExtend(u32(registers[reg(args.a)]));
+    registers[reg(args.b)] = value >> shift;
     return ok();
   },
   // NEG_ADD_IMM_32
@@ -500,12 +499,14 @@ export const RUN: InstructionRun[] = [
   },
   // SET_GT_U_IMM
   (args, registers) => {
-    registers[reg(args.b)] = registers[reg(args.a)] > args.c ? 1 : 0;
+    const cond = registers[reg(args.a)] > u64(u32SignExtend(args.c));
+    registers[reg(args.b)] = cond ? 1 : 0;
     return ok();
   },
   // SET_GT_S_IMM
   (args, registers) => {
-    registers[reg(args.b)] = i64(registers[reg(args.a)]) > u32SignExtend(args.c) ? 1 : 0;
+    const cond = i64(registers[reg(args.a)]) > u32SignExtend(args.c);
+    registers[reg(args.b)] = cond ? 1 : 0;
     return ok();
   },
   // SHLO_L_IMM_ALT_32
@@ -543,7 +544,7 @@ export const RUN: InstructionRun[] = [
   },
   // ADD_IMM
   (args, registers) => {
-    const sum: u64 = registers[reg(args.a)] + args.c;
+    const sum: u64 = registers[reg(args.a)] + u32SignExtend(args.c);
     registers[reg(args.b)] = sum;
     return ok();
   },
@@ -551,7 +552,7 @@ export const RUN: InstructionRun[] = [
   // 140
   // MUL_IMM
   (args, registers) => {
-    registers[reg(args.b)] = registers[reg(args.a)] * args.c;
+    registers[reg(args.b)] = registers[reg(args.a)] * u32SignExtend(args.c);
     return ok();
   },
   // SHLO_L_IMM
@@ -569,31 +570,33 @@ export const RUN: InstructionRun[] = [
   // SHAR_R_IMM
   (args, registers) => {
     const shift = u32(args.c % MAX_SHIFT_64);
-    registers[reg(args.b)] = i64(registers[reg(args.a)]) >> shift;
+    const value = i64(registers[reg(args.a)]);
+    registers[reg(args.b)] = value >> shift;
     return ok();
   },
   // NEG_ADD_IMM
   (args, registers) => {
-    const sum = args.c - registers[reg(args.a)];
+    const sum = u32SignExtend(args.c) - registers[reg(args.a)];
     registers[reg(args.b)] = sum;
     return ok();
   },
   // SHLO_L_IMM_ALT
   (args, registers) => {
     const shift = u32(registers[reg(args.a)] % MAX_SHIFT_64);
-    registers[reg(args.b)] = args.c << shift;
+    registers[reg(args.b)] = u32SignExtend(args.c) << shift;
     return ok();
   },
   // SHLO_R_IMM_ALT
   (args, registers) => {
     const shift = u32(registers[reg(args.a)] % MAX_SHIFT_64);
-    registers[reg(args.b)] = args.c >>> shift;
+    registers[reg(args.b)] = u32SignExtend(args.c) >>> shift;
     return ok();
   },
   // SHAR_R_IMM_ALT
   (args, registers) => {
     const shift = u32(registers[reg(args.a)] % MAX_SHIFT_64);
-    registers[reg(args.b)] = u32SignExtend(u32(i64(args.c) >> shift));
+    const value = u32SignExtend(args.c);
+    registers[reg(args.b)] = u32SignExtend(u32(value >> shift));
     return ok();
   },
   INVALID,
@@ -731,13 +734,15 @@ export const RUN: InstructionRun[] = [
   // SHLO_L_32
   (args, registers) => {
     const shift = u32(registers[reg(args.a)] % MAX_SHIFT_32);
-    registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.b)]) << shift);
+    const value = u32(registers[reg(args.b)]);
+    registers[reg(args.c)] = u32SignExtend(value << shift);
     return ok();
   },
   // SHLO_R_32
   (args, registers) => {
     const shift = u32(registers[reg(args.a)] % MAX_SHIFT_32);
-    registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.b)]) >>> shift);
+    const value = u32(registers[reg(args.b)]);
+    registers[reg(args.c)] = u32SignExtend(value >>> shift);
     return ok();
   },
   // SHAR_R_32
