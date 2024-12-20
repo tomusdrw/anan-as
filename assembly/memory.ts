@@ -91,14 +91,17 @@ export class Memory {
     }
     this.sbrkAddress = newSbrk;
 
-    const pageIdx = u32(newSbrk >> PAGE_SIZE_SHIFT);
+    const pageIdx = i32(newSbrk >> PAGE_SIZE_SHIFT);
     if (pageIdx === this.lastAllocatedPage) {
       return freeMemoryStart;
     }
 
+    for (let i = this.lastAllocatedPage + 1; i <= pageIdx; i++) {
+      const page = this.arena.acquire();
+      this.pages.set(i, new Page(Access.Write, page));
+    }
+
     this.lastAllocatedPage = pageIdx;
-    const page = this.arena.acquire();
-    this.pages.set(pageIdx, new Page(Access.Write, page));
     return freeMemoryStart;
   }
 

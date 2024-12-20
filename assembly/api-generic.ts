@@ -134,6 +134,11 @@ export function getOutputChunks(memory: Memory): InitialChunk[] {
     const pageIdx = pages[i];
     const page = memory.pages.get(pageIdx);
 
+    // skip empty pages
+    if (page.raw.page === null) {
+      continue;
+    }
+
     for (let n = 0; n < page.raw.data.length; n++) {
       const v = page.raw.data[n];
       if (v !== 0) {

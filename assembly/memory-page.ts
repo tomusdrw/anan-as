@@ -4,6 +4,9 @@ export type ArenaId = u32;
 export const PAGE_SIZE: u32 = 4096;
 export const PAGE_SIZE_SHIFT = 12;
 
+/** Amount of memory to allocate eagerly */
+export const ALLOCATE_EAGERLY: u32 = 2**29; // 512MB
+
 export enum Access {
   None = 0,
   Read = 1,
@@ -24,8 +27,15 @@ export class Page {
 export class RawPage {
   constructor(
     public readonly id: ArenaId,
-    public readonly data: Uint8Array,
+    public page: Uint8Array | null,
   ) {}
+
+  get data(): Uint8Array {
+    if (this.page === null) {
+      this.page = new Uint8Array(PAGE_SIZE).fill(0);
+    }
+    return this.page as Uint8Array;
+  }
 }
 
 export class Arena {
@@ -48,9 +58,16 @@ export class Arena {
       return this.free.pop();
     }
     // no pages!
-    console.log("Run out of pages! Allocating.");
+    const allocatedMemory = this.extraPageIndex * PAGE_SIZE;
+    // print warning only once
+    if (allocatedMemory === this.data.byteLength) {
+      console.log("Warning: Run out of pages! Allocating.");
+    }
+
+    // actually allocate for some time, but later do it lazily
+    const data = (allocatedMemory < ALLOCATE_EAGERLY) ? new Uint8Array(PAGE_SIZE) : null;
     this.extraPageIndex += 1;
-    return new RawPage(this.extraPageIndex, new Uint8Array(PAGE_SIZE).fill(0));
+    return new RawPage(this.extraPageIndex, data);
   }
 
   release(page: RawPage): void {
