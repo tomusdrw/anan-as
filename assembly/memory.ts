@@ -79,14 +79,16 @@ export class Memory {
     this.pages.clear();
   }
 
-  sbrk(amount: u32): u32 {
-    const freeMemoryStart = this.sbrkAddress;
+  sbrk(amount: u32): Result {
+    const freeMemoryStart = new Result();
+    freeMemoryStart.ok = this.sbrkAddress;
     if (amount === 0) {
       return freeMemoryStart;
     }
 
     const newSbrk = this.sbrkAddress + amount;
     if (newSbrk > u32(newSbrk)) {
+      freeMemoryStart.fault.isFault = true;
       return freeMemoryStart;
     }
     this.sbrkAddress = u32(newSbrk);

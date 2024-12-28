@@ -327,7 +327,12 @@ export const RUN: InstructionRun[] = [
   },
   // SBRK
   (args, registers, memory) => {
-    registers[reg(args.b)] = memory.sbrk(u32(registers[reg(args.a)]));
+    const res = memory.sbrk(u32(registers[reg(args.a)]));
+    // out of memory
+    if (res.fault.isFault) {
+      return panic();
+    }
+    registers[reg(args.b)] = res.ok;
     return ok();
   },
   INVALID,
