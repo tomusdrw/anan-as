@@ -80,16 +80,16 @@ export class Memory {
   }
 
   sbrk(amount: u32): u32 {
+    const freeMemoryStart = this.sbrkAddress;
     if (amount === 0) {
-      return this.sbrkAddress;
+      return freeMemoryStart;
     }
 
-    const freeMemoryStart = this.sbrkAddress;
-    const newSbrk = u32(this.sbrkAddress + amount);
-    if (newSbrk < this.sbrkAddress) {
-      console.log("Run out of memory!");
+    const newSbrk = this.sbrkAddress + amount;
+    if (newSbrk > u32(newSbrk)) {
+      return freeMemoryStart;
     }
-    this.sbrkAddress = newSbrk;
+    this.sbrkAddress = u32(newSbrk);
 
     const pageIdx = i32(newSbrk >> PAGE_SIZE_SHIFT);
     if (pageIdx === this.lastAllocatedPage) {

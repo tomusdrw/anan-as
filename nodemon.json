@@ -1,0 +1,6 @@
+{
+	"verbose": true,
+	"exec": "npm run build",
+	"ignore": ["build", "web/build", "node_modules"],
+	"ext": ".ts"
+}
