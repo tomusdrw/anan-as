@@ -1,6 +1,6 @@
 import { Args } from "./arguments";
 import { OutcomeData, dJump, hostCall, ok, okOrFault, panic, staticJump } from "./instructions-outcome";
-import { MAX_SHIFT_32, MAX_SHIFT_64, mulUpperSigned, mulUpperUnsigned, reg, u32SignExtend } from "./math";
+import { MAX_SHIFT_32, MAX_SHIFT_64, mulUpperSigned, mulUpperSignedUnsigned, mulUpperUnsigned, reg, u32SignExtend } from "./math";
 import { Memory } from "./memory";
 import { Registers } from "./registers";
 
@@ -850,17 +850,26 @@ export const RUN: InstructionRun[] = [
   },
   // MUL_UPPER_S_S
   (args, registers) => {
-    registers[reg(args.c)] = mulUpperSigned(i64(registers[reg(args.a)]), i64(registers[reg(args.b)]));
+    registers[reg(args.c)] = mulUpperSigned(
+      i64(registers[reg(args.a)]),
+      i64(registers[reg(args.b)])
+    );
     return ok();
   },
   // MUL_UPPER_U_U
   (args, registers) => {
-    registers[reg(args.c)] = mulUpperUnsigned(registers[reg(args.a)], registers[reg(args.b)]);
+    registers[reg(args.c)] = mulUpperUnsigned(
+      registers[reg(args.a)],
+      registers[reg(args.b)]
+    );
     return ok();
   },
   // MUL_UPPER_S_U
   (args, registers) => {
-    registers[reg(args.c)] = mulUpperSigned(i64(registers[reg(args.a)]), registers[reg(args.b)]);
+    registers[reg(args.c)] = mulUpperSignedUnsigned(
+      i64(registers[reg(args.a)]),
+      registers[reg(args.b)]
+    );
     return ok();
   },
   // SET_LT_U
