@@ -27,7 +27,7 @@ class ChunkBytes {
   ) {}
 }
 
-const MEMORY_SIZE = 0x1_000_000;
+const MEMORY_SIZE = 0x1_0000_0000;
 
 const EMPTY_UINT8ARRAY = new Uint8Array(0);
 
@@ -86,8 +86,8 @@ export class Memory {
       return freeMemoryStart;
     }
 
-    const newSbrk = this.sbrkAddress + amount;
-    if (newSbrk > u32(newSbrk)) {
+    const newSbrk = i64(this.sbrkAddress) + amount;
+    if (newSbrk >= MEMORY_SIZE) {
       freeMemoryStart.fault.isFault = true;
       return freeMemoryStart;
     }
@@ -293,7 +293,7 @@ export class Memory {
       return new Chunks(new MaybePageFault(), first);
     }
 
-    const secondPageIdx = ((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
+    const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
       return fault(address);
     }

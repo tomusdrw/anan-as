@@ -330,7 +330,7 @@ export const RUN: InstructionRun[] = [
     const res = memory.sbrk(u32(registers[reg(args.a)]));
     // out of memory
     if (res.fault.isFault) {
-      return panic();
+      return okOrFault(res.fault);
     }
     registers[reg(args.b)] = res.ok;
     return ok();
