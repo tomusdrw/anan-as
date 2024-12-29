@@ -115,6 +115,8 @@ function main() {
     try {
       // Resolve the full file path
       const absolutePath = resolve(filePath);
+      
+      // TODO [ToDr] readdir if argument is a dir
 
       // Read the file synchronously
       const fileContent = readFileSync(absolutePath, 'utf-8');

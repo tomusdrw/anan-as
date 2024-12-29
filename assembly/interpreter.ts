@@ -1,8 +1,9 @@
 import { GasCounter, gasCounter } from "./gas";
-import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
+import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
 import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions-outcome";
 import { Memory, MemoryBuilder } from "./memory";
+import {PAGE_SIZE} from "./memory-page";
 import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
@@ -55,7 +56,7 @@ export class Interpreter {
     // check if we are at the right location
     if (!this.program.mask.isInstruction(pc)) {
       // TODO [ToDr] Potential edge case here?
-      if (this.gas.sub(1)) {
+      if (this.gas.sub(MISSING_INSTRUCTION.gas)) {
         this.status = Status.OOG; 
       } else {
         this.status = Status.PANIC;
@@ -89,6 +90,15 @@ export class Interpreter {
     if (args === null) {
       this.status = Status.PANIC;
       return false;
+    }
+
+    // additional gas cost of sbrk
+    if (iData === SBRK) {
+      const gas = (args.a + PAGE_SIZE) / PAGE_SIZE * 16;
+      if (this.gas.sub(gas)) {
+        this.status = Status.OOG;
+        return false;
+      }
     }
 
     const exe = RUN[instruction];
