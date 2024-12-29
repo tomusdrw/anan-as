@@ -2,8 +2,9 @@ import { GasCounter, gasCounter } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
 import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions-outcome";
+import {reg} from "./math";
 import { Memory, MemoryBuilder } from "./memory";
-import {PAGE_SIZE} from "./memory-page";
+import {PAGE_SIZE, PAGE_SIZE_SHIFT} from "./memory-page";
 import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
@@ -94,7 +95,8 @@ export class Interpreter {
 
     // additional gas cost of sbrk
     if (iData === SBRK) {
-      const gas = (args.a + PAGE_SIZE) / PAGE_SIZE * 16;
+      const alloc = u32(this.registers[reg(args.a)]);
+      const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
       if (this.gas.sub(gas)) {
         this.status = Status.OOG;
         return false;

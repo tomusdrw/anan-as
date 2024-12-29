@@ -1,19 +1,17 @@
 #!/usr/bin/env node
 
-// import { FuzzedDataProvider } from "@jazzer.js/core";
 import "json-bigint-patch";
 import fs from 'node:fs';
 import { Pvm } from "@typeberry/pvm-debugger-adapter";
 import { wrapAsProgram, runVm, disassemble, InputKind } from "../build/release.js";
 
 export function fuzz(data) {
-  const gas = 20n;
+  const gas = 20_000_000_000n;
   const pc = 0;
   const pvm = new Pvm();
   const program = wrapAsProgram(new Uint8Array(data));
 
   try {
-    console.log(program);
     pvm.reset(
       program,
       pc,
@@ -50,7 +48,7 @@ export function fuzz(data) {
         pc: pvm.getProgramCounter(),
         registers: pvm.getRegisters()
       },
-  );
+    );
   } catch (e) {
     const hex = programHex(program);
     console.log(program);
