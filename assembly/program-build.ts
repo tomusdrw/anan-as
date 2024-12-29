@@ -62,10 +62,11 @@ function skipBytes(kind: Arguments, data: Uint8Array): i32 {
       return 1 + i32(Math.min(4, data.length));
     case Arguments.TwoRegOneOff:
       return 1 + i32(Math.min(4, data.length));
-    case Arguments.TwoRegTwoImm:
+    case Arguments.TwoRegTwoImm: {
       const n = nibbles(data[1]);
       const split = n.low + 1;
       return 2 + split + immBytes(data.length, 2 + split);
+    }
     case Arguments.ThreeReg:
       return 2;
     default:

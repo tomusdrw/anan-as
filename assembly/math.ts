@@ -1,4 +1,4 @@
-import {NO_OF_REGISTERS} from "./registers";
+import { NO_OF_REGISTERS } from "./registers";
 
 /**
  * Multiply two unsigned 64-bit numbers and take the upper 64-bits of the result.
@@ -32,11 +32,11 @@ export function mulUpperUnsigned(a: u64, b: u64): u64 {
  * Same as [mulUpperUnsigned] but treat the arguments as signed (two-complement) 64-bit numbers and the result alike.
  */
 export function mulUpperSigned(a: i64, b: i64): u64 {
-  const aSign = (a < 0) ? 1 : -1;
-  const bSign = (b < 0) ? 1 : -1;
+  const aSign = a < 0 ? 1 : -1;
+  const bSign = b < 0 ? 1 : -1;
   const sign = aSign * bSign;
-  const aAbs = (a < 0) ? ~a + 1 : a;
-  const bAbs = (b < 0) ? ~b + 1 : b;
+  const aAbs = a < 0 ? ~a + 1 : a;
+  const bAbs = b < 0 ? ~b + 1 : b;
 
   if (sign < 0) {
     return ~mulUpperUnsigned(aAbs, bAbs) + 1;
@@ -45,7 +45,7 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
 }
 
 export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
-  const aSign = (a < 0) ? 1 : -1;
+  const aSign = a < 0 ? 1 : -1;
   if (aSign < 0) {
     const aAbs = ~a + 1;
     return ~mulUpperUnsigned(aAbs, b) + 1;
@@ -53,13 +53,12 @@ export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
   return mulUpperUnsigned(a, b);
 }
 
-
-@inline
+// @inline
 export function u32SignExtend(v: u32): i64 {
-  return i64(i32(v))
+  return i64(i32(v));
 }
 
-@inline
+// @inline
 export function reg(v: u64): u32 {
   return v >= u64(NO_OF_REGISTERS) ? NO_OF_REGISTERS - 1 : u32(v);
 }
