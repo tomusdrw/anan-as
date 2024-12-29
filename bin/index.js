@@ -104,7 +104,7 @@ function main() {
   }
 
   const status = {
-    all: args.length,
+    all: 0,
     ok: [],
     fail: [],
   };
@@ -119,8 +119,10 @@ function main() {
     }
 
     if (dir !== null) {
+      status.all += dir.length;
       dir.forEach((file) => processFile(IS_DEBUG, status, join(filePath, file)));
     } else {
+      status.all += 1;
       // or just process file
       processFile(IS_DEBUG, status, filePath);
     }

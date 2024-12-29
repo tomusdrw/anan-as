@@ -5,7 +5,7 @@ export const PAGE_SIZE: u32 = 4096;
 export const PAGE_SIZE_SHIFT = 12;
 
 /** Amount of memory to allocate eagerly */
-export const ALLOCATE_EAGERLY: u32 = 2**29; // 512MB
+export const ALLOCATE_EAGERLY: u32 = 2 ** 29; // 512MB
 
 export enum Access {
   None = 0,
@@ -65,7 +65,7 @@ export class Arena {
     }
 
     // actually allocate for some time, but later do it lazily
-    const data = (allocatedMemory < ALLOCATE_EAGERLY) ? new Uint8Array(PAGE_SIZE) : null;
+    const data = allocatedMemory < ALLOCATE_EAGERLY ? new Uint8Array(PAGE_SIZE) : null;
     this.extraPageIndex += 1;
     return new RawPage(this.extraPageIndex, data);
   }

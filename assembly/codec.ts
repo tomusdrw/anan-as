@@ -134,7 +134,7 @@ export function encodeVarU32(v: u64): Uint8Array {
 
       // encode the first byte
       const maxVal = 2 ** (8 * l);
-      const byte = (2 ** 8 - 2 ** (8 - l)) + v / maxVal;
+      const byte = 2 ** 8 - 2 ** (8 - l) + v / maxVal;
       dest[0] = u8(byte);
 
       // now encode the rest of bytes of len `l`

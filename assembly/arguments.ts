@@ -40,7 +40,7 @@ type ArgsDecoder = (data: Uint8Array) => Args;
 
 function twoImm(data: Uint8Array): Args {
   const n = nibbles(data[0]);
-  const split = <i32>Math.min(4, n.low) + 1; 
+  const split = <i32>Math.min(4, n.low) + 1;
   const first = decodeI32(data.subarray(1, split));
   const second = decodeI32(data.subarray(split));
   return asArgs(first, second, 0, 0);

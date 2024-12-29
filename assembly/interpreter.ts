@@ -2,9 +2,9 @@ import { GasCounter, gasCounter } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
 import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions-outcome";
-import {reg} from "./math";
+import { reg } from "./math";
 import { Memory, MemoryBuilder } from "./memory";
-import {PAGE_SIZE, PAGE_SIZE_SHIFT} from "./memory-page";
+import { PAGE_SIZE, PAGE_SIZE_SHIFT } from "./memory-page";
 import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
@@ -58,7 +58,7 @@ export class Interpreter {
     if (!this.program.mask.isInstruction(pc)) {
       // TODO [ToDr] Potential edge case here?
       if (this.gas.sub(MISSING_INSTRUCTION.gas)) {
-        this.status = Status.OOG; 
+        this.status = Status.OOG;
       } else {
         this.status = Status.PANIC;
       }

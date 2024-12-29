@@ -1,8 +1,8 @@
 import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
-import { Decoder} from "./codec";
+import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
-import {reg, u32SignExtend} from "./math";
-import {Registers} from "./registers";
+import { reg, u32SignExtend } from "./math";
+import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
 
@@ -210,14 +210,10 @@ class ResolvedArguments {
   b: i64 = 0;
   c: i64 = 0;
   d: i64 = 0;
-  decoded: Args = new Args;
+  decoded: Args = new Args();
 }
 
-export function resolveArguments(
-  kind: Arguments,
-  data: Uint8Array,
-  registers: Registers,
-): ResolvedArguments | null {
+export function resolveArguments(kind: Arguments, data: Uint8Array, registers: Registers): ResolvedArguments | null {
   const args = decodeArguments(kind, data);
   if (args === null) {
     return null;

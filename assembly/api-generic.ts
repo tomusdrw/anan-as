@@ -99,13 +99,9 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-      const name = changetype<string>(iData.namePtr); 
+      const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
-      const args = resolveArguments(
-        iData.kind,
-        int.program.code.subarray(int.pc + 1),
-        int.registers
-      );
+      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), int.registers);
       if (args !== null) {
         console.log(`ARGUMENTS:
   ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 

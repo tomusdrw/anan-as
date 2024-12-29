@@ -1,6 +1,6 @@
-import {Arguments, REQUIRED_BYTES, nibbles} from "./arguments";
-import {encodeVarU32} from "./codec";
-import {INSTRUCTIONS, MISSING_INSTRUCTION} from "./instructions";
+import { Arguments, REQUIRED_BYTES, nibbles } from "./arguments";
+import { encodeVarU32 } from "./codec";
+import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 
 /** Turn given bytecode into a valid program. Add JumpTable and Mask. */
 export function wrapAsProgram(bytecode: Uint8Array): Uint8Array {
@@ -92,7 +92,7 @@ function buildMask(bytecode: Uint8Array): u8[] {
     let byte: u8 = 0;
     for (let j = i; j < i + 8; j++) {
       if (j < mask.length) {
-        byte |= mask[j] ? 1 : 0; 
+        byte |= mask[j] ? 1 : 0;
       } else {
         byte |= 1;
       }
