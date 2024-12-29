@@ -3,7 +3,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
-import { Program, decodeArguments, decodeProgram, liftBytes } from "./program";
+import { Program, decodeArguments, decodeProgram, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
 export class InitialPage {
@@ -62,7 +62,7 @@ export function getAssembly(p: Program): string {
     }
 
     const args = decodeArguments(iData.kind, p.code.subarray(i + 1, end));
-    const argsArray = [args.a, args.b, args.c, args.d];
+    const argsArray = args === null ? [0, 0, 0, 0] : [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
     for (let i = 0; i < relevantArgs; i++) {
       v += ` ${argsArray[i]}, `;
@@ -96,9 +96,19 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
     if (logs) console.log(`PC = ${int.pc}`);
     if (logs) console.log(`STATUS = ${int.status}`);
     if (logs) console.log(`REGISTERS = ${registers.join(", ")}`);
-    if (logs && int.pc < u32(int.program.code.length)) {
-      const name = changetype<string>(INSTRUCTIONS[int.program.code[int.pc]].namePtr);
-      console.log(`INSTRUCTION = ${name} (${int.program.code[int.pc]})`);
+    if (logs) {
+      const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
+      const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
+      const name = changetype<string>(iData.namePtr);
+      console.log(`INSTRUCTION = ${name} (${instruction})`);
+      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), int.registers);
+      if (args !== null) {
+        console.log(`ARGUMENTS:
+  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
+  ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
+  ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
+  ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
+      }
     }
 
     isOk = int.nextStep();
@@ -119,6 +129,11 @@ export function getOutputChunks(memory: Memory): InitialChunk[] {
   for (let i = 0; i < pages.length; i++) {
     const pageIdx = pages[i];
     const page = memory.pages.get(pageIdx);
+
+    // skip empty pages
+    if (page.raw.page === null) {
+      continue;
+    }
 
     for (let n = 0; n < page.raw.data.length; n++) {
       const v = page.raw.data[n];

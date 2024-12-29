@@ -1,8 +1,9 @@
-import { VmInput, getAssembly, runVm } from "./api-generic";
+import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
 import { decodeProgram, decodeSpi, liftBytes } from "./program";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
+export { wrapAsProgram } from "./program-build";
 
 export enum InputKind {
   Generic = 0,
@@ -24,16 +25,16 @@ export function disassemble(input: u8[], kind: InputKind): string {
   return `Unknown kind: ${kind}`;
 }
 
-export function runProgram(input: u8[], kind: InputKind): void {
+export function runProgram(input: u8[], registers: u64[], kind: InputKind): VmOutput {
   if (kind === InputKind.Generic) {
     const vmInput = new VmInput();
-    vmInput.registers[7] = 9;
+    vmInput.registers = registers;
     vmInput.gas = 10_000;
     vmInput.program = input;
 
     const output = runVm(vmInput, true);
     console.log(`Finished with status: ${output.status}`);
-    return;
+    return output;
   }
 
   if (kind === InputKind.SPI) {

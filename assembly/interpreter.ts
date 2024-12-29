@@ -1,8 +1,10 @@
 import { GasCounter, gasCounter } from "./gas";
-import { INSTRUCTIONS } from "./instructions";
+import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
 import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions-outcome";
+import { reg } from "./math";
 import { Memory, MemoryBuilder } from "./memory";
+import { PAGE_SIZE, PAGE_SIZE_SHIFT } from "./memory-page";
 import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
@@ -54,17 +56,26 @@ export class Interpreter {
     const pc = this.pc;
     // check if we are at the right location
     if (!this.program.mask.isInstruction(pc)) {
-      this.gas.sub(1);
-      this.status = Status.PANIC;
+      // TODO [ToDr] Potential edge case here?
+      if (this.gas.sub(MISSING_INSTRUCTION.gas)) {
+        this.status = Status.OOG;
+      } else {
+        this.status = Status.PANIC;
+      }
       return false;
     }
 
     const instruction = this.program.code[pc];
-    const iData = INSTRUCTIONS[instruction];
+    const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
 
     // check gas (might be done for each block instead).
     if (this.gas.sub(iData.gas)) {
       this.status = Status.OOG;
+      return false;
+    }
+
+    if (iData === MISSING_INSTRUCTION) {
+      this.status = Status.PANIC;
       return false;
     }
 
@@ -75,7 +86,22 @@ export class Interpreter {
       this.status = Status.PANIC;
       return false;
     }
+
     const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1, end));
+    if (args === null) {
+      this.status = Status.PANIC;
+      return false;
+    }
+
+    // additional gas cost of sbrk
+    if (iData === SBRK) {
+      const alloc = u32(this.registers[reg(args.a)]);
+      const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
+      if (this.gas.sub(gas)) {
+        this.status = Status.OOG;
+        return false;
+      }
+    }
 
     const exe = RUN[instruction];
     const outcome = exe(args, this.registers, this.memory);

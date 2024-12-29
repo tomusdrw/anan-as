@@ -20,6 +20,8 @@ function instruction(name: string, kind: Arguments, gas: Gas, isTerminating: boo
 
 export const MISSING_INSTRUCTION = instruction("INVALID", Arguments.Zero, 1, false);
 
+export const SBRK = instruction("SBRK", Arguments.TwoReg, 1);
+
 export const INSTRUCTIONS: Instruction[] = [
   // 0
   instruction("TRAP", Arguments.Zero, 1, true),
@@ -46,7 +48,7 @@ export const INSTRUCTIONS: Instruction[] = [
   MISSING_INSTRUCTION,
 
   // 20
-  instruction("LOAD_IMM_64", Arguments.OneRegOneImmOneOff, 1),
+  instruction("LOAD_IMM_64", Arguments.OneRegOneExtImm, 1),
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
@@ -143,7 +145,7 @@ export const INSTRUCTIONS: Instruction[] = [
 
   // 100
   instruction("MOVE_REG", Arguments.TwoReg, 1),
-  instruction("SBRK", Arguments.TwoReg, 1),
+  SBRK,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,

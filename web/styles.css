@@ -28,6 +28,7 @@ button {
   cursor: pointer;
 }
 textarea {
+  width: 100%;
   padding: 1rem;
 }
 textarea.error {

@@ -1,6 +1,8 @@
 import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
 import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
+import { reg, u32SignExtend } from "./math";
+import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
 
@@ -196,9 +198,87 @@ export class Program {
   }
 }
 
-export function decodeArguments(kind: Arguments, data: Uint8Array): Args {
+export function decodeArguments(kind: Arguments, data: Uint8Array): Args | null {
   if (data.length < REQUIRED_BYTES[kind]) {
-    return new Args();
+    return null;
   }
   return DECODERS[kind](data);
+}
+
+class ResolvedArguments {
+  a: i64 = 0;
+  b: i64 = 0;
+  c: i64 = 0;
+  d: i64 = 0;
+  decoded: Args = new Args();
+}
+
+export function resolveArguments(kind: Arguments, data: Uint8Array, registers: Registers): ResolvedArguments | null {
+  const args = decodeArguments(kind, data);
+  if (args === null) {
+    return null;
+  }
+
+  const resolved = new ResolvedArguments();
+  resolved.decoded = args;
+
+  switch (kind) {
+    case Arguments.Zero:
+      return resolved;
+    case Arguments.OneImm:
+      resolved.a = u32SignExtend(args.a);
+      return resolved;
+    case Arguments.TwoImm:
+      resolved.a = u32SignExtend(args.a);
+      resolved.b = u32SignExtend(args.b);
+      return resolved;
+    case Arguments.OneOff:
+      resolved.a = u32SignExtend(args.a);
+      return resolved;
+    case Arguments.OneRegOneImm:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = u32SignExtend(args.b);
+      return resolved;
+    case Arguments.OneRegOneExtImm:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = (u64(args.a) << 32) + u64(args.b);
+      return resolved;
+    case Arguments.OneRegTwoImm:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = u32SignExtend(args.b);
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
+    case Arguments.OneRegOneImmOneOff:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = u32SignExtend(args.b);
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
+    case Arguments.TwoReg:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      return resolved;
+    case Arguments.TwoRegOneImm:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
+    case Arguments.TwoRegOneOff:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = u32SignExtend(args.c);
+      return resolved;
+    case Arguments.TwoRegTwoImm:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = u32SignExtend(args.c);
+      resolved.d = u32SignExtend(args.d);
+      return resolved;
+    case Arguments.ThreeReg:
+      resolved.a = registers[reg(args.a)];
+      resolved.b = registers[reg(args.b)];
+      resolved.c = registers[reg(args.c)];
+      return resolved;
+    default:
+      throw new Error(`Unhandled arguments kind: ${kind}`);
+  }
 }

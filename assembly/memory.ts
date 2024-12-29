@@ -27,7 +27,7 @@ class ChunkBytes {
   ) {}
 }
 
-const MEMORY_SIZE = 0x1_000_000;
+const MEMORY_SIZE = 0x1_0000_0000;
 
 const EMPTY_UINT8ARRAY = new Uint8Array(0);
 
@@ -61,6 +61,7 @@ export class Memory {
     private readonly arena: Arena,
     public readonly pages: Map<PageIndex, Page> = new Map(),
     private sbrkAddress: u32 = 0,
+    private lastAllocatedPage: i32 = -1,
   ) {}
 
   pageDump(index: PageIndex): Uint8Array | null {
@@ -78,17 +79,32 @@ export class Memory {
     this.pages.clear();
   }
 
-  sbrk(amount: u32): u32 {
-    const newSbrk = this.sbrkAddress + amount;
-    if (newSbrk < this.sbrkAddress) {
-      console.log("Run out of memory!");
+  sbrk(amount: u32): Result {
+    const freeMemoryStart = new Result();
+    freeMemoryStart.ok = this.sbrkAddress;
+    if (amount === 0) {
+      return freeMemoryStart;
     }
-    this.sbrkAddress = newSbrk;
 
-    const pageIdx = u32(newSbrk >> PAGE_SIZE_SHIFT);
-    const page = this.arena.acquire();
-    this.pages.set(pageIdx, new Page(Access.Write, page));
-    return newSbrk;
+    const newSbrk = i64(this.sbrkAddress) + amount;
+    if (newSbrk >= MEMORY_SIZE) {
+      freeMemoryStart.fault.isFault = true;
+      return freeMemoryStart;
+    }
+    this.sbrkAddress = u32(newSbrk);
+
+    const pageIdx = i32(newSbrk >> PAGE_SIZE_SHIFT);
+    if (pageIdx === this.lastAllocatedPage) {
+      return freeMemoryStart;
+    }
+
+    for (let i = this.lastAllocatedPage + 1; i <= pageIdx; i++) {
+      const page = this.arena.acquire();
+      this.pages.set(i, new Page(Access.Write, page));
+    }
+
+    this.lastAllocatedPage = pageIdx;
+    return freeMemoryStart;
   }
 
   getU8(address: u32): Result {
@@ -277,7 +293,7 @@ export class Memory {
       return new Chunks(new MaybePageFault(), first);
     }
 
-    const secondPageIdx = ((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
+    const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
       return fault(address);
     }

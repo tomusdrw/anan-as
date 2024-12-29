@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import "json-bigint-patch";
-import {readFileSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {readFileSync, readdirSync} from 'node:fs';
+import {resolve, join} from 'node:path';
 import * as assert from 'node:assert';
 
 import { runVm, InputKind, disassemble } from "../build/release.js";
@@ -104,38 +104,27 @@ function main() {
   }
 
   const status = {
-    all: args.length,
+    all: 0,
     ok: [],
     fail: [],
   };
 
   // Process each file
   args.forEach((filePath) => {
-    let jsonData;
+    // try whole directory
+    let dir = null;
     try {
-      // Resolve the full file path
-      const absolutePath = resolve(filePath);
-
-      // Read the file synchronously
-      const fileContent = readFileSync(absolutePath, 'utf-8');
-
-      // Parse the JSON content
-      jsonData = JSON.parse(fileContent);
-    } catch (error) {
-      status.fail.push(filePath);
-      console.error(`Error reading file: ${filePath}`);
-      console.error(error.message);
-      return;
+      dir = readdirSync(filePath);
+    } catch (e) {
     }
 
-    try {
-      // Process the parsed JSON
-      processJson(jsonData, IS_DEBUG);
-      status.ok.push(filePath);
-    } catch (error) {
-      status.fail.push(filePath);
-      console.error(`Error running test: ${filePath}`);
-      console.error(error.message);
+    if (dir !== null) {
+      status.all += dir.length;
+      dir.forEach((file) => processFile(IS_DEBUG, status, join(filePath, file)));
+    } else {
+      status.all += 1;
+      // or just process file
+      processFile(IS_DEBUG, status, filePath);
     }
   });
 
@@ -147,6 +136,35 @@ function main() {
       console.error(`❗ ${e}`);
     }
     process.exit(-1)
+  }
+}
+
+function processFile(IS_DEBUG, status, filePath) {
+  let jsonData;
+  try {
+    // Resolve the full file path
+    const absolutePath = resolve(filePath);
+
+    // Read the file synchronously
+    const fileContent = readFileSync(absolutePath, 'utf-8');
+
+    // Parse the JSON content
+    jsonData = JSON.parse(fileContent);
+  } catch (error) {
+    status.fail.push(filePath);
+    console.error(`Error reading file: ${filePath}`);
+    console.error(error.message);
+    return;
+  }
+
+  try {
+    // Process the parsed JSON
+    processJson(jsonData, IS_DEBUG);
+    status.ok.push(filePath);
+  } catch (error) {
+    status.fail.push(filePath);
+    console.error(`Error running test: ${filePath}`);
+    console.error(error.message);
   }
 }
 
