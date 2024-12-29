@@ -2,7 +2,7 @@ import { VmInput, getAssembly, runVm } from "./api-generic";
 import { decodeProgram, decodeSpi, liftBytes } from "./program";
 
 export * from "./api";
-export { runVm } from "./api-generic";
+export { runVm, getAssembly } from "./api-generic";
 
 export enum InputKind {
   Generic = 0,

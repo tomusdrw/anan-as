@@ -17,7 +17,7 @@ export class InitialChunk {
 }
 
 export class VmInput {
-  registers: u32[] = new Array<u32>(NO_OF_REGISTERS).fill(0);
+  registers: u64[] = new Array<u64>(NO_OF_REGISTERS).fill(0);
   pc: u32 = 0;
   gas: i64 = 0;
   program: u8[] = [];
@@ -27,7 +27,7 @@ export class VmInput {
 
 export class VmOutput {
   status: Status = Status.OK;
-  registers: u32[] = [];
+  registers: u64[] = [];
   pc: u32 = 0;
   memory: InitialChunk[] = [];
   gas: i64 = 0;
@@ -63,7 +63,7 @@ export function getAssembly(p: Program): string {
 
     const args = decodeArguments(iData.kind, p.code.subarray(i + 1, end));
     const argsArray = [args.a, args.b, args.c, args.d];
-    const relevantArgs = <i32>RELEVANT_ARGS[iData.kind];
+    const relevantArgs = RELEVANT_ARGS[iData.kind];
     for (let i = 0; i < relevantArgs; i++) {
       v += ` ${argsArray[i]}, `;
     }
@@ -88,6 +88,7 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   let isOk = true;
   for (;;) {
     if (!isOk) {
+      if (logs) console.log(`REGISTERS = ${registers.join(", ")} (final)`);
       if (logs) console.log(`Finished with status: ${int.status}`);
       break;
     }

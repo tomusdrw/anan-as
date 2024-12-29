@@ -1,4 +1,4 @@
-// TODO [ToDr] Unions not supported.
+/** Gas type. */
 export type Gas = u64;
 
 /** Create a new gas counter instance depending on the gas value. */

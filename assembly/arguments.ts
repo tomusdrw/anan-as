@@ -4,17 +4,20 @@ export enum Arguments {
   TwoImm = 2,
   OneOff = 3,
   OneRegOneImm = 4,
-  OneRegTwoImm = 5,
-  OneRegOneImmOneOff = 6,
-  TwoReg = 7,
-  TwoRegOneImm = 8,
-  TwoRegOneOff = 9,
-  TwoRegTwoImm = 10,
-  ThreeReg = 11,
+  OneRegOneExtImm = 5,
+  OneRegTwoImm = 6,
+  OneRegOneImmOneOff = 7,
+  TwoReg = 8,
+  TwoRegOneImm = 9,
+  TwoRegOneOff = 10,
+  TwoRegTwoImm = 11,
+  ThreeReg = 12,
 }
 
 /** How many numbers in `Args` is relevant for given `Arguments`. */
-export const RELEVANT_ARGS = [<u8>0, 1, 2, 1, 2, 3, 3, 2, 3, 3, 4, 3];
+export const RELEVANT_ARGS = [<i32>0, 1, 2, 1, 2, 3, 3, 3, 2, 3, 3, 4, 3];
+/** How many bytes is required by given `Arguments`. */
+export const REQUIRED_BYTES = [<i32>0, 0, 0, 0, 1, 9, 1, 1, 1, 1, 1, 1, 2];
 
 // @unmanaged
 export class Args {
@@ -65,6 +68,13 @@ export const DECODERS: ArgsDecoder[] = [
   (data: Uint8Array) => {
     return asArgs(nibbles(data[0]).low, decodeI32(data.subarray(1)), 0, 0);
   },
+  // DECODERS[Arguments.OneRegOneExtImm] =
+  (data: Uint8Array) => {
+    const a = nibbles(data[0]).low;
+    const b = decodeU32(data.subarray(1));
+    const c = decodeU32(data.subarray(5));
+    return asArgs(a, b, c, 0);
+  },
   //DECODERS[Arguments.OneRegTwoImm] =
   (data: Uint8Array) => {
     const first = nibbles(data[0]);
@@ -76,7 +86,10 @@ export const DECODERS: ArgsDecoder[] = [
   // DECODERS[Arguments.OneRegOneImmOneOff] =
   (data: Uint8Array) => {
     const n = nibbles(data[0]);
-    return asArgs(n.low, decodeI32(data.subarray(1, 1 + n.hig)), decodeI32(data.subarray(1 + n.hig)), 0);
+    const split = n.hig + 1;
+    const immA = decodeI32(data.subarray(1, split));
+    const offs = decodeI32(data.subarray(split));
+    return asArgs(n.low, immA, offs, 0);
   },
   // DECODERS[Arguments.TwoReg] =
   (data: Uint8Array) => {
@@ -136,5 +149,13 @@ function decodeI32(data: Uint8Array): u32 {
   for (let i: u32 = len; i < 4; i++) {
     num |= prefix << (i * 8);
   }
+  return num;
+}
+
+function decodeU32(data: Uint8Array): u32 {
+  let num = u32(data[0]);
+  num |= u32(data[1]) << 8;
+  num |= u32(data[2]) << 16;
+  num |= u32(data[3]) << 24;
   return num;
 }

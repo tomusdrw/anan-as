@@ -1,7 +1,7 @@
 export type PageIndex = u32;
 export type ArenaId = u32;
 
-export const PAGE_SIZE = 4096;
+export const PAGE_SIZE: u32 = 4096;
 export const PAGE_SIZE_SHIFT = 12;
 
 export enum Access {

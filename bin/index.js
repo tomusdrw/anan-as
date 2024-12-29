@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
+import "json-bigint-patch";
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import * as assert from 'node:assert';
 
-import { runVm } from "../build/release.js";
+import { runVm, InputKind, disassemble } from "../build/release.js";
 
 function read(data, field) {
   if (field in data) {
@@ -22,21 +23,28 @@ function processJson(data, debug = false) {
   }
   // input
   const input = {
-    registers: read(data, 'initial-regs'),
-    pc: read(data, 'initial-pc' ),
-    pageMap: asPageMap(read(data, 'initial-page-map' )),
-    memory: asChunks(read(data, 'initial-memory' )),
-    gas: BigInt(read(data, 'initial-gas' )),
+    registers: read(data, 'initial-regs').map(x => BigInt(x)),
+    pc: read(data, 'initial-pc'),
+    pageMap: asPageMap(read(data, 'initial-page-map')),
+    memory: asChunks(read(data, 'initial-memory')),
+    gas: BigInt(read(data, 'initial-gas')),
     program: read(data, 'program'),
   };
   // expected
   const expected = {
-    status: read(data, 'expected-status' ),
-    registers: read(data, 'expected-regs' ),
-    pc: read(data,  'expected-pc' ),
-    memory: asChunks(read(data, 'expected-memory' )),
+    status: read(data, 'expected-status'),
+    registers: read(data, 'expected-regs').map(x => BigInt(x)),
+    pc: read(data,  'expected-pc'),
+    memory: asChunks(read(data, 'expected-memory')),
     gas: BigInt(read(data, 'expected-gas')),
   };
+
+  if (debug) {
+    const assembly = disassemble(input.program, InputKind.Generic);
+    console.info('===========');
+    console.info(assembly);
+      console.info('\n^^^^^^^^^^^\n');
+  }
 
   const result = runVm(input, debug);
   result.status = statusAsString(result.status);

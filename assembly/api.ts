@@ -4,7 +4,7 @@ import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { decodeProgram, liftBytes } from "./program";
-import { NO_OF_REGISTERS, Registers } from "./registers";
+import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 
 let interpreter: Interpreter | null = null;
 
@@ -106,8 +106,6 @@ export function setGasLeft(gas: i64): void {
   }
 }
 
-const REG_SIZE_BYTES = 4;
-
 export function getRegisters(): Uint8Array {
   const flat = new Uint8Array(NO_OF_REGISTERS * REG_SIZE_BYTES).fill(0);
   if (interpreter === null) {
@@ -167,10 +165,10 @@ function fillRegisters(registers: Registers, flat: u8[]): void {
   }
 
   for (let i = 0; i < registers.length; i++) {
-    let num: u32 = 0;
+    let num: u64 = 0;
     for (let j: u8 = 0; j < <u8>REG_SIZE_BYTES; j++) {
       const index = i * REG_SIZE_BYTES + j;
-      num |= (<u32>flat[index]) << (j * 8);
+      num |= (<u64>flat[index]) << (j * 8);
     }
     registers[i] = num;
   }

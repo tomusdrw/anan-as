@@ -47,6 +47,10 @@ export function ok(): OutcomeData {
   return new OutcomeData();
 }
 
+export function panic(): OutcomeData {
+  return status(Result.PANIC);
+}
+
 export function hostCall(id: u32): OutcomeData {
   const r = new OutcomeData();
   r.outcome = Outcome.Result;
