@@ -25,10 +25,10 @@ export function disassemble(input: u8[], kind: InputKind): string {
   return `Unknown kind: ${kind}`;
 }
 
-export function runProgram(input: u8[], kind: InputKind): VmOutput {
+export function runProgram(input: u8[], registers: u64[], kind: InputKind): VmOutput {
   if (kind === InputKind.Generic) {
     const vmInput = new VmInput();
-    vmInput.registers[7] = 9;
+    vmInput.registers = registers;
     vmInput.gas = 10_000;
     vmInput.program = input;
 

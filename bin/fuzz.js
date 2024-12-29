@@ -6,7 +6,7 @@ import { Pvm } from "@typeberry/pvm-debugger-adapter";
 import { wrapAsProgram, runVm, disassemble, InputKind } from "../build/release.js";
 
 export function fuzz(data) {
-  const gas = 20_000_000_000n;
+  const gas = 200n;
   const pc = 0;
   const pvm = new Pvm();
   const program = wrapAsProgram(new Uint8Array(data));
@@ -80,7 +80,7 @@ function assert(tb, an, comment = '') {
 
 function writeTestCase(program, initial, expected) {
   const hex = programHex(program);
-  fs.writeFileSync(`../tests/${hex}.json`, JSON.stringify({
+  fs.writeFileSync(`../tests/length_${hex.length}/${hex}.json`, JSON.stringify({
     name: linkTo(hex),
     "initial-regs": initial.registers,
     "initial-pc": initial.pc,
