@@ -8,6 +8,7 @@
 		"asbuild:release": "asc assembly/index.ts --target release",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
 		"build": "npm run asbuild && npm run cp-build",
+		"update-version": "node ./web/bump-version.js $GITHUB_SHA",
 		"format": "biome format --write",
 		"lint": "biome lint --write; biome check --write",
 		"qa": "biome ci",
