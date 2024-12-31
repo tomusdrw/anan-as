@@ -32,24 +32,29 @@ export function mulUpperUnsigned(a: u64, b: u64): u64 {
  * Same as [mulUpperUnsigned] but treat the arguments as signed (two-complement) 64-bit numbers and the result alike.
  */
 export function mulUpperSigned(a: i64, b: i64): u64 {
-  const aSign = a < 0 ? 1 : -1;
-  const bSign = b < 0 ? 1 : -1;
-  const sign = aSign * bSign;
+  let isResultNegative = false;
+  let aAbs = a;
+  let bAbs = b;
+  if (a < 0) {
+    isResultNegative = !isResultNegative;
+    aAbs = ~a + 1;
+  }
+  if (b < 0) {
+    isResultNegative = !isResultNegative;
+    bAbs = ~b + 1;
+  }
 
-  if (sign < 0) {
-    const aAbs: u64 = a < 0 ? ~a + 1 : a;
-    const bAbs: u64 = b < 0 ? ~b + 1 : b;
+  if (isResultNegative) {
     const upper = mulUpperUnsigned(aAbs, bAbs);
     const lower = aAbs * bAbs;
     return ~upper + (lower === 0 ? 1 : 0);
   }
 
-  return mulUpperUnsigned(a, b);
+  return mulUpperUnsigned(aAbs, bAbs);
 }
 
 export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
-  const aSign = a < 0 ? 1 : -1;
-  if (aSign === 1) {
+  if (a < 0) {
     const aAbs: u64 = ~a + 1;
     const upper = mulUpperUnsigned(aAbs, b);
     const lower = aAbs * b;

@@ -15,7 +15,8 @@
 		"prestart": "npm run build",
 		"preweb": "npm run build",
 		"web": "npx live-server ./web",
-		"start": "node ./bin/index.js"
+		"start": "node ./bin/index.js",
+		"fuzz": "npx jazzer --sync ./bin/fuzz"
 	},
 	"keywords": [],
 	"author": "Fluffy Labs",

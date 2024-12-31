@@ -37,20 +37,24 @@ export function fuzz(data) {
       assert(pvm.getProgramCounter(), output.pc, 'pc');
     });
 
-    writeTestCase(
-      program,
-      {
-        pc,
-        gas,
-        registers,
-      },
-      {
-        status: pvm.getStatus(),
-        gasLeft: pvm.getGasLeft(),
-        pc: pvm.getProgramCounter(),
-        registers: pvm.getRegisters()
-      },
-    );
+    try {
+      writeTestCase(
+        program,
+        {
+          pc,
+          gas,
+          registers,
+        },
+        {
+          status: pvm.getStatus(),
+          gasLeft: pvm.getGasLeft(),
+          pc: pvm.getProgramCounter(),
+          registers: pvm.getRegisters()
+        },
+      );
+    } catch (e) {
+      console.warn('Unable to write file', e);
+    }
   } catch (e) {
     const hex = programHex(program);
     console.log(program);
