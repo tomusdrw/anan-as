@@ -89,6 +89,7 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   for (;;) {
     if (!isOk) {
       if (logs) console.log(`REGISTERS = ${registers.join(", ")} (final)`);
+      if (logs) console.log(`REGISTERS = ${registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
       if (logs) console.log(`Finished with status: ${int.status}`);
       break;
     }
@@ -96,6 +97,7 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
     if (logs) console.log(`PC = ${int.pc}`);
     if (logs) console.log(`STATUS = ${int.status}`);
     if (logs) console.log(`REGISTERS = ${registers.join(", ")}`);
+    if (logs) console.log(`REGISTERS = ${registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];

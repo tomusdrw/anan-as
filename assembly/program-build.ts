@@ -83,8 +83,7 @@ function buildMask(bytecode: Uint8Array): u8[] {
 
     const requiredBytes = REQUIRED_BYTES[iData.kind];
     if (i + 1 + requiredBytes <= bytecode.length) {
-      const skip = skipBytes(iData.kind, bytecode.subarray(i + 1));
-      i += skip;
+      i += skipBytes(iData.kind, bytecode.subarray(i + 1));
     }
   }
   // pack mask
@@ -92,12 +91,10 @@ function buildMask(bytecode: Uint8Array): u8[] {
   for (let i = 0; i < mask.length; i += 8) {
     let byte: u8 = 0;
     for (let j = i; j < i + 8; j++) {
-      if (j < mask.length) {
-        byte |= mask[j] ? 1 : 0;
-      } else {
-        byte |= 1;
+      byte >>= 1;
+      if (j < mask.length && mask[j]) {
+        byte |= 0b1000_0000;
       }
-      byte << 1;
     }
     packed.push(byte);
   }

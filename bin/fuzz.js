@@ -30,7 +30,6 @@ export function fuzz(data) {
       program,
     }, printDebugInfo);
 
-    
     collectErrors((assert) => {
       assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
       assert(pvm.getGasLeft(), output.gas, 'gas');
