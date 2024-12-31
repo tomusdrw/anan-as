@@ -95,7 +95,7 @@ export class Interpreter {
 
     // additional gas cost of sbrk
     if (iData === SBRK) {
-      const alloc = u32(this.registers[reg(args.a)]);
+      const alloc = u64(u32(this.registers[reg(args.a)]));
       const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
       if (this.gas.sub(gas)) {
         this.status = Status.OOG;
@@ -158,7 +158,6 @@ export class Interpreter {
       case Outcome.Ok: {
         // by default move to next instruction.
         this.pc += 1 + argsLen;
-
         return true;
       }
     }

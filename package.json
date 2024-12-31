@@ -15,7 +15,8 @@
 		"prestart": "npm run build",
 		"preweb": "npm run build",
 		"web": "npx live-server ./web",
-		"start": "node ./bin/index.js"
+		"start": "node ./bin/index.js",
+		"fuzz": "npx jazzer --sync ./bin/fuzz"
 	},
 	"keywords": [],
 	"author": "Fluffy Labs",
@@ -24,7 +25,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@jazzer.js/core": "^2.1.0",
-		"@typeberry/pvm-debugger-adapter": "^0.0.1-1bce842",
+		"@typeberry/pvm-debugger-adapter": "0.1.0-5b611f4",
 		"assemblyscript": "^0.27.31"
 	},
 	"type": "module",

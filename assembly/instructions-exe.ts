@@ -46,7 +46,7 @@ export const RUN: InstructionRun[] = [
   // 20
   // LOAD_IMM_64
   (args, registers) => {
-    registers[reg(args.a)] = u64(args.c) + (u64(args.b) << 32);
+    registers[reg(args.a)] = u64(args.b) + (u64(args.c) << 32);
     return ok();
   },
   INVALID,

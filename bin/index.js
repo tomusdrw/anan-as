@@ -133,7 +133,7 @@ function main() {
   if (status.fail.length) {
     console.error('Failures:');
     for (const e of status.fail) {
-      console.error(`❗ ${e}`);
+      console.error(`❗ ${e.filePath} (${e.name})`);
     }
     process.exit(-1)
   }
@@ -151,7 +151,7 @@ function processFile(IS_DEBUG, status, filePath) {
     // Parse the JSON content
     jsonData = JSON.parse(fileContent);
   } catch (error) {
-    status.fail.push(filePath);
+    status.fail.push({ filePath, name: '<unknown>' });
     console.error(`Error reading file: ${filePath}`);
     console.error(error.message);
     return;
@@ -160,9 +160,9 @@ function processFile(IS_DEBUG, status, filePath) {
   try {
     // Process the parsed JSON
     processJson(jsonData, IS_DEBUG);
-    status.ok.push(filePath);
+    status.ok.push({ filePath, name: jsonData.name });
   } catch (error) {
-    status.fail.push(filePath);
+    status.fail.push({ filePath, name: jsonData.name });
     console.error(`Error running test: ${filePath}`);
     console.error(error.message);
   }

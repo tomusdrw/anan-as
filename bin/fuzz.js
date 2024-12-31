@@ -17,7 +17,7 @@ export function fuzz(data) {
       pc,
       gas,
     );
-    pvm.run(100);
+    while(pvm.nSteps(100)) {}
 
     const printDebugInfo = false;
     const registers = Array(13).join(',').split(',').map(() => BigInt(0));
@@ -30,25 +30,31 @@ export function fuzz(data) {
       program,
     }, printDebugInfo);
 
-    assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
-    assert(pvm.getGasLeft(), output.gas, 'gas');
-    assert(pvm.getRegisters().toString(), output.registers.toString(), 'registers');
-    // assert(pvm.getProgramCounter(), output.pc, 'pc');
+    collectErrors((assert) => {
+      assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
+      assert(pvm.getGasLeft(), output.gas, 'gas');
+      assert(Array.from(pvm.getRegisters()), output.registers, 'registers');
+      assert(pvm.getProgramCounter(), output.pc, 'pc');
+    });
 
-    writeTestCase(
-      program,
-      {
-        pc,
-        gas,
-        registers,
-      },
-      {
-        status: pvm.getStatus(),
-        gasLeft: pvm.getGasLeft(),
-        pc: pvm.getProgramCounter(),
-        registers: pvm.getRegisters()
-      },
-    );
+    try {
+      writeTestCase(
+        program,
+        {
+          pc,
+          gas,
+          registers,
+        },
+        {
+          status: pvm.getStatus(),
+          gasLeft: pvm.getGasLeft(),
+          pc: pvm.getProgramCounter(),
+          registers: pvm.getRegisters()
+        },
+      );
+    } catch (e) {
+      console.warn('Unable to write file', e);
+    }
   } catch (e) {
     const hex = programHex(program);
     console.log(program);
@@ -73,13 +79,50 @@ function normalizeStatus(status) {
 }
 
 function assert(tb, an, comment = '') {
-  if (tb !== an) {
-    throw new Error(`Diverging value: (typeberry) ${tb} vs ${an} (ananas). ${comment}`);
+  let condition =  tb !== an;
+  if (Array.isArray(tb) && Array.isArray(an)) {
+    condition = tb.toString() !== an.toString();
+  }
+
+  if (condition) {
+    const alsoAsHex = (f) => {
+      if (Array.isArray(f)) {
+        return `${f.map(alsoAsHex).join(', ')}`;
+      }
+
+      if (typeof f === 'number' || typeof f === 'bigint') {
+        if (BigInt(f) !== 0n) {
+          return `${f} | 0x${f.toString(16)}`;
+        }
+        return `${f}`;
+      }
+      return f;
+    };
+
+    throw new Error(`Diverging value: ${comment}
+\t(typeberry) ${alsoAsHex(tb)}
+\t(ananas)    ${alsoAsHex(an)}`);
+  }
+}
+
+function collectErrors(cb) {
+  const errors = [];
+  cb((...args) => {
+    try {
+      assert(...args);
+    } catch (e) {
+      errors.push(e);
+    }
+  });
+
+  if (errors.length > 0) {
+    throw new Error(errors.join('\n'));
   }
 }
 
 function writeTestCase(program, initial, expected) {
   const hex = programHex(program);
+  fs.mkdirSync(`../tests/length_${hex.length}`, { recursive: true });
   fs.writeFileSync(`../tests/length_${hex.length}/${hex}.json`, JSON.stringify({
     name: linkTo(hex),
     "initial-regs": initial.registers,
