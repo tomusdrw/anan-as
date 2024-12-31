@@ -35,21 +35,25 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
   const aSign = a < 0 ? 1 : -1;
   const bSign = b < 0 ? 1 : -1;
   const sign = aSign * bSign;
-  const aAbs = a < 0 ? ~a + 1 : a;
-  const bAbs = b < 0 ? ~b + 1 : b;
 
   if (sign < 0) {
-    return ~mulUpperUnsigned(aAbs, bAbs) + 1;
+    const aAbs: u64 = a < 0 ? ~a + 1 : a;
+    const bAbs: u64 = b < 0 ? ~b + 1 : b;
+    const upper = mulUpperUnsigned(aAbs, bAbs);
+    const lower = aAbs * bAbs;
+    return ~upper + (lower === 0 ? 1 : 0);
   }
-  return mulUpperUnsigned(aAbs, bAbs);
+
+  return mulUpperUnsigned(a, b);
 }
 
 export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
   const aSign = a < 0 ? 1 : -1;
   if (aSign === 1) {
-    const aAbs = ~a + 1;
-    console.log(`${mulUpperUnsigned(aAbs, b)}`);
-    return ~mulUpperUnsigned(aAbs, b);
+    const aAbs: u64 = ~a + 1;
+    const upper = mulUpperUnsigned(aAbs, b);
+    const lower = aAbs * b;
+    return ~upper + (lower === 0 ? 1 : 0);
   }
   return mulUpperUnsigned(a, b);
 }
