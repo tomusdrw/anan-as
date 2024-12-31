@@ -44,7 +44,7 @@ export function nextStep(): boolean {
   return false;
 }
 
-export function run(steps: u32): boolean {
+export function nSteps(steps: u32): boolean {
   if (interpreter !== null) {
     const int = <Interpreter>interpreter;
     let isOk = true;

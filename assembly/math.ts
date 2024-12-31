@@ -46,9 +46,10 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
 
 export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
   const aSign = a < 0 ? 1 : -1;
-  if (aSign < 0) {
+  if (aSign === 1) {
     const aAbs = ~a + 1;
-    return ~mulUpperUnsigned(aAbs, b) + 1;
+    console.log(`${mulUpperUnsigned(aAbs, b)}`);
+    return ~mulUpperUnsigned(aAbs, b);
   }
   return mulUpperUnsigned(a, b);
 }
