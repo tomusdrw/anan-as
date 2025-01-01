@@ -1,6 +1,6 @@
 {
   "name": "ananas",
-  "version": "0.0.1",
+  "version": "1.0.0-xxxxxx",
   "capabilities": {
     "resetJAM": false,
     "resetGeneric": true,

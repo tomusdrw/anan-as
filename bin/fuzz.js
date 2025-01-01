@@ -68,7 +68,7 @@ function programHex(program) {
   return Array.from(program).map(x => x.toString(16).padStart(2, '0')).join('');
 }
 function linkTo(programHex) {
-  return `https://deploy-preview-244--pvm-debugger.netlify.app/?program=0x${programHex}`;
+  return `https://deploy-preview-244--pvm-debugger.netlify.app/#/load?program=0x${programHex}`;
 }
 
 function normalizeStatus(status) {
