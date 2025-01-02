@@ -39,6 +39,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Update version
+        run: npm run update-version
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
