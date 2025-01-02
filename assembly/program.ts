@@ -91,12 +91,12 @@ export class Mask {
     return this.bytesToSkip[index] === 0;
   }
 
-  argsLen(i: u32, maxLen: u32): u32 {
+  bytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
-      return this.bytesToSkip[i + 1];
+      return this.bytesToSkip[i + 1] + 1;
     }
 
-    return maxLen - i - 1;
+    return 1;
   }
 
   toString(): string {

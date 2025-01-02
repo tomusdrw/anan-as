@@ -53,15 +53,14 @@ export function getAssembly(p: Program): string {
     v += changetype<string>(iData.namePtr);
     v += `(${instruction})`;
 
-    const argsLen = p.mask.argsLen(i, len);
-    const end = i + 1 + argsLen;
-    const args = decodeArguments(iData.kind, p.code.subarray(i + 1, end));
+    const skipBytes = p.mask.bytesToNextInstruction(i);
+    const args = decodeArguments(iData.kind, p.code.subarray(i + 1));
     const argsArray = [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
     for (let i = 0; i < relevantArgs; i++) {
       v += ` ${argsArray[i]}, `;
     }
-    i += argsLen;
+    i += skipBytes;
   }
   return v;
 }
