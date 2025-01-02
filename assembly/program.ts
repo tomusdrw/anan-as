@@ -93,10 +93,10 @@ export class Mask {
 
   bytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
-      return this.bytesToSkip[i + 1] + 1;
+      return this.bytesToSkip[i + 1];
     }
 
-    return 1;
+    return 0;
   }
 
   toString(): string {
@@ -199,16 +199,16 @@ export class Program {
   }
 }
 
-export function decodeArguments(kind: Arguments, data: Uint8Array): Args {
+export function decodeArguments(kind: Arguments, data: Uint8Array, lim: u32): Args {
   if (data.length < REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
     const extended = new Uint8Array(REQUIRED_BYTES[kind]);
     for (let i = 0; i < data.length; i++) {
       extended[i] = data[i];
     }
-    return DECODERS[kind](extended);
+    return DECODERS[kind](extended, lim);
   }
-  return DECODERS[kind](data);
+  return DECODERS[kind](data, lim);
 }
 
 class ResolvedArguments {
@@ -219,8 +219,13 @@ class ResolvedArguments {
   decoded: Args = new Args();
 }
 
-export function resolveArguments(kind: Arguments, data: Uint8Array, registers: Registers): ResolvedArguments | null {
-  const args = decodeArguments(kind, data);
+export function resolveArguments(
+  kind: Arguments,
+  data: Uint8Array,
+  lim: u32,
+  registers: Registers,
+): ResolvedArguments | null {
+  const args = decodeArguments(kind, data, lim);
   if (args === null) {
     return null;
   }

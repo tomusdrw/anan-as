@@ -81,7 +81,7 @@ export class Interpreter {
 
     // get args and invoke instruction
     const skipBytes = this.program.mask.bytesToNextInstruction(pc);
-    const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1));
+    const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1), skipBytes);
 
     // additional gas cost of sbrk
     if (iData === SBRK) {
@@ -147,7 +147,7 @@ export class Interpreter {
       }
       case Outcome.Ok: {
         // by default move to next instruction.
-        this.pc += skipBytes;
+        this.pc += 1 + skipBytes;
         return true;
       }
     }
