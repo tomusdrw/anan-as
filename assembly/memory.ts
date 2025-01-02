@@ -1,3 +1,4 @@
+import { u32SignExtend } from "./math";
 import { Access, Arena, PAGE_SIZE, PAGE_SIZE_SHIFT, Page, PageIndex } from "./memory-page";
 
 // @unmanaged
@@ -163,7 +164,7 @@ export class Memory {
     const r = new Result();
     r.fault = res.fault;
     if (!res.fault.isFault) {
-      r.ok = i8(res.bytes[0]);
+      r.ok = u32SignExtend(i32(i16(i8(res.bytes[0]))));
     }
     return r;
   }
@@ -175,12 +176,7 @@ export class Memory {
     if (!res.fault.isFault) {
       let l = u16(res.bytes[0]);
       l |= u16(res.bytes[1]) << 8;
-      r.ok = i32(l);
-
-      if ((l & 0x80) > 0) {
-        const high = i64(2 ** 64 - 1) << 16;
-        r.ok |= high;
-      }
+      r.ok = u32SignExtend(i32(i16(l)));
     }
     return r;
   }
@@ -190,16 +186,11 @@ export class Memory {
     const r = new Result();
     r.fault = res.fault;
     if (!res.fault.isFault) {
-      const l = u32(res.bytes[0]);
-      r.ok = l;
-      r.ok |= u32(res.bytes[1]) << 8;
-      r.ok |= u32(res.bytes[2]) << 16;
-      r.ok |= u32(res.bytes[3]) << 24;
-
-      if ((l & 0x80) > 0) {
-        const high = i64(2 ** 64 - 1) << 32;
-        r.ok |= high;
-      }
+      let l = u32(res.bytes[0]);
+      l |= u32(res.bytes[1]) << 8;
+      l |= u32(res.bytes[2]) << 16;
+      l |= u32(res.bytes[3]) << 24;
+      r.ok = u32SignExtend(l);
     }
     return r;
   }
