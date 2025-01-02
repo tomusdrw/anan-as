@@ -53,21 +53,15 @@ export function getAssembly(p: Program): string {
     v += changetype<string>(iData.namePtr);
     v += `(${instruction})`;
 
-    const argsLen = p.mask.argsLen(i);
-    const end = i + 1 + argsLen;
-    if (end > len) {
-      const name = changetype<string>(iData.namePtr);
-      const intro = "Invalid program - code is not long enough";
-      throw new Error(`${intro} Expected: ${argsLen} for ${name} at ${i} (${end} > ${len})`);
-    }
-
-    const args = decodeArguments(iData.kind, p.code.subarray(i + 1, end));
-    const argsArray = args === null ? [0, 0, 0, 0] : [args.a, args.b, args.c, args.d];
+    const skipBytes = p.mask.bytesToNextInstruction(i);
+    const args = decodeArguments(iData.kind, p.code.subarray(i + 1), skipBytes);
+    const argsArray = [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
     for (let i = 0; i < relevantArgs; i++) {
       v += ` ${argsArray[i]}, `;
     }
-    i += argsLen;
+    i += skipBytes;
+    console.log(`${v}, nextPC: ${i}`);
   }
   return v;
 }
@@ -101,9 +95,10 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
+      const skipBytes = p.mask.bytesToNextInstruction(int.pc);
       const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
-      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), int.registers);
+      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);
       if (args !== null) {
         console.log(`ARGUMENTS:
   ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 

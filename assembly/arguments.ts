@@ -36,81 +36,81 @@ function asArgs(a: u32, b: u32, c: u32, d: u32): Args {
   return x;
 }
 
-type ArgsDecoder = (data: Uint8Array) => Args;
+type ArgsDecoder = (data: Uint8Array, immLimit: u32) => Args;
 
-function twoImm(data: Uint8Array): Args {
+function twoImm(data: Uint8Array, lim: u32): Args {
   const n = nibbles(data[0]);
   const split = <i32>Math.min(4, n.low) + 1;
-  const first = decodeI32(data.subarray(1, split));
-  const second = decodeI32(data.subarray(split));
+  const first = decodeI32(data, 1, split);
+  const second = decodeI32(data, split, lim);
   return asArgs(first, second, 0, 0);
 }
 
 export const DECODERS: ArgsDecoder[] = [
   // DECODERS[Arguments.Zero] =
-  (_) => {
+  (_d, _l) => {
     return asArgs(0, 0, 0, 0);
   },
   // DECODERS[Arguments.OneImm] =
-  (data: Uint8Array) => {
-    return asArgs(decodeI32(data), 0, 0, 0);
+  (data, lim) => {
+    return asArgs(decodeI32(data, 0, lim), 0, 0, 0);
   },
   // DECODERS[Arguments.TwoImm] =
-  (data: Uint8Array) => twoImm(data),
+  (data, lim) => twoImm(data, lim),
   // DECODERS[Arguments.OneOff] =
-  (data: Uint8Array) => {
-    return asArgs(decodeI32(data), 0, 0, 0);
+  (data, lim) => {
+    return asArgs(decodeI32(data, 0, lim), 0, 0, 0);
   },
   // DECODERS[Arguments.OneRegOneImm] =
-  (data: Uint8Array) => {
-    return asArgs(nibbles(data[0]).low, decodeI32(data.subarray(1)), 0, 0);
+  (data, lim) => {
+    return asArgs(nibbles(data[0]).low, decodeI32(data, 1, lim), 0, 0);
   },
   // DECODERS[Arguments.OneRegOneExtImm] =
-  (data: Uint8Array) => {
+  (data, _lim) => {
     const a = nibbles(data[0]).low;
     const b = decodeU32(data.subarray(1));
     const c = decodeU32(data.subarray(5));
     return asArgs(a, b, c, 0);
   },
   //DECODERS[Arguments.OneRegTwoImm] =
-  (data: Uint8Array) => {
+  (data, lim) => {
     const n = nibbles(data[0]);
     const split = <i32>Math.min(4, n.hig) + 1;
-    const immA = decodeI32(data.subarray(1, split));
-    const immB = decodeI32(data.subarray(split));
+    const immA = decodeI32(data, 1, split);
+    const immB = decodeI32(data, split, lim);
     return asArgs(n.low, immA, immB, 0);
   },
   // DECODERS[Arguments.OneRegOneImmOneOff] =
-  (data: Uint8Array) => {
+  (data, lim) => {
     const n = nibbles(data[0]);
     const split = <i32>Math.min(4, n.hig) + 1;
-    const immA = decodeI32(data.subarray(1, split));
-    const offs = decodeI32(data.subarray(split));
+    const immA = decodeI32(data, 1, split);
+    const offs = decodeI32(data, split, lim);
     return asArgs(n.low, immA, offs, 0);
   },
   // DECODERS[Arguments.TwoReg] =
-  (data: Uint8Array) => {
+  (data, _lim) => {
     const n = nibbles(data[0]);
     return asArgs(n.hig, n.low, 0, 0);
   },
   // DECODERS[Arguments.TwoRegOneImm] =
-  (data: Uint8Array) => {
+  (data, lim) => {
     const n = nibbles(data[0]);
-    return asArgs(n.hig, n.low, decodeI32(data.subarray(1)), 0);
+    return asArgs(n.hig, n.low, decodeI32(data, 1, lim), 0);
   },
   // DECODERS[Arguments.TwoRegOneOff] =
-  (data: Uint8Array) => {
+  (data, lim) => {
     const n = nibbles(data[0]);
-    return asArgs(n.hig, n.low, decodeI32(data.subarray(1)), 0);
+    return asArgs(n.hig, n.low, decodeI32(data, 1, lim), 0);
   },
   // DECODERS[Arguments.TwoRegTwoImm] =
-  (data: Uint8Array) => {
+  (data, lim) => {
     const n = nibbles(data[0]);
-    const result = twoImm(data.subarray(1));
+    const result = twoImm(data.subarray(1), lim > 1 ? lim - 1 : 0);
     return asArgs(n.hig, n.low, result.a, result.b);
   },
   // DECODERS[Arguments.ThreeReg] =
-  (data: Uint8Array) => {
+  (data, _lim) => {
     const a = nibbles(data[0]);
     const b = nibbles(data[1]);
     return asArgs(a.hig, a.low, b.low, 0);
@@ -134,7 +134,8 @@ export function nibbles(byte: u8): Nibbles {
 }
 
 //@inline
-function decodeI32(data: Uint8Array): u32 {
+function decodeI32(input: Uint8Array, start: u32, end: u32): u32 {
+  const data = input.subarray(start, end > start ? end : start);
   const len = <u32>Math.min(4, data.length);
   let num = 0;
   for (let i: u32 = 0; i < len; i++) {
