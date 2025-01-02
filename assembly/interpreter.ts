@@ -80,18 +80,9 @@ export class Interpreter {
     }
 
     // get args and invoke instruction
-    const argsLen = this.program.mask.argsLen(pc);
+    const argsLen = this.program.mask.argsLen(pc, this.program.code.length);
     const end = pc + 1 + argsLen;
-    if (end > <u32>this.program.code.length) {
-      this.status = Status.PANIC;
-      return false;
-    }
-
     const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1, end));
-    if (args === null) {
-      this.status = Status.PANIC;
-      return false;
-    }
 
     // additional gas cost of sbrk
     if (iData === SBRK) {
