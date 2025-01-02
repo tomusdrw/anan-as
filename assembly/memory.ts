@@ -173,9 +173,9 @@ export class Memory {
     const r = new Result();
     r.fault = res.fault;
     if (!res.fault.isFault) {
-      const l = u32(res.bytes[0]);
-      r.ok = l;
-      r.ok |= u32(res.bytes[1]) << 8;
+      let l = u16(res.bytes[0]);
+      l |= u16(res.bytes[1]) << 8;
+      r.ok = i32(l);
 
       if ((l & 0x80) > 0) {
         const high = i64(2 ** 64 - 1) << 16;
