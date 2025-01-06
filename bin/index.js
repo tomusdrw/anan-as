@@ -7,6 +7,9 @@ import * as assert from 'node:assert';
 
 import { runVm, InputKind, disassemble } from "../build/release.js";
 
+const OK = '🟢';
+const ERR = '🔴';
+
 // Run the CLI application
 main();
 
@@ -107,9 +110,6 @@ function read(data, field) {
   }
   throw new Error(`Required field ${field} missing in ${JSON.stringify(data, null, 2)}`);
 }
-
-const OK = '🟢';
-const ERR = '🔴';
 
 function processJson(data, debug = false) {
   if (debug) {
