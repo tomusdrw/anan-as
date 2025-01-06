@@ -7,6 +7,100 @@ import * as assert from 'node:assert';
 
 import { runVm, InputKind, disassemble } from "../build/release.js";
 
+// Run the CLI application
+main();
+
+// Main function
+function main() {
+  let IS_DEBUG = false;
+  // Get the JSON file arguments from the command line
+  let args = process.argv.slice(2);
+
+  if (args[0] === '--debug') {
+    args.shift();
+    IS_DEBUG = true;
+  }
+
+  if (args.length === 0) {
+    console.error("Error: No JSON files provided.");
+    console.error("Usage: index.js [--debug] <file1.json> [file2.json ...]");
+    console.error("read from stdin: index.js [--debug] -");
+    process.exit(1);
+  }
+
+  if (args[0] === '-') {
+    readFromStdin(IS_DEBUG);
+    return;
+  }
+
+  const status = {
+    all: 0,
+    ok: [],
+    fail: [],
+  };
+
+  // Process each file
+  args.forEach((filePath) => {
+    // try whole directory
+    let dir = null;
+    try {
+      dir = readdirSync(filePath);
+    } catch (e) {
+    }
+
+    if (dir !== null) {
+      status.all += dir.length;
+      dir.forEach((file) => processFile(IS_DEBUG, status, join(filePath, file)));
+    } else {
+      status.all += 1;
+      // or just process file
+      processFile(IS_DEBUG, status, filePath);
+      // TODO print results to stdout
+    }
+  });
+
+  const icon = status.ok.length === status.all ? OK : ERR;
+  console.log(`${icon} Tests status: ${status.ok.length}/${status.all}`);
+  if (status.fail.length) {
+    console.error('Failures:');
+    for (const e of status.fail) {
+      console.error(`❗ ${e.filePath} (${e.name})`);
+    }
+    process.exit(-1)
+  }
+}
+
+function readFromStdin(debug = false) {
+  process.stdin.setEncoding('utf8');
+  process.stderr.write('awaiting input\n');
+
+  // Read from stdin
+  let buffer  = '';
+  process.stdin.on('data', (data) => {
+    buffer += data;
+    if (buffer.endsWith("\n\n")) {
+      const json = JSON.parse(buffer);
+      const input = {
+        registers: read(json, 'initial-regs').map(x => BigInt(x)),
+        pc: read(json, 'initial-pc'),
+        pageMap: asPageMap(read(json, 'initial-page-map')),
+        memory: asChunks(read(json, 'initial-memory')),
+        gas: BigInt(read(json, 'initial-gas')),
+        program: read(json, 'program'),
+      };
+      const result = runVm(input, debug);
+
+      json['expected-pc'] = result.pc;
+      json['expected-gas'] = result.gas;
+      json['expected-status'] = statusAsString(result.status);
+      json['expected-regs'] = result.registers;
+
+      console.log(JSON.stringify(json));
+      console.log();
+    }
+  });
+}
+
 function read(data, field) {
   if (field in data) {
     return data[field];
@@ -86,59 +180,6 @@ function statusAsString(status) {
   return map[status] || `unknown(${status})`;
 }
 
-// Main function
-function main() {
-  let IS_DEBUG = false;
-  // Get the JSON file arguments from the command line
-  let args = process.argv.slice(2);
-
-  if (args[0] === '--debug') {
-    args.shift();
-    IS_DEBUG = true;
-  }
-
-  if (args.length === 0) {
-    console.error("Error: No JSON files provided.");
-    console.error("Usage: index.js [--debug] <file1.json> [file2.json ...]");
-    process.exit(1);
-  }
-
-  const status = {
-    all: 0,
-    ok: [],
-    fail: [],
-  };
-
-  // Process each file
-  args.forEach((filePath) => {
-    // try whole directory
-    let dir = null;
-    try {
-      dir = readdirSync(filePath);
-    } catch (e) {
-    }
-
-    if (dir !== null) {
-      status.all += dir.length;
-      dir.forEach((file) => processFile(IS_DEBUG, status, join(filePath, file)));
-    } else {
-      status.all += 1;
-      // or just process file
-      processFile(IS_DEBUG, status, filePath);
-    }
-  });
-
-  const icon = status.ok.length === status.all ? OK : ERR;
-  console.log(`${icon} Tests status: ${status.ok.length}/${status.all}`);
-  if (status.fail.length) {
-    console.error('Failures:');
-    for (const e of status.fail) {
-      console.error(`❗ ${e.filePath} (${e.name})`);
-    }
-    process.exit(-1)
-  }
-}
-
 function processFile(IS_DEBUG, status, filePath) {
   let jsonData;
   try {
@@ -168,5 +209,3 @@ function processFile(IS_DEBUG, status, filePath) {
   }
 }
 
-// Run the CLI application
-main();
