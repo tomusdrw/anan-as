@@ -64,11 +64,11 @@ export function decodeProgram(program: Uint8Array): Program {
 
 export class Mask {
   // NOTE: might be longer than code (bit-alignment)
-  readonly bytesToSkip: StaticArray<u8>;
+  readonly bytesToSkip: StaticArray<u32>;
 
   constructor(packedMask: Uint8Array, codeLength: i32) {
-    this.bytesToSkip = new StaticArray<u8>(codeLength);
-    let lastInstructionOffset: u8 = 0;
+    this.bytesToSkip = new StaticArray<u32>(codeLength);
+    let lastInstructionOffset: u32 = 0;
     for (let i: i32 = packedMask.length - 1; i >= 0; i -= 1) {
       let bits = packedMask[i];
       const index = i * 8;
@@ -91,10 +91,11 @@ export class Mask {
     return this.bytesToSkip[index] === 0;
   }
 
-  argsLen(i: u32): u8 {
+  bytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
       return this.bytesToSkip[i + 1];
     }
+
     return 0;
   }
 
@@ -198,11 +199,16 @@ export class Program {
   }
 }
 
-export function decodeArguments(kind: Arguments, data: Uint8Array): Args | null {
+export function decodeArguments(kind: Arguments, data: Uint8Array, lim: u32): Args {
   if (data.length < REQUIRED_BYTES[kind]) {
-    return null;
+    // in case we have less data than needed we extend the data with zeros.
+    const extended = new Uint8Array(REQUIRED_BYTES[kind]);
+    for (let i = 0; i < data.length; i++) {
+      extended[i] = data[i];
+    }
+    return DECODERS[kind](extended, lim);
   }
-  return DECODERS[kind](data);
+  return DECODERS[kind](data, lim);
 }
 
 class ResolvedArguments {
@@ -213,8 +219,13 @@ class ResolvedArguments {
   decoded: Args = new Args();
 }
 
-export function resolveArguments(kind: Arguments, data: Uint8Array, registers: Registers): ResolvedArguments | null {
-  const args = decodeArguments(kind, data);
+export function resolveArguments(
+  kind: Arguments,
+  data: Uint8Array,
+  lim: u32,
+  registers: Registers,
+): ResolvedArguments | null {
+  const args = decodeArguments(kind, data, lim);
   if (args === null) {
     return null;
   }
