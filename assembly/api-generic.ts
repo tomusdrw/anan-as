@@ -116,6 +116,10 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   output.pc = int.pc;
   output.gas = int.gas.get();
   output.memory = getOutputChunks(int.memory);
+
+  // release used pages back
+  int.memory.free();
+
   return output;
 }
 
