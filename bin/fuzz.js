@@ -5,11 +5,16 @@ import fs from 'node:fs';
 import { Pvm } from "@typeberry/pvm-debugger-adapter";
 import { wrapAsProgram, runVm, disassemble, InputKind } from "../build/release.js";
 
+let runNumber = 0;
+
 export function fuzz(data) {
   const gas = 200n;
   const pc = 0;
   const pvm = new Pvm();
   const program = wrapAsProgram(new Uint8Array(data));
+  if (program.length > 100) {
+    return;
+  }
 
   try {
     pvm.reset(
@@ -37,24 +42,26 @@ export function fuzz(data) {
       assert(pvm.getProgramCounter(), output.pc, 'pc');
     });
 
-    // try {
-    //   writeTestCase(
-    //     program,
-    //     {
-    //       pc,
-    //       gas,
-    //       registers,
-    //     },
-    //     {
-    //       status: pvm.getStatus(),
-    //       gasLeft: pvm.getGasLeft(),
-    //       pc: pvm.getProgramCounter(),
-    //       registers: pvm.getRegisters()
-    //     },
-    //   );
-    // } catch (e) {
-    //   console.warn('Unable to write file', e);
-    // }
+    try {
+      if (runNumber % 5000 === 0) {
+        writeTestCase(
+          program,
+          {
+            pc,
+            gas,
+            registers,
+          },
+          {
+            status: pvm.getStatus(),
+            gasLeft: pvm.getGasLeft(),
+            pc: pvm.getProgramCounter(),
+            registers: pvm.getRegisters()
+          },
+        );
+      }
+    } catch (e) {
+      console.warn('Unable to write file', e);
+    }
   } catch (e) {
     const hex = programHex(program);
     console.log(program);

@@ -40,14 +40,14 @@ export class RawPage {
 
 export class Arena {
   private free: RawPage[];
-  private arenaBytes: number;
+  private readonly arenaBytes: u32;
   private extraPageIndex: ArenaId;
 
   constructor(pageCount: u32) {
     this.arenaBytes = PAGE_SIZE * pageCount;
-    const data = new ArrayBuffer(this.arenaBytes);
     this.free = [];
     this.extraPageIndex = pageCount;
+    const data = new ArrayBuffer(this.arenaBytes);
     for (let i = 0; i < <i32>pageCount; i++) {
       this.free.unshift(new RawPage(i, Uint8Array.wrap(data, i * PAGE_SIZE, PAGE_SIZE)));
     }
