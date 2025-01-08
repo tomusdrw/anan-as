@@ -29,7 +29,7 @@ export function fuzz(data) {
       gas,
       program,
     }, printDebugInfo);
-
+    
     collectErrors((assert) => {
       assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
       assert(pvm.getGasLeft(), output.gas, 'gas');
@@ -37,24 +37,24 @@ export function fuzz(data) {
       assert(pvm.getProgramCounter(), output.pc, 'pc');
     });
 
-    try {
-      writeTestCase(
-        program,
-        {
-          pc,
-          gas,
-          registers,
-        },
-        {
-          status: pvm.getStatus(),
-          gasLeft: pvm.getGasLeft(),
-          pc: pvm.getProgramCounter(),
-          registers: pvm.getRegisters()
-        },
-      );
-    } catch (e) {
-      console.warn('Unable to write file', e);
-    }
+    // try {
+    //   writeTestCase(
+    //     program,
+    //     {
+    //       pc,
+    //       gas,
+    //       registers,
+    //     },
+    //     {
+    //       status: pvm.getStatus(),
+    //       gasLeft: pvm.getGasLeft(),
+    //       pc: pvm.getProgramCounter(),
+    //       registers: pvm.getRegisters()
+    //     },
+    //   );
+    // } catch (e) {
+    //   console.warn('Unable to write file', e);
+    // }
   } catch (e) {
     const hex = programHex(program);
     console.log(program);

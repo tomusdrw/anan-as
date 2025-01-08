@@ -55,6 +55,10 @@ export class MemoryBuilder {
   build(sbrkAddress: u32): Memory {
     return new Memory(this.arena, this.pages, sbrkAddress);
   }
+
+  destroy(): void {
+    this.arena.destroy();
+  }
 }
 
 export class Memory {

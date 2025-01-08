@@ -2,11 +2,13 @@ import { InitialChunk, InitialPage, buildMemory } from "./api-generic";
 import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
+import {MemoryBuilder} from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { decodeProgram, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 
 let interpreter: Interpreter | null = null;
+let builder = new MemoryBuilder();
 
 export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas): void {
   const p = decodeProgram(liftBytes(program));
@@ -28,7 +30,7 @@ export function resetGenericWithMemory(
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
   fillRegisters(registers, flatRegisters);
 
-  const memory = buildMemory(readPages(pageMap), readChunks(chunks));
+  const memory = buildMemory(builder, readPages(pageMap), readChunks(chunks));
 
   const int = new Interpreter(p, registers, memory);
   int.gas.set(initialGas);

@@ -61,7 +61,6 @@ export function getAssembly(p: Program): string {
       v += ` ${argsArray[i]}, `;
     }
     i += skipBytes;
-    console.log(`${v}, nextPC: ${i}`);
   }
   return v;
 }
@@ -73,7 +72,8 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   for (let r = 0; r < registers.length; r++) {
     registers[r] = input.registers[r];
   }
-  const memory = buildMemory(input.pageMap, input.memory);
+  const builder = new MemoryBuilder();
+  const memory = buildMemory(builder, input.pageMap, input.memory);
 
   const int = new Interpreter(p, registers, memory);
   int.nextPc = -1;
@@ -119,6 +119,7 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
 
   // release used pages back
   int.memory.free();
+  builder.destroy();
 
   return output;
 }
@@ -158,8 +159,7 @@ export function getOutputChunks(memory: Memory): InitialChunk[] {
   return chunks;
 }
 
-export function buildMemory(pages: InitialPage[], chunks: InitialChunk[]): Memory {
-  const builder = new MemoryBuilder();
+export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks: InitialChunk[]): Memory {
   for (let i = 0; i < pages.length; i++) {
     const initPage = pages[i];
     builder.setData(initPage.access, initPage.address, new Uint8Array(initPage.length));
