@@ -94,7 +94,7 @@ export class Memory {
     }
     this.sbrkAddress = u32(newSbrk);
 
-    const pageIdx = i32(newSbrk >> PAGE_SIZE_SHIFT);
+    const pageIdx = i32((newSbrk - 1) >> PAGE_SIZE_SHIFT);
     if (pageIdx === this.lastAllocatedPage) {
       return freeMemoryStart;
     }

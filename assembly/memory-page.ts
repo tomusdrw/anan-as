@@ -39,17 +39,17 @@ export class RawPage {
 }
 
 export class Arena {
-  private readonly data: ArrayBuffer;
-  private readonly free: RawPage[];
+  private free: RawPage[];
+  private readonly arenaBytes: u32;
   private extraPageIndex: ArenaId;
 
   constructor(pageCount: u32) {
-    const size = PAGE_SIZE * pageCount;
-    this.data = new ArrayBuffer(size);
+    this.arenaBytes = PAGE_SIZE * pageCount;
     this.free = [];
     this.extraPageIndex = pageCount;
+    const data = new ArrayBuffer(this.arenaBytes);
     for (let i = 0; i < <i32>pageCount; i++) {
-      this.free.unshift(new RawPage(i, Uint8Array.wrap(this.data, i * PAGE_SIZE, PAGE_SIZE)));
+      this.free.unshift(new RawPage(i, Uint8Array.wrap(data, i * PAGE_SIZE, PAGE_SIZE)));
     }
   }
 
@@ -60,7 +60,7 @@ export class Arena {
     // no pages!
     const allocatedMemory = this.extraPageIndex * PAGE_SIZE;
     // print warning only once
-    if (allocatedMemory === this.data.byteLength) {
+    if (allocatedMemory === this.arenaBytes) {
       console.log("Warning: Run out of pages! Allocating.");
     }
 
