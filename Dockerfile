@@ -1,5 +1,5 @@
-# Use the official Node.js image from Docker Hub
-FROM node:20-alpine
+# Use the official Node.js image based on Ubuntu
+FROM node:20-bullseye-slim
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .
