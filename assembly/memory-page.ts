@@ -73,13 +73,4 @@ export class Arena {
   release(page: RawPage): void {
     this.free.push(page);
   }
-
-  /**
-  * Seems like there is an issue with cyclic dependency here that AS GC can't resolve,
-  * so we have to clear the references manually.
-  */
-  destroy(): void {
-    this.free = [];
-    this.extraPageIndex = 0;
-  }
 }

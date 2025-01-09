@@ -119,7 +119,6 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
 
   // release used pages back
   int.memory.free();
-  builder.destroy();
 
   return output;
 }
