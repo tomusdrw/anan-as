@@ -16,5 +16,9 @@ COPY . .
 # Build the application (if needed, adjust this step accordingly)
 RUN npm run build
 
+# Move typeberry out of node_modules to allow the fuzzer to collect coverage.
+RUN cp -r ./node_modules/@typeberry/pvm-debugger-adapter typeberry
+RUN npm link ./typeberry
+
 # Start the application
 CMD ["npm", "run", "fuzz"]
