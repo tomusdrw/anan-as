@@ -43,7 +43,7 @@ export function fuzz(data) {
     });
 
     try {
-      if (runNumber % 5000 === 0) {
+      if (runNumber % 100000 === 0) {
         writeTestCase(
           program,
           {
