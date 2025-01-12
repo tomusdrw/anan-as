@@ -156,7 +156,7 @@ export function setMemory(address: u32, data: Uint8Array): void {
   const end = address + data.length;
   for (let i = address; i < end; i++) {
     // TODO [ToDr] handle page fault?
-    int.memory.setU8(i, data[i]);
+    int.memory.setU8(i, data[i - address]);
   }
 }
 
