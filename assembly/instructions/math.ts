@@ -195,3 +195,15 @@ export const mul_upper_s_u: InstructionRun = (args, registers) => {
   registers[reg(args.c)] = mulUpperSignedUnsigned(i64(registers[reg(args.a)]), registers[reg(args.b)]);
   return ok();
 };
+
+// MAX
+export const max: InstructionRun = () => ok();
+
+// MAX_U
+export const max_u: InstructionRun = () => ok();
+
+// MIN
+export const min: InstructionRun = () => ok();
+
+// MIN_U
+export const min_u: InstructionRun = () => ok();
