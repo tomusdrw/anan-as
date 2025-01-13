@@ -1,4 +1,4 @@
-import {InstructionRun, ok} from "./outcome";
+import { InstructionRun, ok } from "./outcome";
 
 // COUNT_SET_BITS_64
 export const count_set_bits_64: InstructionRun = () => ok();

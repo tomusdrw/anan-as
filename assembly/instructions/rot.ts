@@ -1,4 +1,4 @@
-import {InstructionRun, ok} from "./outcome";
+import { InstructionRun, ok } from "./outcome";
 
 // ROT_R_64_IMM
 export const rot_r_64_imm: InstructionRun = () => ok();
@@ -23,4 +23,3 @@ export const rot_r_64: InstructionRun = () => ok();
 
 // ROT_R_32
 export const rot_r_32: InstructionRun = () => ok();
-
