@@ -21,7 +21,9 @@ export const REQUIRED_BYTES = [<i32>0, 0, 1, 0, 1, 9, 1, 1, 1, 1, 1, 2, 2];
 
 // @unmanaged
 export class Args {
+  /** TwoReg: `omega_A` */
   a: u32 = 0;
+  /** TwoReg: `omega'_D` */
   b: u32 = 0;
   c: u32 = 0;
   d: u32 = 0;
