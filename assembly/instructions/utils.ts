@@ -1,4 +1,4 @@
-import { NO_OF_REGISTERS } from "./registers";
+import { NO_OF_REGISTERS } from "../registers";
 
 /**
  * Multiply two unsigned 64-bit numbers and take the upper 64-bits of the result.
@@ -64,6 +64,16 @@ export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
 }
 
 // @inline
+export function u8SignExtend(v: u8): i64 {
+  return i64(i32(i16(i8(v))));
+}
+
+// @inline
+export function u16SignExtend(v: u16): i64 {
+  return i64(i32(i16(v)));
+}
+
+// @inline
 export function u32SignExtend(v: u32): i64 {
   return i64(i32(v));
 }
@@ -72,6 +82,3 @@ export function u32SignExtend(v: u32): i64 {
 export function reg(v: u64): u32 {
   return v >= u64(NO_OF_REGISTERS) ? NO_OF_REGISTERS - 1 : u32(v);
 }
-
-export const MAX_SHIFT_64 = 64;
-export const MAX_SHIFT_32 = 32;

@@ -1,4 +1,4 @@
-import { u32SignExtend } from "./math";
+import { u8SignExtend, u16SignExtend, u32SignExtend } from "./instructions/utils";
 import { Access, Arena, PAGE_SIZE, PAGE_SIZE_SHIFT, Page, PageIndex } from "./memory-page";
 
 // @unmanaged
@@ -164,7 +164,7 @@ export class Memory {
     const r = new Result();
     r.fault = res.fault;
     if (!res.fault.isFault) {
-      r.ok = u32SignExtend(i32(i16(i8(res.bytes[0]))));
+      r.ok = u8SignExtend(res.bytes[0]);
     }
     return r;
   }
@@ -176,7 +176,7 @@ export class Memory {
     if (!res.fault.isFault) {
       let l = u16(res.bytes[0]);
       l |= u16(res.bytes[1]) << 8;
-      r.ok = u32SignExtend(i32(i16(l)));
+      r.ok = u16SignExtend(l);
     }
     return r;
   }

@@ -1,8 +1,8 @@
 import { GasCounter, gasCounter } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
 import { RUN } from "./instructions-exe";
-import { Outcome, Result } from "./instructions-outcome";
-import { reg } from "./math";
+import { Outcome, Result } from "./instructions/outcome";
+import { reg } from "./instructions/utils";
 import { Memory, MemoryBuilder } from "./memory";
 import { PAGE_SIZE, PAGE_SIZE_SHIFT } from "./memory-page";
 import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";

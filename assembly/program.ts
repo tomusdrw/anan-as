@@ -1,7 +1,7 @@
 import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
 import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
-import { reg, u32SignExtend } from "./math";
+import { reg, u32SignExtend } from "./instructions/utils";
 import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
