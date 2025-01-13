@@ -1,4 +1,8 @@
-import { MaybePageFault } from "./memory";
+import { Args } from "../arguments";
+import { MaybePageFault, Memory } from "../memory";
+import { Registers } from "../registers";
+
+export type InstructionRun = (args: Args, registers: Registers, memory: Memory) => OutcomeData;
 
 export enum Result {
   PANIC = 2 ** 32 - 12,
