@@ -39,6 +39,16 @@ export class Interpreter {
   }
 
   nextStep(): boolean {
+    // resuming after host call
+    if (this.status === Status.HOST) {
+      // let's assume all is good and move on :)
+      this.status = Status.OK;
+      // apply the nextPc, but don't stop, rather continue
+      // executing right away.
+      this.pc = this.nextPc;
+      this.nextPc = -1;
+    }
+
     if (this.status !== Status.OK) {
       return false;
     }
@@ -130,6 +140,8 @@ export class Interpreter {
         if (outcome.result === Result.HOST) {
           this.status = Status.HOST;
           this.exitCode = outcome.exitCode;
+          // set the next PC after the host call is called.
+          this.nextPc = this.pc + 1 + skipBytes;
           return false;
         }
         if (outcome.result === Result.FAULT) {
