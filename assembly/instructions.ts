@@ -209,7 +209,6 @@ export const INSTRUCTIONS: Instruction[] = [
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
-  MISSING_INSTRUCTION,
 
   /* 170 */ instruction("BRANCH_EQ", Arguments.TwoRegOneOff, 1, true),
   /* 171 */ instruction("BRANCH_NE", Arguments.TwoRegOneOff, 1, true),

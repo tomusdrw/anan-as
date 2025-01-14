@@ -44,7 +44,9 @@ export const neg_add_imm: InstructionRun = (args, registers) => {
 
 // ADD_32
 export const add_32: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.a)]) + u32(registers[reg(args.b)]));
+  const a = u32(registers[reg(args.a)]);
+  const b = u32(registers[reg(args.b)]);
+  registers[reg(args.c)] = u32SignExtend(a + b);
   return ok();
 };
 

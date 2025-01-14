@@ -25,7 +25,7 @@ export const store_imm_u32: InstructionRun = (args, _registers, memory) => {
 // STORE_IMM_U64
 export const store_imm_u64: InstructionRun = (args, _registers, memory) => {
   const address = args.a;
-  const pageFault = memory.setU64(address, u64(args.b));
+  const pageFault = memory.setU64(address, u32SignExtend(args.b));
   return okOrFault(pageFault);
 };
 
