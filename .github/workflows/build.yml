@@ -26,7 +26,7 @@ jobs:
       with:
         repository: FluffyLabs/jamtestvectors
         path: "./jamtestvectors"
-        ref: f4b46d5f6a45015a422db3090d00c49603a5466d # GP0.5.4
+        ref: 747c2525145d2ed720c7168e3afa8582f66d00c2 # GP0.5.4
     - run: npm start ./jamtestvectors/pvm/programs/*.json
 
   build-and-test:
