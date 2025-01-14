@@ -35,5 +35,5 @@ jobs:
       with:
         repository: FluffyLabs/jamtestvectors
         path: "./jamtestvectors"
-        ref: 0746da541814a6e1bb5da0ece4b1d249a10e5a13 # TODO Temporary 64-bit
+        ref: f4b46d5f6a45015a422db3090d00c49603a5466d # GP0.5.4
     - run: npm start ./jamtestvectors/pvm/programs/*.json
