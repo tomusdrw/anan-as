@@ -1,5 +1,5 @@
 import { InstructionRun, ok } from "./outcome";
-import {reg, u16SignExtend, u8SignExtend} from "./utils";
+import { reg, u8SignExtend, u16SignExtend } from "./utils";
 
 // COUNT_SET_BITS_64
 export const count_set_bits_64: InstructionRun = (args, regs) => {

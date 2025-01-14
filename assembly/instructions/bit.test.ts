@@ -2,9 +2,20 @@ import { Args } from "../arguments";
 import { MemoryBuilder } from "../memory";
 import { newRegisters } from "../registers";
 import { Assert, Test, test } from "../test";
-import { count_set_bits_32, count_set_bits_64, leading_zero_bits_32, leading_zero_bits_64, reverse_bytes, sign_extend_16, sign_extend_8, trailing_zero_bits_32, trailing_zero_bits_64, zero_extend_16 } from "./bit";
-import {Outcome} from "./outcome";
-import {reg} from "./utils";
+import {
+  count_set_bits_32,
+  count_set_bits_64,
+  leading_zero_bits_32,
+  leading_zero_bits_64,
+  reverse_bytes,
+  sign_extend_8,
+  sign_extend_16,
+  trailing_zero_bits_32,
+  trailing_zero_bits_64,
+  zero_extend_16,
+} from "./bit";
+import { Outcome } from "./outcome";
+import { reg } from "./utils";
 
 export const TESTS: Test[] = [
   test("count_set_bits_64", () => {

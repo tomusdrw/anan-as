@@ -6,16 +6,25 @@ import * as rot from "./instructions/rot.test";
 import { Test } from "./test";
 
 export function runAllTests(): void {
-  run(bit.TESTS, "bit.ts");
-  run(branch.TESTS, "branch.ts");
-  run(math.TESTS, "math.ts");
-  run(logic.TESTS, "logic.ts");
-  run(rot.TESTS, "rot.ts");
+  let a: u64 = 0;
+  a += run(bit.TESTS, "bit.ts");
+  a += run(branch.TESTS, "branch.ts");
+  a += run(math.TESTS, "math.ts");
+  a += run(logic.TESTS, "logic.ts");
+  a += run(rot.TESTS, "rot.ts");
+
+  const okay = u32(a >> 32);
+  const total = u32(a);
+
+  printSummary("\n\nTotal", okay, total);
+  if (okay !== total) {
+    throw new Error("Some tests failed.");
+  }
 }
 
-function run(tests: Test[], file: string): void {
+function run(tests: Test[], file: string): u64 {
   let ok = 0;
-  console.log(`${file}`);
+  console.log(`> ${file}`);
   for (let i = 0; i < tests.length; i++) {
     console.log(`  >>> ${tests[i].name}`);
     const res = tests[i].ptr();
@@ -30,7 +39,12 @@ function run(tests: Test[], file: string): void {
     }
   }
 
-  console.log("");
-  const ico = ok === tests.length ? "✅" : "🔴";
-  console.log(`${ok} / ${tests.length} ${ico}`);
+  printSummary(`< ${file}`, ok, tests.length);
+
+  return (u64(ok) << 32) + tests.length;
+}
+
+function printSummary(msg: string, okay: u32, total: u32): void {
+  const ico = okay === total ? "✅" : "🔴";
+  console.log(`${msg} ${okay} / ${total} ${ico}`);
 }

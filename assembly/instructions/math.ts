@@ -197,13 +197,33 @@ export const mul_upper_s_u: InstructionRun = (args, registers) => {
 };
 
 // MAX
-export const max: InstructionRun = () => ok();
+export const max: InstructionRun = (args, registers) => {
+  const a = i64(registers[reg(args.a)]);
+  const b = i64(registers[reg(args.b)]);
+  registers[reg(args.c)] = a < b ? b : a;
+  return ok();
+};
 
 // MAX_U
-export const max_u: InstructionRun = () => ok();
+export const max_u: InstructionRun = (args, registers) => {
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = a < b ? b : a;
+  return ok();
+};
 
 // MIN
-export const min: InstructionRun = () => ok();
+export const min: InstructionRun = (args, registers) => {
+  const a = i64(registers[reg(args.a)]);
+  const b = i64(registers[reg(args.b)]);
+  registers[reg(args.c)] = a > b ? b : a;
+  return ok();
+};
 
 // MIN_U
-export const min_u: InstructionRun = () => ok();
+export const min_u: InstructionRun = (args, registers) => {
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = a > b ? b : a;
+  return ok();
+};

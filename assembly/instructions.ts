@@ -135,7 +135,6 @@ export const INSTRUCTIONS: Instruction[] = [
 
   /* 100 */ instruction("MOVE_REG", Arguments.TwoReg, 1),
   /* 101 */ SBRK,
-  // new (start)
   /* 102 */ instruction("COUNT_SET_BITS_64", Arguments.TwoReg, 1),
   /* 103 */ instruction("COUNT_SET_BITS_32", Arguments.TwoReg, 1),
   /* 104 */ instruction("LEADING_ZERO_BITS_64", Arguments.TwoReg, 1),
@@ -147,7 +146,6 @@ export const INSTRUCTIONS: Instruction[] = [
 
   /* 110 */ instruction("ZERO_EXTEND_16", Arguments.TwoReg, 1),
   /* 111 */ instruction("REVERSE_BYTES", Arguments.TwoReg, 1),
-  // new (end)
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
@@ -198,13 +196,11 @@ export const INSTRUCTIONS: Instruction[] = [
   /* 155 */ instruction("SHLO_L_IMM_ALT_64", Arguments.TwoRegOneImm, 1),
   /* 156 */ instruction("SHLO_R_IMM_ALT_64", Arguments.TwoRegOneImm, 1),
   /* 157 */ instruction("SHAR_R_IMM_ALT_64", Arguments.TwoRegOneImm, 1),
-  // new (start)
   /* 158 */ instruction("ROT_R_64_IMM", Arguments.TwoRegOneImm, 1),
   /* 159 */ instruction("ROT_R_64_IMM_ALT", Arguments.TwoRegOneImm, 1),
 
   /* 160 */ instruction("ROT_R_32_IMM", Arguments.TwoRegOneImm, 1),
   /* 161 */ instruction("ROT_R_32_IMM_ALT", Arguments.TwoRegOneImm, 1),
-  // new (end)
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
   MISSING_INSTRUCTION,
@@ -270,7 +266,6 @@ export const INSTRUCTIONS: Instruction[] = [
   /* 218 */ instruction("CMOV_IZ", Arguments.ThreeReg, 1),
   /* 219 */ instruction("CMOV_NZ", Arguments.ThreeReg, 1),
 
-  // new (start)
   /* 220 */ instruction("ROT_L_64", Arguments.ThreeReg, 1),
   /* 221 */ instruction("ROT_L_32", Arguments.ThreeReg, 1),
   /* 222 */ instruction("ROT_R_64", Arguments.ThreeReg, 1),
@@ -283,5 +278,4 @@ export const INSTRUCTIONS: Instruction[] = [
   /* 229 */ instruction("MIN", Arguments.ThreeReg, 1),
 
   /* 230 */ instruction("MIN_U", Arguments.ThreeReg, 1),
-  // new (end)
 ];

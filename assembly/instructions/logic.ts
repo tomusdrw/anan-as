@@ -21,36 +21,36 @@ export const or_imm: InstructionRun = (args, registers) => {
 
 // AND
 export const and: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] & registers[reg(args.b)];
+  registers[reg(args.c)] = registers[reg(args.b)] & registers[reg(args.a)];
   return ok();
 };
 
 // XOR
 export const xor: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] ^ registers[reg(args.b)];
+  registers[reg(args.c)] = registers[reg(args.b)] ^ registers[reg(args.a)];
   return ok();
 };
 
 // OR
 export const or: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] | registers[reg(args.b)];
+  registers[reg(args.c)] = registers[reg(args.b)] | registers[reg(args.a)];
   return ok();
 };
 
 // AND_INV
 export const and_inv: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] & registers[reg(args.b)];
+  registers[reg(args.c)] = registers[reg(args.b)] & ~registers[reg(args.a)];
   return ok();
 };
 
 // OR_INV
 export const or_inv: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] | registers[reg(args.b)];
+  registers[reg(args.c)] = registers[reg(args.b)] | ~registers[reg(args.a)];
   return ok();
 };
 
 // XNOR
 export const xnor: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] ^ registers[reg(args.b)];
+  registers[reg(args.c)] = ~(registers[reg(args.b)] ^ registers[reg(args.a)]);
   return ok();
 };
