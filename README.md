@@ -8,7 +8,8 @@ Assembly Script implementation of the JAM PVM (32bit).
 
 - [x] Memory
 - [x] [JAM tests](https://github.com/w3f/jamtestvectors/pull/3) compatibility
-- [ ] 64-bit & new instructions ([GrayPaper v0.5.0](https://graypaper.fluffylabs.dev))
+- [x] 64-bit & new instructions ([GrayPaper v0.5.0](https://graypaper.fluffylabs.dev))
+- [x] GP 0.5.4 compatibility (ZBB extensions)
 
 ### Why?
 
