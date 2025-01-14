@@ -6,6 +6,7 @@
 		"asbuild": "npm run asbuild:debug && npm run asbuild:release",
 		"asbuild:debug": "asc assembly/index.ts --target debug",
 		"asbuild:release": "asc assembly/index.ts --target release",
+		"asbuild:test": "asc assembly/test-run.ts --target test",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
 		"build": "npm run asbuild && npm run cp-build",
 		"update-version": "node ./web/bump-version.js $GITHUB_SHA",
@@ -17,7 +18,8 @@
 		"preweb": "npm run build",
 		"web": "npx live-server ./web",
 		"start": "node ./bin/index.js",
-		"fuzz": "npx jazzer --sync ./bin/fuzz"
+		"fuzz": "npx jazzer --sync ./bin/fuzz",
+		"test": "npm run asbuild:test && node ./bin/test.js"
 	},
 	"keywords": [],
 	"author": "Fluffy Labs",

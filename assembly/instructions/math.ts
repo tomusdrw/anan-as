@@ -44,7 +44,9 @@ export const neg_add_imm: InstructionRun = (args, registers) => {
 
 // ADD_32
 export const add_32: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.a)]) + u32(registers[reg(args.b)]));
+  const a = u32(registers[reg(args.a)]);
+  const b = u32(registers[reg(args.b)]);
+  registers[reg(args.c)] = u32SignExtend(a + b);
   return ok();
 };
 
@@ -193,5 +195,37 @@ export const mul_upper_u_u: InstructionRun = (args, registers) => {
 // MUL_UPPER_S_U
 export const mul_upper_s_u: InstructionRun = (args, registers) => {
   registers[reg(args.c)] = mulUpperSignedUnsigned(i64(registers[reg(args.a)]), registers[reg(args.b)]);
+  return ok();
+};
+
+// MAX
+export const max: InstructionRun = (args, registers) => {
+  const a = i64(registers[reg(args.a)]);
+  const b = i64(registers[reg(args.b)]);
+  registers[reg(args.c)] = a < b ? b : a;
+  return ok();
+};
+
+// MAX_U
+export const max_u: InstructionRun = (args, registers) => {
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = a < b ? b : a;
+  return ok();
+};
+
+// MIN
+export const min: InstructionRun = (args, registers) => {
+  const a = i64(registers[reg(args.a)]);
+  const b = i64(registers[reg(args.b)]);
+  registers[reg(args.c)] = a > b ? b : a;
+  return ok();
+};
+
+// MIN_U
+export const min_u: InstructionRun = (args, registers) => {
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = a > b ? b : a;
   return ok();
 };
