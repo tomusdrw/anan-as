@@ -44,7 +44,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(ret.outcome, Outcome.Ok, "outcome");
-    assert.isEqual<u64>(regs[reg(args.b)], 0xef00_0000_00de_adbe);
+    assert.isEqual<u64>(regs[reg(args.b)], 0xefff_ffff_ffde_adbe);
     return assert;
   }),
   test("rot_l_64", () => {
