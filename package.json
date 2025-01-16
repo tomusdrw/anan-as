@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@jazzer.js/core": "^2.1.0",
-		"@typeberry/pvm-debugger-adapter": "latest",
+		"@typeberry/pvm-debugger-adapter": "0.1.0-8f85e8a",
 		"assemblyscript": "^0.27.31"
 	},
 	"type": "module",
