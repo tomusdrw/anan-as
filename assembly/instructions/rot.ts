@@ -3,13 +3,13 @@ import { reg, u32SignExtend } from "./utils";
 
 // ROT_R_64_IMM
 export const rot_r_64_imm: InstructionRun = (args, regs) => {
-  regs[reg(args.b)] = math.rot_r(regs[reg(args.a)], args.c);
+  regs[reg(args.b)] = math.rot_r(regs[reg(args.a)], u32SignExtend(args.c));
   return ok();
 };
 
 // ROT_R_64_IMM_ALT
 export const rot_r_64_imm_alt: InstructionRun = (args, regs) => {
-  regs[reg(args.b)] = math.rot_r(args.c, regs[reg(args.a)]);
+  regs[reg(args.b)] = math.rot_r(u32SignExtend(args.c), regs[reg(args.a)]);
   return ok();
 };
 
