@@ -182,19 +182,19 @@ export const rem_s: InstructionRun = (args, registers) => {
 
 // MUL_UPPER_S_S
 export const mul_upper_s_s: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = mulUpperSigned(i64(registers[reg(args.a)]), i64(registers[reg(args.b)]));
+  registers[reg(args.c)] = mulUpperSigned(i64(registers[reg(args.b)]), i64(registers[reg(args.a)]));
   return ok();
 };
 
 // MUL_UPPER_U_U
 export const mul_upper_u_u: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = mulUpperUnsigned(registers[reg(args.a)], registers[reg(args.b)]);
+  registers[reg(args.c)] = mulUpperUnsigned(registers[reg(args.b)], registers[reg(args.a)]);
   return ok();
 };
 
 // MUL_UPPER_S_U
 export const mul_upper_s_u: InstructionRun = (args, registers) => {
-  registers[reg(args.c)] = mulUpperSignedUnsigned(i64(registers[reg(args.a)]), registers[reg(args.b)]);
+  registers[reg(args.c)] = mulUpperSignedUnsigned(i64(registers[reg(args.b)]), registers[reg(args.a)]);
   return ok();
 };
 

@@ -38,18 +38,24 @@ export class MemoryBuilder {
   private arena: Arena = new Arena(128);
 
   setData(access: Access, address: u32, data: Uint8Array): void {
-    const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
-    if (!this.pages.has(pageIdx)) {
-      const page = this.arena.acquire();
-      this.pages.set(pageIdx, new Page(access, page));
-    }
+    let currentAddress = address;
+    let currentData = data;
+    while (currentData.length > 0) {
+      const pageIdx = u32(currentAddress >> PAGE_SIZE_SHIFT);
+      if (!this.pages.has(pageIdx)) {
+        const page = this.arena.acquire();
+        this.pages.set(pageIdx, new Page(access, page));
+      }
 
-    const relAddress = address % PAGE_SIZE;
-    const page = this.pages.get(pageIdx);
-    page.raw.data.set(data, relAddress);
+      const relAddress = currentAddress % PAGE_SIZE;
+      const page = this.pages.get(pageIdx);
 
-    if (relAddress + data.length > <u32>PAGE_SIZE) {
-      throw new Error("Unable to write data in builder. Exceeds the page!");
+      const end = u32(currentData.length) < PAGE_SIZE ? currentData.length : PAGE_SIZE;
+      page.raw.data.set(currentData.subarray(0, end), relAddress);
+
+      // move to the next address to write
+      currentAddress = address + (end - currentAddress);
+      currentData = currentData.subarray(end);
     }
   }
 

@@ -77,7 +77,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
 
   const int = new Interpreter(p, registers, memory);
   int.useSbrkGas = useSbrkGas;
-  int.nextPc = -1;
+  int.nextPc = input.pc;
   int.gas.set(input.gas);
 
   let isOk = true;

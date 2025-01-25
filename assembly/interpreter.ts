@@ -22,6 +22,7 @@ export class Interpreter {
   public readonly registers: Registers;
   public readonly memory: Memory;
   public readonly gas: GasCounter;
+  // TODO [ToDr] consider making this just getters?
   public pc: u32;
   public status: Status;
   public exitCode: u32;
