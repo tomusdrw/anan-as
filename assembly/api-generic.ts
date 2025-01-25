@@ -31,6 +31,7 @@ export class VmOutput {
   pc: u32 = 0;
   memory: InitialChunk[] = [];
   gas: i64 = 0;
+  exitCode: u32 = 0;
 }
 
 export function getAssembly(p: Program): string {
@@ -117,6 +118,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
   output.pc = int.pc;
   output.gas = int.gas.get();
   output.memory = getOutputChunks(int.memory);
+  output.exitCode = int.exitCode;
 
   // release used pages back
   int.memory.free();

@@ -156,7 +156,7 @@ export class Interpreter {
         if (outcome.result === Result.FAULT_ACCESS) {
           this.gas.sub(1);
           this.status = Status.PANIC;
-          this.exitCode = outcome.exitCode;
+          // this.exitCode = outcome.exitCode;
           return false;
         }
         if (outcome.result === Result.PANIC) {

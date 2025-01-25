@@ -214,6 +214,7 @@ export class Memory {
   setU16(address: u32, value: u16): MaybePageFault {
     const res = this.getChunks(Access.Write, address, 2);
     if (res.fault.isFault) {
+      console.log(`fault when getting chunks: ${res.fault.fault}`);
       return res.fault;
     }
     res.first[0] = value & 0xff;
@@ -273,12 +274,12 @@ export class Memory {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
 
     if (!this.pages.has(pageIdx)) {
-      return fault(address);
+      return fault(pageIdx << PAGE_SIZE_SHIFT);
     }
 
     const page = this.pages.get(pageIdx);
     if (!page.can(access)) {
-      const f = fault(address);
+      const f = fault(pageIdx << PAGE_SIZE_SHIFT);
       f.fault.isAccess = true;
       return f;
     }
@@ -295,12 +296,12 @@ export class Memory {
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
-      return fault(address);
+      return fault(secondPageIdx << PAGE_SIZE_SHIFT);
     }
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
     if (!page.can(access)) {
-      const f = fault(address);
+      const f = fault(secondPageIdx << PAGE_SIZE_SHIFT);
       f.fault.isAccess = true;
       return f;
     }
@@ -335,6 +336,7 @@ function getBytes(bytes: u8, first: Uint8Array, second: Uint8Array): StaticArray
 function fault(address: u32): Chunks {
   const r = new MaybePageFault();
   r.isFault = true;
+  console.log(`Creating new fault with ${address}`);
   r.fault = address;
   return new Chunks(r);
 }

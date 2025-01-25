@@ -111,6 +111,7 @@ function readFromStdin(options) {
       json['expected-gas'] = result.gas;
       json['expected-status'] = statusAsString(result.status);
       json['expected-regs'] = result.registers;
+      json['expected-page-fault-address'] = result.exitCode;
 
       console.log(JSON.stringify(json));
       console.log();
@@ -118,9 +119,12 @@ function readFromStdin(options) {
   });
 }
 
-function read(data, field) {
+function read(data, field, defaultValue = undefined) {
   if (field in data) {
     return data[field];
+  }
+  if (defaultValue !== undefined) {
+    return defaultValue;
   }
   throw new Error(`Required field ${field} missing in ${JSON.stringify(data, null, 2)}`);
 }
@@ -145,6 +149,7 @@ function processJson(data, options) {
     pc: read(data,  'expected-pc'),
     memory: asChunks(read(data, 'expected-memory')),
     gas: BigInt(read(data, 'expected-gas')),
+    exitCode: read(data, 'expected-page-fault-address', 0),
   };
 
   if (options.isDebug) {
