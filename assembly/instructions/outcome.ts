@@ -5,10 +5,10 @@ import { Registers } from "../registers";
 export type InstructionRun = (args: Args, registers: Registers, memory: Memory) => OutcomeData;
 
 export enum Result {
-  PANIC,
-  FAULT,
-  FAULT_ACCESS,
-  HOST,
+  PANIC = 0,
+  FAULT = 1,
+  FAULT_ACCESS = 2,
+  HOST = 3,
 }
 
 export enum Outcome {
