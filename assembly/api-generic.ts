@@ -65,7 +65,7 @@ export function getAssembly(p: Program): string {
   return v;
 }
 
-export function runVm(input: VmInput, logs: boolean = false): VmOutput {
+export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
   const p = decodeProgram(liftBytes(input.program));
 
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
@@ -76,6 +76,7 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   const memory = buildMemory(builder, input.pageMap, input.memory);
 
   const int = new Interpreter(p, registers, memory);
+  int.useSbrkGas = useSbrkGas;
   int.nextPc = -1;
   int.gas.set(input.gas);
 

@@ -15,13 +15,27 @@ main();
 
 // Main function
 function main() {
-  let IS_DEBUG = false;
+  const options = {
+    isDebug: false,
+    useSbrkGas: false,
+  };
+
   // Get the JSON file arguments from the command line
   let args = process.argv.slice(2);
 
-  if (args[0] === '--debug') {
-    args.shift();
-    IS_DEBUG = true;
+  for (;;) {
+    if (args.length === 0) {
+      break;
+    }
+    if (args[0] === '--debug') {
+      args.shift();
+      options.isDebug = true;
+    } else if (args[0] === '--sbrk-gas') {
+      args.shift();
+      options.useSbrkGas = true;
+    } else {
+      break;
+    }
   }
 
   if (args.length === 0) {
@@ -32,7 +46,7 @@ function main() {
   }
 
   if (args[0] === '-') {
-    readFromStdin(IS_DEBUG);
+    readFromStdin(options);
     return;
   }
 
@@ -53,11 +67,11 @@ function main() {
 
     if (dir !== null) {
       status.all += dir.length;
-      dir.forEach((file) => processFile(IS_DEBUG, status, join(filePath, file)));
+      dir.forEach((file) => processFile(options, status, join(filePath, file)));
     } else {
       status.all += 1;
       // or just process file
-      processFile(IS_DEBUG, status, filePath);
+      processFile(options, status, filePath);
       // TODO print results to stdout
     }
   });
@@ -73,7 +87,7 @@ function main() {
   }
 }
 
-function readFromStdin(debug = false) {
+function readFromStdin(options) {
   process.stdin.setEncoding('utf8');
   process.stderr.write('awaiting input\n');
 
@@ -91,7 +105,7 @@ function readFromStdin(debug = false) {
         gas: BigInt(read(json, 'initial-gas')),
         program: read(json, 'program'),
       };
-      const result = runVm(input, debug);
+      const result = runVm(input, options.isDebug, options.useSbrkGas);
 
       json['expected-pc'] = result.pc;
       json['expected-gas'] = result.gas;
@@ -111,8 +125,8 @@ function read(data, field) {
   throw new Error(`Required field ${field} missing in ${JSON.stringify(data, null, 2)}`);
 }
 
-function processJson(data, debug = false) {
-  if (debug) {
+function processJson(data, options) {
+  if (options.isDebug) {
     console.debug(`🤖 Running ${data.name}`);
   }
   // input
@@ -133,14 +147,14 @@ function processJson(data, debug = false) {
     gas: BigInt(read(data, 'expected-gas')),
   };
 
-  if (debug) {
+  if (options.isDebug) {
     const assembly = disassemble(input.program, InputKind.Generic);
     console.info('===========');
     console.info(assembly);
       console.info('\n^^^^^^^^^^^\n');
   }
 
-  const result = runVm(input, debug);
+  const result = runVm(input, options.isDebug, options.useSbrkGas);
   result.status = statusAsString(result.status);
 
   try {
@@ -171,8 +185,8 @@ function statusAsString(status) {
   const map = {
     255: 'ok',
     0: 'halt',
-    1: 'trap', // panic
-    2: 'trap', // page fault
+    1: 'panic', // panic
+    2: 'page-fault', // page fault
     3: 'host',
     4: 'oog'
   };
@@ -180,7 +194,7 @@ function statusAsString(status) {
   return map[status] || `unknown(${status})`;
 }
 
-function processFile(IS_DEBUG, status, filePath) {
+function processFile(options, status, filePath) {
   let jsonData;
   try {
     // Resolve the full file path
@@ -200,7 +214,7 @@ function processFile(IS_DEBUG, status, filePath) {
 
   try {
     // Process the parsed JSON
-    processJson(jsonData, IS_DEBUG);
+    processJson(jsonData, options);
     status.ok.push({ filePath, name: jsonData.name });
   } catch (error) {
     status.fail.push({ filePath, name: jsonData.name });

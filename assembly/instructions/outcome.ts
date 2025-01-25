@@ -5,9 +5,10 @@ import { Registers } from "../registers";
 export type InstructionRun = (args: Args, registers: Registers, memory: Memory) => OutcomeData;
 
 export enum Result {
-  PANIC = 2 ** 32 - 12,
-  FAULT = 2 ** 32 - 13,
-  HOST = 2 ** 32 - 14,
+  PANIC,
+  FAULT,
+  FAULT_ACCESS,
+  HOST,
 }
 
 export enum Outcome {
@@ -67,7 +68,9 @@ export function okOrFault(pageFault: MaybePageFault): OutcomeData {
   const r = new OutcomeData();
   if (pageFault.isFault) {
     r.outcome = Outcome.Result;
-    r.result = Result.FAULT;
+    // not accessible memory does not result in `FAULT`, but rather goes straight to TRAP
+    // yet in gas calculations we still subtract 1, unlike TRAP, but like FAULT.
+    r.result = pageFault.isAccess ? Result.FAULT_ACCESS : Result.FAULT;
     r.exitCode = pageFault.fault;
   }
   return r;

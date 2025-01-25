@@ -26,6 +26,7 @@ export class Interpreter {
   public status: Status;
   public exitCode: u32;
   public nextPc: u32;
+  public useSbrkGas: boolean;
 
   constructor(program: Program, registers: Registers, memory: Memory = new MemoryBuilder().build(0)) {
     this.program = program;
@@ -36,6 +37,7 @@ export class Interpreter {
     this.status = Status.OK;
     this.exitCode = 0;
     this.nextPc = 0;
+    this.useSbrkGas = false;
   }
 
   nextStep(): boolean {
@@ -94,7 +96,7 @@ export class Interpreter {
     const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1), skipBytes);
 
     // additional gas cost of sbrk
-    if (iData === SBRK) {
+    if (iData === SBRK && this.useSbrkGas) {
       const alloc = u64(u32(this.registers[reg(args.a)]));
       const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
       if (this.gas.sub(gas)) {
@@ -150,8 +152,15 @@ export class Interpreter {
           this.exitCode = outcome.exitCode;
           return false;
         }
+        if (outcome.result === Result.FAULT_ACCESS) {
+          this.gas.sub(1);
+          this.status = Status.PANIC;
+          this.exitCode = outcome.exitCode;
+          return false;
+        }
         if (outcome.result === Result.PANIC) {
           this.status = Status.PANIC;
+          this.exitCode = outcome.exitCode;
           return false;
         }
 

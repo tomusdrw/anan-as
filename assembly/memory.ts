@@ -4,6 +4,7 @@ import { Access, Arena, PAGE_SIZE, PAGE_SIZE_SHIFT, Page, PageIndex } from "./me
 // @unmanaged
 export class MaybePageFault {
   isFault: boolean = false;
+  isAccess: boolean = false;
   fault: u32 = 0;
 }
 
@@ -271,7 +272,9 @@ export class Memory {
 
     const page = this.pages.get(pageIdx);
     if (!page.can(access)) {
-      return fault(address);
+      const f = fault(address);
+      f.fault.isAccess = true;
+      return f;
     }
 
     const relativeAddress = address % PAGE_SIZE;
@@ -291,7 +294,9 @@ export class Memory {
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
     if (!page.can(access)) {
-      return fault(address);
+      const f = fault(address);
+      f.fault.isAccess = true;
+      return f;
     }
 
     const firstChunk = page.raw.data.subarray(relativeAddress);
