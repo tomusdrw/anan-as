@@ -4,6 +4,7 @@ import { Access, Arena, PAGE_SIZE, PAGE_SIZE_SHIFT, Page, PageIndex } from "./me
 // @unmanaged
 export class MaybePageFault {
   isFault: boolean = false;
+  isAccess: boolean = false;
   fault: u32 = 0;
 }
 
@@ -37,18 +38,24 @@ export class MemoryBuilder {
   private arena: Arena = new Arena(128);
 
   setData(access: Access, address: u32, data: Uint8Array): void {
-    const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
-    if (!this.pages.has(pageIdx)) {
-      const page = this.arena.acquire();
-      this.pages.set(pageIdx, new Page(access, page));
-    }
+    let currentAddress = address;
+    let currentData = data;
+    while (currentData.length > 0) {
+      const pageIdx = u32(currentAddress >> PAGE_SIZE_SHIFT);
+      if (!this.pages.has(pageIdx)) {
+        const page = this.arena.acquire();
+        this.pages.set(pageIdx, new Page(access, page));
+      }
 
-    const relAddress = address % PAGE_SIZE;
-    const page = this.pages.get(pageIdx);
-    page.raw.data.set(data, relAddress);
+      const relAddress = currentAddress % PAGE_SIZE;
+      const page = this.pages.get(pageIdx);
 
-    if (relAddress + data.length > <u32>PAGE_SIZE) {
-      throw new Error("Unable to write data in builder. Exceeds the page!");
+      const end = u32(currentData.length) < PAGE_SIZE ? currentData.length : PAGE_SIZE;
+      page.raw.data.set(currentData.subarray(0, end), relAddress);
+
+      // move to the next address to write
+      currentAddress = address + (end - currentAddress);
+      currentData = currentData.subarray(end);
     }
   }
 
@@ -207,6 +214,7 @@ export class Memory {
   setU16(address: u32, value: u16): MaybePageFault {
     const res = this.getChunks(Access.Write, address, 2);
     if (res.fault.isFault) {
+      console.log(`fault when getting chunks: ${res.fault.fault}`);
       return res.fault;
     }
     res.first[0] = value & 0xff;
@@ -266,12 +274,14 @@ export class Memory {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
 
     if (!this.pages.has(pageIdx)) {
-      return fault(address);
+      return fault(pageIdx << PAGE_SIZE_SHIFT);
     }
 
     const page = this.pages.get(pageIdx);
     if (!page.can(access)) {
-      return fault(address);
+      const f = fault(pageIdx << PAGE_SIZE_SHIFT);
+      f.fault.isAccess = true;
+      return f;
     }
 
     const relativeAddress = address % PAGE_SIZE;
@@ -286,12 +296,14 @@ export class Memory {
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
-      return fault(address);
+      return fault(secondPageIdx << PAGE_SIZE_SHIFT);
     }
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
     if (!page.can(access)) {
-      return fault(address);
+      const f = fault(secondPageIdx << PAGE_SIZE_SHIFT);
+      f.fault.isAccess = true;
+      return f;
     }
 
     const firstChunk = page.raw.data.subarray(relativeAddress);
@@ -324,6 +336,7 @@ function getBytes(bytes: u8, first: Uint8Array, second: Uint8Array): StaticArray
 function fault(address: u32): Chunks {
   const r = new MaybePageFault();
   r.isFault = true;
+  console.log(`Creating new fault with ${address}`);
   r.fault = address;
   return new Chunks(r);
 }

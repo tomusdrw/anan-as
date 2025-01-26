@@ -31,6 +31,7 @@ export class VmOutput {
   pc: u32 = 0;
   memory: InitialChunk[] = [];
   gas: i64 = 0;
+  exitCode: u32 = 0;
 }
 
 export function getAssembly(p: Program): string {
@@ -65,7 +66,7 @@ export function getAssembly(p: Program): string {
   return v;
 }
 
-export function runVm(input: VmInput, logs: boolean = false): VmOutput {
+export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
   const p = decodeProgram(liftBytes(input.program));
 
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
@@ -76,7 +77,8 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   const memory = buildMemory(builder, input.pageMap, input.memory);
 
   const int = new Interpreter(p, registers, memory);
-  int.nextPc = -1;
+  int.useSbrkGas = useSbrkGas;
+  int.nextPc = input.pc;
   int.gas.set(input.gas);
 
   let isOk = true;
@@ -116,6 +118,7 @@ export function runVm(input: VmInput, logs: boolean = false): VmOutput {
   output.pc = int.pc;
   output.gas = int.gas.get();
   output.memory = getOutputChunks(int.memory);
+  output.exitCode = int.exitCode;
 
   // release used pages back
   int.memory.free();
