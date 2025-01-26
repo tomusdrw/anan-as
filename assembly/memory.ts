@@ -214,7 +214,6 @@ export class Memory {
   setU16(address: u32, value: u16): MaybePageFault {
     const res = this.getChunks(Access.Write, address, 2);
     if (res.fault.isFault) {
-      console.log(`fault when getting chunks: ${res.fault.fault}`);
       return res.fault;
     }
     res.first[0] = value & 0xff;
@@ -336,7 +335,6 @@ function getBytes(bytes: u8, first: Uint8Array, second: Uint8Array): StaticArray
 function fault(address: u32): Chunks {
   const r = new MaybePageFault();
   r.isFault = true;
-  console.log(`Creating new fault with ${address}`);
   r.fault = address;
   return new Chunks(r);
 }
