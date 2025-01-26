@@ -112,6 +112,8 @@ function readFromStdin(options) {
       json['expected-status'] = statusAsString(result.status);
       json['expected-regs'] = result.registers;
       json['expected-page-fault-address'] = result.exitCode;
+      // clear previous buffer
+      buffer = '';
 
       console.log(JSON.stringify(json));
       console.log();
