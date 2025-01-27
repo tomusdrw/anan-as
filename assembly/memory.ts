@@ -54,7 +54,7 @@ export class MemoryBuilder {
       page.raw.data.set(currentData.subarray(0, end), relAddress);
 
       // move to the next address to write
-      currentAddress = address + (end - currentAddress);
+      currentAddress = currentAddress + (end - currentAddress);
       currentData = currentData.subarray(end);
     }
   }
