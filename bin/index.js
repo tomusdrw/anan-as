@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 import "json-bigint-patch";
-import {readFileSync, readdirSync, writeFileSync} from 'node:fs';
-import {resolve, join} from 'node:path';
-import * as assert from 'node:assert';
+import * as assert from "node:assert";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
-import { runVm, InputKind, disassemble, compile } from "../build/release.js";
+import { InputKind, compile, disassemble, runVm } from "../build/release.js";
 
-const OK = '🟢';
-const ERR = '🔴';
+const OK = "🟢";
+const ERR = "🔴";
 
 // Run the CLI application
 main();
@@ -22,19 +22,19 @@ function main() {
   };
 
   // Get the JSON file arguments from the command line
-  let args = process.argv.slice(2);
+  const args = process.argv.slice(2);
 
   for (;;) {
     if (args.length === 0) {
       break;
     }
-    if (args[0] === '--debug') {
+    if (args[0] === "--debug") {
       args.shift();
       options.isDebug = true;
-    } else if (args[0] === '--sbrk-gas') {
+    } else if (args[0] === "--sbrk-gas") {
       args.shift();
       options.useSbrkGas = true;
-    } else if (args[0] === '--compile') {
+    } else if (args[0] === "--compile") {
       args.shift();
       options.compile = true;
     } else {
@@ -49,7 +49,7 @@ function main() {
     process.exit(1);
   }
 
-  if (args[0] === '-') {
+  if (args[0] === "-") {
     readFromStdin(options);
     return;
   }
@@ -61,63 +61,64 @@ function main() {
   };
 
   // Process each file
-  args.forEach((filePath) => {
+  for (const filePath of args) {
     // try whole directory
     let dir = null;
     try {
       dir = readdirSync(filePath);
-    } catch (e) {
-    }
+    } catch (_e) {}
 
     if (dir !== null) {
       status.all += dir.length;
-      dir.forEach((file) => processFile(options, status, join(filePath, file)));
+      for (const file of dir) {
+        processFile(options, status, join(filePath, file));
+      }
     } else {
       status.all += 1;
       // or just process file
       processFile(options, status, filePath);
       // TODO print results to stdout
     }
-  });
+  }
 
   const icon = status.ok.length === status.all ? OK : ERR;
   console.log(`${icon} Tests status: ${status.ok.length}/${status.all}`);
   if (status.fail.length) {
-    console.error('Failures:');
+    console.error("Failures:");
     for (const e of status.fail) {
       console.error(`❗ ${e.filePath} (${e.name})`);
     }
-    process.exit(-1)
+    process.exit(-1);
   }
 }
 
 function readFromStdin(options) {
-  process.stdin.setEncoding('utf8');
-  process.stderr.write('awaiting input\n');
+  process.stdin.setEncoding("utf8");
+  process.stderr.write("awaiting input\n");
 
   // Read from stdin
-  let buffer  = '';
-  process.stdin.on('data', (data) => {
+  let buffer = "";
+  process.stdin.on("data", (data) => {
     buffer += data;
     if (buffer.endsWith("\n\n")) {
       const json = JSON.parse(buffer);
       const input = {
-        registers: read(json, 'initial-regs').map(x => BigInt(x)),
-        pc: read(json, 'initial-pc'),
-        pageMap: asPageMap(read(json, 'initial-page-map')),
-        memory: asChunks(read(json, 'initial-memory')),
-        gas: BigInt(read(json, 'initial-gas')),
-        program: read(json, 'program'),
+        registers: read(json, "initial-regs").map((x) => BigInt(x)),
+        pc: read(json, "initial-pc"),
+        pageMap: asPageMap(read(json, "initial-page-map")),
+        memory: asChunks(read(json, "initial-memory")),
+        gas: BigInt(read(json, "initial-gas")),
+        program: read(json, "program"),
       };
       const result = runVm(input, options.isDebug, options.useSbrkGas);
 
-      json['expected-pc'] = result.pc;
-      json['expected-gas'] = result.gas;
-      json['expected-status'] = statusAsString(result.status);
-      json['expected-regs'] = result.registers;
-      json['expected-page-fault-address'] = result.exitCode;
+      json["expected-pc"] = result.pc;
+      json["expected-gas"] = result.gas;
+      json["expected-status"] = statusAsString(result.status);
+      json["expected-regs"] = result.registers;
+      json["expected-page-fault-address"] = result.exitCode;
       // clear previous buffer
-      buffer = '';
+      buffer = "";
 
       console.log(JSON.stringify(json));
       console.log();
@@ -141,41 +142,41 @@ function processJson(data, options) {
   }
   // input
   const input = {
-    registers: read(data, 'initial-regs').map(x => BigInt(x)),
-    pc: read(data, 'initial-pc'),
-    pageMap: asPageMap(read(data, 'initial-page-map')),
-    memory: asChunks(read(data, 'initial-memory')),
-    gas: BigInt(read(data, 'initial-gas')),
-    program: read(data, 'program'),
+    registers: read(data, "initial-regs").map((x) => BigInt(x)),
+    pc: read(data, "initial-pc"),
+    pageMap: asPageMap(read(data, "initial-page-map")),
+    memory: asChunks(read(data, "initial-memory")),
+    gas: BigInt(read(data, "initial-gas")),
+    program: read(data, "program"),
   };
   // expected
   const expected = {
-    status: read(data, 'expected-status'),
-    registers: read(data, 'expected-regs').map(x => BigInt(x)),
-    pc: read(data,  'expected-pc'),
-    memory: asChunks(read(data, 'expected-memory')),
-    gas: BigInt(read(data, 'expected-gas')),
-    exitCode: read(data, 'expected-page-fault-address', 0),
+    status: read(data, "expected-status"),
+    registers: read(data, "expected-regs").map((x) => BigInt(x)),
+    pc: read(data, "expected-pc"),
+    memory: asChunks(read(data, "expected-memory")),
+    gas: BigInt(read(data, "expected-gas")),
+    exitCode: read(data, "expected-page-fault-address", 0),
   };
 
   if (options.isDebug) {
     const assembly = disassemble(input.program, InputKind.Generic);
-    console.info('===========');
+    console.info("===========");
     console.info(assembly);
-    console.info('\n^^^^^^^^^^^\n');
+    console.info("\n^^^^^^^^^^^\n");
   }
 
   if (options.compile) {
     const program = compile(input, options.useSbrkGas);
 
-    console.info('\nCompile: AssemblyScript source');
-    console.info('===========');
+    console.info("\nCompile: AssemblyScript source");
+    console.info("===========");
     console.info(program);
-    const loc = './assembly/generated-pvm.ts';
+    const loc = "./assembly/generated-pvm.ts";
     writeFileSync(loc, program);
     console.info(`Written down to ${loc}`);
     console.info(`Compile using 'npm run compile-pvm'`);
-    console.info('\n^^^^^^^^^^^\n');
+    console.info("\n^^^^^^^^^^^\n");
   }
 
   const result = runVm(input, options.isDebug, options.useSbrkGas);
@@ -191,28 +192,29 @@ function processJson(data, options) {
 }
 
 function asChunks(chunks) {
-  return chunks.map(chunk => {
-    chunk.data = read(chunk, 'contents');
+  return chunks.map((chunk) => {
+    chunk.data = read(chunk, "contents");
+    // biome-ignore lint/performance/noDelete: we don't want to have that key
     delete chunk.contents;
     return chunk;
   });
 }
 
 function asPageMap(pages) {
-  return pages.map(page => {
-    page.access = read(page, 'is-writable') ? 2 : 1;
+  return pages.map((page) => {
+    page.access = read(page, "is-writable") ? 2 : 1;
     return page;
   });
 }
 
 function statusAsString(status) {
   const map = {
-    255: 'ok',
-    0: 'halt',
-    1: 'panic', // panic
-    2: 'page-fault', // page fault
-    3: 'host',
-    4: 'oog'
+    255: "ok",
+    0: "halt",
+    1: "panic", // panic
+    2: "page-fault", // page fault
+    3: "host",
+    4: "oog",
   };
 
   return map[status] || `unknown(${status})`;
@@ -225,12 +227,12 @@ function processFile(options, status, filePath) {
     const absolutePath = resolve(filePath);
 
     // Read the file synchronously
-    const fileContent = readFileSync(absolutePath, 'utf-8');
+    const fileContent = readFileSync(absolutePath, "utf-8");
 
     // Parse the JSON content
     jsonData = JSON.parse(fileContent);
   } catch (error) {
-    status.fail.push({ filePath, name: '<unknown>' });
+    status.fail.push({ filePath, name: "<unknown>" });
     console.error(`Error reading file: ${filePath}`);
     console.error(error.message);
     return;
@@ -246,4 +248,3 @@ function processFile(options, status, filePath) {
     console.error(error.message);
   }
 }
-
