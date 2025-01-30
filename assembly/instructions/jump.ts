@@ -3,7 +3,7 @@ import { reg, u32SignExtend } from "./utils";
 
 // JUMP
 export const jump: InstructionRun = (args) => {
-  return staticJump(args.a)
+  return staticJump(args.a);
 };
 
 // JUMP_IND

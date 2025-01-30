@@ -1,11 +1,11 @@
 import { RELEVANT_ARGS } from "./arguments";
+import * as compiler from "./compile/compiler";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
-import * as compiler from "./compile/compiler";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { Program, decodeArguments, decodeProgram, liftBytes, resolveArguments } from "./program";
-import { NO_OF_REGISTERS, Registers, newRegisters } from "./registers";
+import { NO_OF_REGISTERS, newRegisters } from "./registers";
 
 export class InitialPage {
   address: u32 = 0;
@@ -67,16 +67,14 @@ export function getAssembly(p: Program): string {
   return v;
 }
 
-export function compile(input: VmInput, useSbrkGas: boolean = false): string {
+export function compile(input: VmInput, _useSbrkGas: boolean = false): string {
   const program = decodeProgram(liftBytes(input.program));
   const registers = newRegisters();
   for (let r = 0; r < registers.length; r++) {
     registers[r] = input.registers[r];
   }
 
-  const result = compiler.compile(
-    program, input.pc, input.gas, registers,
-  );
+  const result = compiler.compile(program, input.pc, input.gas, registers);
   return result;
 }
 

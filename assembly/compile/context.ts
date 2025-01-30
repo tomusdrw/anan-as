@@ -1,5 +1,5 @@
-import {Args} from "../arguments";
-import {NO_OF_REGISTERS} from "../registers";
+import { Args } from "../arguments";
+import { NO_OF_REGISTERS } from "../registers";
 
 export class CompileContext {
   public readonly data: string[] = [];
@@ -17,20 +17,21 @@ export class CompileContext {
     this.data.push(v);
   }
 
-  addBlockLine(v: string, args: Args = new Args()): void {
+  addBlockLine(x: string, args: Args = new Args()): void {
+    let v = x;
     // some replacing happens here
     v = v
-      .replace('args.a', `${args.a}`)
-      .replace('args.b', `${args.b}`)
-      .replace('args.c', `${args.c}`)
-      .replace('args.d', `${args.d}`)
+      .replace("args.a", `${args.a}`)
+      .replace("args.b", `${args.b}`)
+      .replace("args.c", `${args.c}`)
+      .replace("args.d", `${args.d}`);
     for (let i = 0; i < NO_OF_REGISTERS; i++) {
       for (let j = 0; j < 3; j++) {
         v = v.replace(`regs[${i}]`, `regs${i}`);
       }
     }
-      
-    this.bufferedBlock.push('  ' + v);
+
+    this.bufferedBlock.push(`  ${v}`);
   }
 
   staticJump(arg: u32): void {
@@ -38,7 +39,7 @@ export class CompileContext {
   }
 
   panic(): void {
-    this.addBlockLine('  trap(); abort();');
+    this.addBlockLine("  trap(); abort();");
   }
 
   hostCall(num: u32): void {
@@ -53,15 +54,15 @@ export class CompileContext {
     // TODO ToDr this must be using the jump table
     this.addBlockLine(`  // dynamic jump to ${v}`);
   }
-  
+
   startBlock(pc: u32): void {
     this.push(`function block${pc}(): void {`);
   }
 
   endBlock(blockGas: i64): void {
     this.push(`  gas -= ${blockGas};`);
-    this.push(`  if (gas < 0) { outOfGas(); }`);
+    this.push("  if (gas < 0) { outOfGas(); }");
     this.flushBlockBuffer();
-    this.push(`}`);
+    this.push("}");
   }
 }

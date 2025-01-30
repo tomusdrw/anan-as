@@ -1,22 +1,16 @@
-import {INSTRUCTIONS, MISSING_INSTRUCTION} from "../instructions";
-import {Program, decodeArguments} from "../program";
-import {Registers} from "../registers";
-import {CompileContext} from "./context";
-import {COMPILE} from "./instructions";
+import { INSTRUCTIONS, MISSING_INSTRUCTION } from "../instructions";
+import { Program, decodeArguments } from "../program";
+import { Registers } from "../registers";
+import { CompileContext } from "./context";
+import { COMPILE } from "./instructions";
 
-export function compile(
-  program: Program,
-  initialPc: u32,
-  gas: i64,
-  registers: Registers,
-): string {
+export function compile(program: Program, initialPc: u32, gas: i64, registers: Registers): string {
   const ctx = new CompileContext();
   // externalities
-  ctx.push(`declare function trap(): void;`);
-  ctx.push(`declare function outOfGas(): void;`);
-  ctx.push(`declare function fault(address: u32): void;`);
-  ctx.push(`declare function dumpReg(idx: u32, data: i64): void;`);
-
+  ctx.push("declare function trap(): void;");
+  ctx.push("declare function outOfGas(): void;");
+  ctx.push("declare function fault(address: u32): void;");
+  ctx.push("declare function dumpReg(idx: u32, data: i64): void;");
 
   for (let i = 0; i < registers.length; i++) {
     ctx.push(`let regs${i}: i64 = 0x${registers[i].toString(16)};`);
@@ -29,9 +23,9 @@ export function compile(
   // program
   ctx.pc = 0;
   let blockGas: i64 = 0;
-  while (ctx.pc < <u32>(program.code.length)) {
+  while (ctx.pc < <u32>program.code.length) {
     if (!program.mask.isInstruction(ctx.pc)) {
-      throw new Error('not an instruction?');
+      throw new Error("not an instruction?");
     }
 
     if (program.basicBlocks.isStart(ctx.pc)) {
@@ -53,25 +47,25 @@ export function compile(
     ctx.addBlockLine(`{ // ${changetype<string>(iData.namePtr)}`);
     // handle jumps and other results?
     exe(ctx, args);
-    ctx.addBlockLine('};');
+    ctx.addBlockLine("};");
     // move to next instruction
     ctx.pc += 1 + skipBytes;
   }
 
   ctx.endBlock(blockGas);
-  
+
   // utility functions
-  ctx.push('// utils');
-  ctx.push('@inline function u32SignExtend(v: u32): i64 { return i64(i32(v)); }');
-  ctx.push('@inline function u16SignExtend(v: u16): i64 { return i64(i32(i16(v))); }');
-  ctx.push('@inline function u8SignExtend(v: u8): i64 { return i64(i32(i16(i8(v)))); }');
+  ctx.push("// utils");
+  ctx.push("@inline function u32SignExtend(v: u32): i64 { return i64(i32(v)); }");
+  ctx.push("@inline function u16SignExtend(v: u16): i64 { return i64(i32(i16(v))); }");
+  ctx.push("@inline function u8SignExtend(v: u8): i64 { return i64(i32(i16(i8(v)))); }");
 
   // print out registers at the end
-  ctx.push('\n// registers');
+  ctx.push("\n// registers");
   for (let i = 0; i < registers.length; i++) {
     ctx.push(`dumpReg(${i}, regs${i});`);
   }
 
   // TODO [ToDr] print out what we have here?
-  return ctx.data.join('\n');
+  return ctx.data.join("\n");
 }
