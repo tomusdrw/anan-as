@@ -2,7 +2,9 @@ import { InstructionRun, dJump, staticJump } from "./outcome";
 import { reg, u32SignExtend } from "./utils";
 
 // JUMP
-export const jump: InstructionRun = (args) => staticJump(args.a);
+export const jump: InstructionRun = (args) => {
+  return staticJump(args.a)
+};
 
 // JUMP_IND
 export const jump_ind: InstructionRun = (args, registers) => {

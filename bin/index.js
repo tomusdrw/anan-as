@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import "json-bigint-patch";
-import {readFileSync, readdirSync} from 'node:fs';
+import {readFileSync, readdirSync, writeFileSync} from 'node:fs';
 import {resolve, join} from 'node:path';
 import * as assert from 'node:assert';
 
-import { runVm, InputKind, disassemble } from "../build/release.js";
+import { runVm, InputKind, disassemble, compile } from "../build/release.js";
 
 const OK = '🟢';
 const ERR = '🔴';
@@ -17,6 +17,7 @@ main();
 function main() {
   const options = {
     isDebug: false,
+    compile: false,
     useSbrkGas: false,
   };
 
@@ -33,6 +34,9 @@ function main() {
     } else if (args[0] === '--sbrk-gas') {
       args.shift();
       options.useSbrkGas = true;
+    } else if (args[0] === '--compile') {
+      args.shift();
+      options.compile = true;
     } else {
       break;
     }
@@ -158,7 +162,20 @@ function processJson(data, options) {
     const assembly = disassemble(input.program, InputKind.Generic);
     console.info('===========');
     console.info(assembly);
-      console.info('\n^^^^^^^^^^^\n');
+    console.info('\n^^^^^^^^^^^\n');
+  }
+
+  if (options.compile) {
+    const program = compile(input, options.useSbrkGas);
+
+    console.info('\nCompile: AssemblyScript source');
+    console.info('===========');
+    console.info(program);
+    const loc = './assembly/generated-pvm.ts';
+    writeFileSync(loc, program);
+    console.info(`Written down to ${loc}`);
+    console.info(`Compile using 'npm run compile-pvm'`);
+    console.info('\n^^^^^^^^^^^\n');
   }
 
   const result = runVm(input, options.isDebug, options.useSbrkGas);
