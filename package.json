@@ -29,7 +29,7 @@
 		"@biomejs/biome": "^1.9.4",
 		"@jazzer.js/core": "^2.1.0",
 		"@typeberry/pvm-debugger-adapter": "0.1.0-8456204",
-		"assemblyscript": "^0.27.32"
+		"assemblyscript": "^0.27.34"
 	},
 	"type": "module",
 	"exports": {
