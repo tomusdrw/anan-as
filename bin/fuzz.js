@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import "json-bigint-patch";
-import fs from 'node:fs';
+import fs from "node:fs";
 import { Pvm } from "@typeberry/pvm-debugger-adapter";
-import { wrapAsProgram, runVm, disassemble, InputKind } from "../build/release.js";
+import { InputKind, disassemble, runVm, wrapAsProgram } from "../build/release.js";
 
-let runNumber = 0;
+const runNumber = 0;
 
 export function fuzz(data) {
   const gas = 200n;
@@ -17,29 +17,31 @@ export function fuzz(data) {
   }
 
   try {
-    pvm.reset(
-      program,
-      pc,
-      gas,
-    );
-    while(pvm.nSteps(100)) {}
+    pvm.reset(program, pc, gas);
+    while (pvm.nSteps(100)) {}
 
     const printDebugInfo = false;
-    const registers = Array(13).join(',').split(',').map(() => BigInt(0));
-    const output = runVm({
-      registers,
-      pc,
-      pageMap: [],
-      memory: [],
-      gas,
-      program,
-    }, printDebugInfo);
-    
+    const registers = Array(13)
+      .join(",")
+      .split(",")
+      .map(() => BigInt(0));
+    const output = runVm(
+      {
+        registers,
+        pc,
+        pageMap: [],
+        memory: [],
+        gas,
+        program,
+      },
+      printDebugInfo,
+    );
+
     collectErrors((assert) => {
-      assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
-      assert(pvm.getGasLeft(), output.gas, 'gas');
-      assert(Array.from(pvm.getRegisters()), output.registers, 'registers');
-      assert(pvm.getProgramCounter(), output.pc, 'pc');
+      assert(pvm.getStatus(), normalizeStatus(output.status), "status");
+      assert(pvm.getGasLeft(), output.gas, "gas");
+      assert(Array.from(pvm.getRegisters()), output.registers, "registers");
+      assert(pvm.getProgramCounter(), output.pc, "pc");
     });
 
     try {
@@ -55,12 +57,12 @@ export function fuzz(data) {
             status: pvm.getStatus(),
             gasLeft: pvm.getGasLeft(),
             pc: pvm.getProgramCounter(),
-            registers: pvm.getRegisters()
+            registers: pvm.getRegisters(),
           },
         );
       }
     } catch (e) {
-      console.warn('Unable to write file', e);
+      console.warn("Unable to write file", e);
     }
   } catch (e) {
     const hex = programHex(program);
@@ -72,7 +74,9 @@ export function fuzz(data) {
 }
 
 function programHex(program) {
-  return Array.from(program).map(x => x.toString(16).padStart(2, '0')).join('');
+  return Array.from(program)
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
 }
 function linkTo(programHex) {
   return `https://pvm-debugger.netlify.app/#/load?program=0x${programHex}`;
@@ -85,8 +89,8 @@ function normalizeStatus(status) {
   return status;
 }
 
-function assert(tb, an, comment = '') {
-  let condition =  tb !== an;
+function assert(tb, an, comment = "") {
+  let condition = tb !== an;
   if (Array.isArray(tb) && Array.isArray(an)) {
     condition = tb.toString() !== an.toString();
   }
@@ -94,10 +98,10 @@ function assert(tb, an, comment = '') {
   if (condition) {
     const alsoAsHex = (f) => {
       if (Array.isArray(f)) {
-        return `${f.map(alsoAsHex).join(', ')}`;
+        return `${f.map(alsoAsHex).join(", ")}`;
       }
 
-      if (typeof f === 'number' || typeof f === 'bigint') {
+      if (typeof f === "number" || typeof f === "bigint") {
         if (BigInt(f) !== 0n) {
           return `${f} | 0x${f.toString(16)}`;
         }
@@ -123,32 +127,35 @@ function collectErrors(cb) {
   });
 
   if (errors.length > 0) {
-    throw new Error(errors.join('\n'));
+    throw new Error(errors.join("\n"));
   }
 }
 
 function writeTestCase(program, initial, expected) {
   const hex = programHex(program);
   fs.mkdirSync(`../tests/length_${hex.length}`, { recursive: true });
-  fs.writeFileSync(`../tests/length_${hex.length}/${hex}.json`, JSON.stringify({
-    name: linkTo(hex),
-    "initial-regs": initial.registers,
-    "initial-pc": initial.pc,
-    "initial-page-map": [],
-    "initial-memory": [],
-    "initial-gas": initial.gas,
-    program: Array.from(program),
-    "expected-status": statusToStr(expected.status),
-    "expected-regs": Array.from(expected.registers),
-    "expected-pc": expected.pc,
-    "expected-gas": expected.gasLeft,
-    "expected-memory": [],
-  }));
+  fs.writeFileSync(
+    `../tests/length_${hex.length}/${hex}.json`,
+    JSON.stringify({
+      name: linkTo(hex),
+      "initial-regs": initial.registers,
+      "initial-pc": initial.pc,
+      "initial-page-map": [],
+      "initial-memory": [],
+      "initial-gas": initial.gas,
+      program: Array.from(program),
+      "expected-status": statusToStr(expected.status),
+      "expected-regs": Array.from(expected.registers),
+      "expected-pc": expected.pc,
+      "expected-gas": expected.gasLeft,
+      "expected-memory": [],
+    }),
+  );
 }
 
 function statusToStr(status) {
   if (status === 0) {
-    return 'halt';
+    return "halt";
   }
   if (status === 1) {
     return "trap";

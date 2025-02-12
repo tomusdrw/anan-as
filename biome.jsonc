@@ -47,6 +47,7 @@
     }
   },
   "files": {
-    "include": ["assembly/*"]
+    "include": ["assembly/*", "bin/*"],
+    "ignore": ["assembly/compile/instructions/*", "assembly/compile/instructions.ts"]
   }
 }

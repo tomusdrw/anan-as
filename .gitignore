@@ -1,2 +1,3 @@
 node_modules
+assembly/generated-pvm.ts
 tests/*

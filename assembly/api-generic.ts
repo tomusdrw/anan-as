@@ -1,10 +1,11 @@
 import { RELEVANT_ARGS } from "./arguments";
+import * as compiler from "./compile/compiler";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { Program, decodeArguments, decodeProgram, liftBytes, resolveArguments } from "./program";
-import { NO_OF_REGISTERS, Registers } from "./registers";
+import { NO_OF_REGISTERS, newRegisters } from "./registers";
 
 export class InitialPage {
   address: u32 = 0;
@@ -66,17 +67,28 @@ export function getAssembly(p: Program): string {
   return v;
 }
 
-export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  const p = decodeProgram(liftBytes(input.program));
+export function compile(input: VmInput, _useSbrkGas: boolean = false): string {
+  const program = decodeProgram(liftBytes(input.program));
+  const registers = newRegisters();
+  for (let r = 0; r < registers.length; r++) {
+    registers[r] = input.registers[r];
+  }
 
-  const registers: Registers = new StaticArray(NO_OF_REGISTERS);
+  const result = compiler.compile(program, input.pc, input.gas, registers);
+  return result;
+}
+
+export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
+  const program = decodeProgram(liftBytes(input.program));
+
+  const registers = newRegisters();
   for (let r = 0; r < registers.length; r++) {
     registers[r] = input.registers[r];
   }
   const builder = new MemoryBuilder();
   const memory = buildMemory(builder, input.pageMap, input.memory);
 
-  const int = new Interpreter(p, registers, memory);
+  const int = new Interpreter(program, registers, memory);
   int.useSbrkGas = useSbrkGas;
   int.nextPc = input.pc;
   int.gas.set(input.gas);
@@ -97,7 +109,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-      const skipBytes = p.mask.bytesToNextInstruction(int.pc);
+      const skipBytes = program.mask.bytesToNextInstruction(int.pc);
       const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
       const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);
