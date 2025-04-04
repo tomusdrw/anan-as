@@ -21,7 +21,7 @@ export function decodeSpi(data: Uint8Array): Program {
   const code = decoder.bytes(codeLength);
   decoder.finish();
 
-  return decodeProgram(code);
+  return deblob(code);
 }
 
 export function liftBytes(data: u8[]): Uint8Array {
@@ -38,7 +38,7 @@ export function lowerBytes(data: Uint8Array): u8[] {
   return r;
 }
 
-export function decodeProgram(program: Uint8Array): Program {
+export function deblob(program: Uint8Array): Program {
   const decoder = new Decoder(program);
 
   // number of items in the jump table

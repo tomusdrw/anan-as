@@ -3,7 +3,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
-import { Program, decodeArguments, decodeProgram, liftBytes, resolveArguments } from "./program";
+import { Program, decodeArguments, deblob, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
 export class InitialPage {
@@ -67,7 +67,7 @@ export function getAssembly(p: Program): string {
 }
 
 export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  const p = decodeProgram(liftBytes(input.program));
+  const p = deblob(liftBytes(input.program));
 
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
   for (let r = 0; r < registers.length; r++) {
