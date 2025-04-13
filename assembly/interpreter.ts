@@ -93,7 +93,7 @@ export class Interpreter {
     }
 
     // get args and invoke instruction
-    const skipBytes = this.program.mask.bytesToNextInstruction(pc);
+    const skipBytes = this.program.mask.skipBytesToNextInstruction(pc);
     const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1), skipBytes);
 
     // additional gas cost of sbrk

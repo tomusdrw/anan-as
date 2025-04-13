@@ -6,6 +6,8 @@ import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
 
+const MAX_SKIP: u32 = 24;
+
 export function decodeSpi(data: Uint8Array): Program {
   const decoder = new Decoder(data);
 
@@ -77,7 +79,7 @@ export class Mask {
         bits = bits << 1;
         if (index + b < codeLength) {
           lastInstructionOffset = isSet ? 0 : lastInstructionOffset + 1;
-          this.bytesToSkip[index + b] = lastInstructionOffset;
+          this.bytesToSkip[index + b] = lastInstructionOffset < MAX_SKIP ? lastInstructionOffset : MAX_SKIP;
         }
       }
     }
@@ -91,7 +93,14 @@ export class Mask {
     return this.bytesToSkip[index] === 0;
   }
 
-  bytesToNextInstruction(i: u32): u32 {
+  /**
+   * Given we are at instruction `i`, how many bytes should be skipped.
+   *
+   * NOTE: we don't guarantee that `isInstruction()` will return true
+   * for the new program counter, since `skip` function is bounded by
+   * an upper limit of `24` bytes.
+   */
+  skipBytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
       return this.bytesToSkip[i + 1];
     }
@@ -120,19 +129,22 @@ export class BasicBlocks {
   constructor(code: Uint8Array, mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
-    let inBlock = false;
-    for (let i: i32 = 0; i < len; i += 1) {
-      const skip = mask.bytesToSkip[i];
-      const isInstruction = skip === 0;
-      if (isInstruction && !inBlock) {
-        inBlock = true;
-        isStartOrEnd[i] += BasicBlock.START;
-      }
-      // in case of start blocks, some of them might be both start & end;
-      const iData = code[i] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[i]];
-      if (isInstruction && inBlock && iData.isTerminating) {
-        inBlock = false;
-        isStartOrEnd[i] += BasicBlock.END;
+    isStartOrEnd[0] = BasicBlock.START;
+    for (let n: i32 = 0; n < len; n += 1) {
+      const skip = mask.bytesToSkip[n];
+      const isInstructionInMask = skip === 0;
+      const iData = code[n] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[n]];
+      const isTerminating = iData.isTerminating;
+
+      if (isInstructionInMask && isTerminating)  {
+        // skip is always 0?
+        const newBlockStart = n + 1 + skip;
+        // mark the beginning of the next block 
+        if (newBlockStart < len) {
+          isStartOrEnd[newBlockStart] = BasicBlock.START;
+        }
+        // and mark current instruction as terminating
+        isStartOrEnd[n] |= BasicBlock.END;
       }
     }
     this.isStartOrEnd = isStartOrEnd;
@@ -153,7 +165,9 @@ export class BasicBlocks {
       t += isStart ? "start" : "";
       const isEnd = (this.isStartOrEnd[i] & BasicBlock.END) > 0;
       t += isEnd ? "end" : "";
-      v += `${i} -> ${t}, `;
+      if (t.length > 0) {
+        v += `${i} -> ${t}, `;
+      }
     }
     return `${v}]`;
   }

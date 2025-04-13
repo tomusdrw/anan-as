@@ -54,7 +54,7 @@ export function getAssembly(p: Program): string {
     v += changetype<string>(iData.namePtr);
     v += `(${instruction})`;
 
-    const skipBytes = p.mask.bytesToNextInstruction(i);
+    const skipBytes = p.mask.skipBytesToNextInstruction(i);
     const args = decodeArguments(iData.kind, p.code.subarray(i + 1), skipBytes);
     const argsArray = [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
@@ -97,7 +97,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-      const skipBytes = p.mask.bytesToNextInstruction(int.pc);
+      const skipBytes = p.mask.skipBytesToNextInstruction(int.pc);
       const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
       const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);

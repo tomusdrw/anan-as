@@ -3,6 +3,7 @@ import * as branch from "./instructions/branch.test";
 import * as logic from "./instructions/logic.test";
 import * as math from "./instructions/math.test";
 import * as rot from "./instructions/rot.test";
+import * as program from "./program.test";
 import { Test } from "./test";
 
 export function runAllTests(): void {
@@ -12,6 +13,7 @@ export function runAllTests(): void {
   a += run(math.TESTS, "math.ts");
   a += run(logic.TESTS, "logic.ts");
   a += run(rot.TESTS, "rot.ts");
+  a += run(program.TESTS, "program.ts");
 
   const okay = u32(a >> 32);
   const total = u32(a);
