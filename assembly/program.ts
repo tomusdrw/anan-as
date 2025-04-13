@@ -4,7 +4,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { reg, u32SignExtend } from "./instructions/utils";
 import { Registers } from "./registers";
 
-export type ProgramCounter = u64;
+export type ProgramCounter = u32;
 
 const MAX_SKIP: u32 = 24;
 
@@ -174,10 +174,10 @@ export class BasicBlocks {
 }
 
 export class JumpTable {
-  readonly jumps: StaticArray<ProgramCounter>;
+  readonly jumps: StaticArray<u64>;
 
   constructor(itemBytes: u8, data: Uint8Array) {
-    const jumps = new StaticArray<ProgramCounter>(itemBytes > 0 ? data.length / itemBytes : 0);
+    const jumps = new StaticArray<u64>(itemBytes > 0 ? data.length / itemBytes : 0);
 
     for (let i = 0; i < data.length; i += itemBytes) {
       let num: u64 = 0;

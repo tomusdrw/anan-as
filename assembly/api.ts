@@ -66,7 +66,7 @@ export function getProgramCounter(): u32 {
     return 0;
   }
   const int = <Interpreter>interpreter;
-  return int.pc;
+  return u32(int.pc);
 }
 
 export function setNextProgramCounter(pc: u32): void {

@@ -5,7 +5,7 @@ import { Outcome, Result } from "./instructions/outcome";
 import { reg } from "./instructions/utils";
 import { Memory, MemoryBuilder } from "./memory";
 import { PAGE_SIZE, PAGE_SIZE_SHIFT } from "./memory-page";
-import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";
+import { BasicBlocks, JumpTable, Program, ProgramCounter, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
 export enum Status {
@@ -203,7 +203,7 @@ enum DjumpStatus {
 // @unmanaged
 class DjumpResult {
   status: DjumpStatus = DjumpStatus.OK;
-  newPc: u32 = 0;
+  newPc: ProgramCounter = 0;
 }
 
 const EXIT = 0xff_ff_00_00;
@@ -226,6 +226,14 @@ function dJump(jumpTable: JumpTable, address: u32): DjumpResult {
     return r;
   }
 
-  r.newPc = jumpTable.jumps[index];
+  const newPc = jumpTable.jumps[index];
+  if (newPc >= MAX_U32) {
+    r.status = DjumpStatus.PANIC;
+    return r;
+  }
+
+  r.newPc = u32(newPc);
   return r;
 }
+
+const MAX_U32: u64 = 2**32;
