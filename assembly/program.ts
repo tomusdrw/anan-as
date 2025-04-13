@@ -4,7 +4,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { reg, u32SignExtend } from "./instructions/utils";
 import { Registers } from "./registers";
 
-export type ProgramCounter = u32;
+export type ProgramCounter = u64;
 
 const MAX_SKIP: u32 = 24;
 
@@ -86,11 +86,11 @@ export class Mask {
   }
 
   isInstruction(index: ProgramCounter): boolean {
-    if (index >= <u32>this.bytesToSkip.length) {
+    if (index >= <u64>this.bytesToSkip.length) {
       return false;
     }
 
-    return this.bytesToSkip[index] === 0;
+    return this.bytesToSkip[u32(index)] === 0;
   }
 
   /**
@@ -136,10 +136,10 @@ export class BasicBlocks {
       const iData = code[n] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[n]];
       const isTerminating = iData.isTerminating;
 
-      if (isInstructionInMask && isTerminating)  {
+      if (isInstructionInMask && isTerminating) {
         // skip is always 0?
         const newBlockStart = n + 1 + skipArgs;
-        // mark the beginning of the next block 
+        // mark the beginning of the next block
         if (newBlockStart < len) {
           isStartOrEnd[newBlockStart] = BasicBlock.START;
         }
@@ -180,7 +180,7 @@ export class JumpTable {
     const jumps = new StaticArray<ProgramCounter>(itemBytes > 0 ? data.length / itemBytes : 0);
 
     for (let i = 0; i < data.length; i += itemBytes) {
-      let num = 0;
+      let num: u64 = 0;
       for (let j: i32 = itemBytes - 1; j >= 0; j--) {
         num = num << 8;
         num += data[i + j];

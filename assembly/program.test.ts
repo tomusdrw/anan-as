@@ -1,10 +1,10 @@
-import {Arguments} from "./arguments";
-import {RUN} from "./instructions-exe";
-import {jump_ind} from "./instructions/jump";
-import {trap} from "./instructions/misc";
-import {InstructionRun} from "./instructions/outcome";
-import {BasicBlocks, decodeArguments, Mask, deblob } from "./program";
-import {Assert, test, Test} from "./test";
+import { Arguments } from "./arguments";
+import { RUN } from "./instructions-exe";
+import { jump_ind } from "./instructions/jump";
+import { trap } from "./instructions/misc";
+import { InstructionRun } from "./instructions/outcome";
+import { BasicBlocks, Mask, deblob, decodeArguments } from "./program";
+import { Assert, Test, test } from "./test";
 
 export function u8arr(data: number[]): Uint8Array {
   const ret = new Uint8Array(data.length);
@@ -16,8 +16,11 @@ export const TESTS: Test[] = [
   test("should parse packed mask correctly", () => {
     const mask = new Mask(u8arr([0b0001_0000, 0b1000_0000, 0b1111_1000]), 21);
 
-    const assert = new Assert;
-    assert.isArrayEqual<u32>(mask.bytesToSkip.slice(), [4,3,2,1,0,10,9,8,7,6,5,4,3,2,1,0,3,2,1,0,0]);
+    const assert = new Assert();
+    assert.isArrayEqual<u32>(
+      mask.bytesToSkip.slice(),
+      [4, 3, 2, 1, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0, 0],
+    );
 
     assert.isEqual(mask.isInstruction(0), false);
     assert.isEqual(mask.isInstruction(4), true);
@@ -27,86 +30,106 @@ export const TESTS: Test[] = [
     return assert;
   }),
 
-  test('should not allow skipping more than 24 bytes', () => {
-    const mask = new Mask(u8arr([
-      0b0000_0001,
-      0b0000_0000,
-      0b0000_0000,
-      0b1000_0000
-    ]), 32);
+  test("should not allow skipping more than 24 bytes", () => {
+    const mask = new Mask(u8arr([0b0000_0001, 0b0000_0000, 0b0000_0000, 0b1000_0000]), 32);
 
-    const assert = new Assert;
-    assert.isArrayEqual<u32>(mask.bytesToSkip.slice(), [
-      0,24,24,24,24,24,24,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
-    ]);
+    const assert = new Assert();
+    assert.isArrayEqual<u32>(
+      mask.bytesToSkip.slice(),
+      [
+        0, 24, 24, 24, 24, 24, 24, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
+        1, 0,
+      ],
+    );
     return assert;
   }),
 
-  test('should decode arguments correctly', () => {
+  test("should decode arguments correctly", () => {
     const data = u8arr([0xff, 0xff, 0xff, 0xff]);
     const args = decodeArguments(Arguments.OneImm, data, 4);
 
-    const assert = new Assert;
-    assert.isEqual(args.a, -1, 'a');
-    assert.isEqual(args.b, 0, 'b');
-    assert.isEqual(args.c, 0, 'c');
-    assert.isEqual(args.d, 0, 'd');
+    const assert = new Assert();
+    assert.isEqual(args.a, -1, "a");
+    assert.isEqual(args.b, 0, "b");
+    assert.isEqual(args.c, 0, "c");
+    assert.isEqual(args.d, 0, "d");
     return assert;
   }),
 
-  test('should decode positive bounded by skip', () => {
+  test("should decode positive bounded by skip", () => {
     const data = u8arr([0x05, 0x05]);
     const args = decodeArguments(Arguments.OneImm, data, 1);
 
-    const assert = new Assert;
-    assert.isEqual(args.a, 5, 'a');
-    assert.isEqual(args.b, 0, 'b');
-    assert.isEqual(args.c, 0, 'c');
-    assert.isEqual(args.d, 0, 'd');
+    const assert = new Assert();
+    assert.isEqual(args.a, 5, "a");
+    assert.isEqual(args.b, 0, "b");
+    assert.isEqual(args.c, 0, "c");
+    assert.isEqual(args.d, 0, "d");
     return assert;
   }),
 
-  test('should deblob program', () => {
-    const raw = u8arr([0,0,33,51,8,1,51,9,1,40,3,0,149,119,255,81,7,12,100,138,200,152,8,100,169,40,243,100,135,51,8,51,9,1,50,0,73,147,82,213,0]);
+  test("should deblob program", () => {
+    const raw = u8arr([
+      0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100,
+      135, 51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
+    ]);
     const program = deblob(raw);
-    const assert = new Assert;
+    const assert = new Assert();
     assert.isEqual(
       program.mask.toString(),
       "Mask[0, 2, 1, 0, 2, 1, 0, 1, 0, 0, 2, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, ]",
     );
-    assert.isEqual(
-      program.jumpTable.toString(),
-      "JumpTable[]",
-    );
+    assert.isEqual(program.jumpTable.toString(), "JumpTable[]");
     assert.isEqual(
       program.basicBlocks.toString(),
-      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]"
+      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
     );
     return assert;
   }),
 
-  test('should construct basic blocks correctly based on skip', () => {
+  test("should construct basic blocks correctly based on skip", () => {
     const code = u8arr([
       opcode(trap),
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, opcode(jump_ind),
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      opcode(jump_ind),
     ]);
-    const mask = new Mask(u8arr([
-      0b0000_0001,
-      0b0000_0000,
-      0b0000_0000,
-      0b1000_0000
-    ]), 32);
+    const mask = new Mask(u8arr([0b0000_0001, 0b0000_0000, 0b0000_0000, 0b1000_0000]), 32);
     const basicBlocks = new BasicBlocks(code, mask);
-    const assert = new Assert;
+    const assert = new Assert();
     assert.isEqual(
       mask.toString(),
       "Mask[0, 24, 24, 24, 24, 24, 24, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ]",
     );
-    assert.isEqual(
-      basicBlocks.toString(),
-      "BasicBlocks[0 -> startend, 25 -> start, 31 -> end, ]"
-    );
+    assert.isEqual(basicBlocks.toString(), "BasicBlocks[0 -> startend, 25 -> start, 31 -> end, ]");
     return assert;
   }),
 ];
@@ -114,4 +137,3 @@ export const TESTS: Test[] = [
 function opcode(search: InstructionRun): number {
   return RUN.indexOf(search);
 }
-

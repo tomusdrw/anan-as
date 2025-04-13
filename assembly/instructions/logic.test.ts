@@ -17,7 +17,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = 0x0000_0000_000f;
     regs[reg(args.b)] = 0xf000_0000_0001;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = and_inv(args, regs, memo);
@@ -38,7 +38,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = 0x0000_0000_000f;
     regs[reg(args.b)] = 0xf000_0000_0001;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = or_inv(args, regs, memo);
@@ -59,7 +59,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = 0x0000_0000_000f;
     regs[reg(args.b)] = 0xf000_0000_0000;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = xnor(args, regs, memo);

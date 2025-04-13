@@ -16,7 +16,7 @@ export const TESTS: Test[] = [
     const regs = newRegisters();
     regs[reg(args.a)] = 0xfe;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = branch_eq_imm(args, regs, memo);

@@ -1,7 +1,7 @@
 export class Test {
   constructor(
     public name: string,
-    public ptr: () => Assert,
+    public ptr: (assert: Assert) => Assert,
   ) {}
 }
 
@@ -22,11 +22,7 @@ export class Assert {
 
   isArrayEqual<T>(actual: T[], expected: T[], msg: string = ""): void {
     this.isEqual(actual.length, expected.length, `length @ ${msg}`);
-    this.isEqual(
-      actual.join(',').toString(),
-      expected.join(',').toString(),
-      msg
-    );
+    this.isEqual(actual.join(",").toString(), expected.join(",").toString(), msg);
   }
 
   isEqual<T>(actual: T, expected: T, msg: string = ""): void {
@@ -39,6 +35,6 @@ export class Assert {
   }
 }
 
-export function test(name: string, ptr: () => Assert): Test {
+export function test(name: string, ptr: (assert: Assert) => Assert): Test {
   return new Test(name, ptr);
 }

@@ -25,7 +25,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xffff_0000_1111;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = count_set_bits_64(args, regs, memo);
@@ -43,7 +43,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xffff_0000_1111;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = count_set_bits_32(args, regs, memo);
@@ -61,7 +61,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xfff0_0000_0111;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = leading_zero_bits_64(args, regs, memo);
@@ -79,7 +79,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xffff_0000_1111;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = leading_zero_bits_32(args, regs, memo);
@@ -97,7 +97,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xfff0_0000_0000;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = trailing_zero_bits_64(args, regs, memo);
@@ -115,7 +115,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xfff0_0000_0000;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = trailing_zero_bits_32(args, regs, memo);
@@ -133,7 +133,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xdead_beef;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = sign_extend_8(args, regs, memo);
@@ -151,7 +151,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xdead_beef;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = sign_extend_16(args, regs, memo);
@@ -169,7 +169,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xdead_beef;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = zero_extend_16(args, regs, memo);
@@ -187,7 +187,7 @@ export const TESTS: Test[] = [
     args.b = 0xf;
     const regs = newRegisters();
     regs[reg(args.a)] = 0xfff0_dead_beef;
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const res = reverse_bytes(args, regs, memo);
