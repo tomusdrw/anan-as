@@ -3,7 +3,7 @@ import {RUN} from "./instructions-exe";
 import {jump_ind} from "./instructions/jump";
 import {trap} from "./instructions/misc";
 import {InstructionRun} from "./instructions/outcome";
-import {BasicBlocks, decodeArguments, Mask} from "./program";
+import {BasicBlocks, decodeArguments, Mask, deblob } from "./program";
 import {Assert, test, Test} from "./test";
 
 export function u8arr(data: number[]): Uint8Array {
@@ -66,23 +66,21 @@ export const TESTS: Test[] = [
     return assert;
   }),
 
-  test('should construct basic blocks', () => {
-    const code = u8arr([
-      opcode(trap),
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ]);
-    const mask = new Mask(u8arr([
-      0b0000_0001,
-      0b0000_0000,
-      0b0000_0000,
-      0b1000_0000
-    ]), 32);
-    const basicBlocks = new BasicBlocks(code, mask);
+  test('should deblob program', () => {
+    const raw = u8arr([0,0,33,51,8,1,51,9,1,40,3,0,149,119,255,81,7,12,100,138,200,152,8,100,169,40,243,100,135,51,8,51,9,1,50,0,73,147,82,213,0]);
+    const program = deblob(raw);
     const assert = new Assert;
     assert.isEqual(
-      basicBlocks.toString(),
-      "BasicBlocks[0 -> startend, 1 -> start, 31 -> end, ]"
+      program.mask.toString(),
+      "Mask[0, 2, 1, 0, 2, 1, 0, 1, 0, 0, 2, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, ]",
+    );
+    assert.isEqual(
+      program.jumpTable.toString(),
+      "JumpTable[]",
+    );
+    assert.isEqual(
+      program.basicBlocks.toString(),
+      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]"
     );
     return assert;
   }),
@@ -107,7 +105,7 @@ export const TESTS: Test[] = [
     );
     assert.isEqual(
       basicBlocks.toString(),
-      "BasicBlocks[0 -> startend, 1 -> start, 31 -> end, ]"
+      "BasicBlocks[0 -> startend, 25 -> start, 31 -> end, ]"
     );
     return assert;
   }),

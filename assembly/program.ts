@@ -131,14 +131,14 @@ export class BasicBlocks {
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
     isStartOrEnd[0] = BasicBlock.START;
     for (let n: i32 = 0; n < len; n += 1) {
-      const skip = mask.bytesToSkip[n];
-      const isInstructionInMask = skip === 0;
+      const isInstructionInMask = mask.isInstruction(n);
+      const skipArgs = mask.skipBytesToNextInstruction(n);
       const iData = code[n] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[n]];
       const isTerminating = iData.isTerminating;
 
       if (isInstructionInMask && isTerminating)  {
         // skip is always 0?
-        const newBlockStart = n + 1 + skip;
+        const newBlockStart = n + 1 + skipArgs;
         // mark the beginning of the next block 
         if (newBlockStart < len) {
           isStartOrEnd[newBlockStart] = BasicBlock.START;
