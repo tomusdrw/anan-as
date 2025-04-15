@@ -135,16 +135,12 @@ export const TESTS: Test[] = [
   test("should parse jump table with large numbers", () => {
     const jumpTable = new JumpTable(
       10,
-      u8arr([
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  
-        0, 0, 0, 0, 2, 0, 2, 2, 2, 0,  
-      ]),
+      u8arr([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 2, 0, 2, 2, 2, 0]),
     );
     const assert = new Assert();
     assert.isEqual(
       jumpTable.toString(),
-      "JumpTable[0 -> 18446744073709551615, 1 -> 18446744073709551615, 2 -> 18446744073709551615, ]"
+      "JumpTable[0 -> 18446744073709551615, 1 -> 18446744073709551615, 2 -> 18446744073709551615, ]",
     );
     return assert;
   }),

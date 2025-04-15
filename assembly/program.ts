@@ -85,9 +85,7 @@ export class Mask {
         bits = bits << 1;
         if (index + b < codeLength) {
           lastInstructionOffset = isSet ? 0 : lastInstructionOffset + 1;
-          this.bytesToSkip[index + b] = lastInstructionOffset < MAX_SKIP + 1
-            ? lastInstructionOffset
-            : MAX_SKIP + 1;
+          this.bytesToSkip[index + b] = lastInstructionOffset < MAX_SKIP + 1 ? lastInstructionOffset : MAX_SKIP + 1;
         }
       }
     }
@@ -196,7 +194,7 @@ export class JumpTable {
         nextNum = nextNum + u64(data[i + j]);
         isOverflow = isOverflow || nextNum < num;
         // handle overflow
-        num = isOverflow ? u64.MAX_VALUE: nextNum;
+        num = isOverflow ? u64.MAX_VALUE : nextNum;
       }
       jumps[i / itemBytes] = num;
     }
