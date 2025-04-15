@@ -65,7 +65,13 @@ export function deblob(program: Uint8Array): Program {
 }
 
 export class Mask {
-  // NOTE: might be longer than code (bit-alignment)
+  /**
+   * NOTE: might be longer than code (bit-alignment).
+   * In this array we keep `skip(n) + 1` from the Gray Paper
+   * for non-instruction bytes.
+   * In case the in-code mask says there is an instruction at that location
+   * we store `0` here.
+   */
   readonly bytesToSkip: StaticArray<u32>;
 
   constructor(packedMask: Uint8Array, codeLength: i32) {
@@ -79,7 +85,9 @@ export class Mask {
         bits = bits << 1;
         if (index + b < codeLength) {
           lastInstructionOffset = isSet ? 0 : lastInstructionOffset + 1;
-          this.bytesToSkip[index + b] = lastInstructionOffset < MAX_SKIP ? lastInstructionOffset : MAX_SKIP;
+          this.bytesToSkip[index + b] = lastInstructionOffset < MAX_SKIP + 1
+            ? lastInstructionOffset
+            : MAX_SKIP + 1;
         }
       }
     }
@@ -94,7 +102,8 @@ export class Mask {
   }
 
   /**
-   * Given we are at instruction `i`, how many bytes should be skipped.
+   * Given we are at instruction `i`, how many bytes should be skipped to
+   * reach the next instruction (i.e. `skip(i) + 1` from the GP).
    *
    * NOTE: we don't guarantee that `isInstruction()` will return true
    * for the new program counter, since `skip` function is bounded by
