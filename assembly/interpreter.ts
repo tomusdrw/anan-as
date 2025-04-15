@@ -236,4 +236,4 @@ function dJump(jumpTable: JumpTable, address: u32): DjumpResult {
   return r;
 }
 
-const MAX_U32: u64 = 2**32;
+const MAX_U32: u64 = 2 ** 32;

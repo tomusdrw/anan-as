@@ -2,7 +2,7 @@ import { RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
-import { Access, PAGE_SIZE } from "./memory-page";
+import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
 import { Program, deblob, decodeArguments, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
@@ -162,9 +162,15 @@ export function getOutputChunks(memory: Memory): InitialChunk[] {
 }
 
 export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks: InitialChunk[]): Memory {
+  let sbrkIndex = RESERVED_MEMORY;
+
   for (let i = 0; i < pages.length; i++) {
     const initPage = pages[i];
     builder.setData(initPage.access, initPage.address, new Uint8Array(initPage.length));
+    // find the highest writeable page and set the sbrk index there.
+    if (initPage.access === Access.Write) {
+      sbrkIndex = initPage.address < sbrkIndex ? sbrkIndex : initPage.address;
+    }
   }
 
   for (let i = 0; i < chunks.length; i++) {
@@ -177,5 +183,5 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
     builder.setData(Access.None, initChunk.address, data);
   }
 
-  return builder.build(0);
+  return builder.build(sbrkIndex);
 }
