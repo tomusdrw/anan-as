@@ -3,7 +3,7 @@ import { RUN } from "./instructions-exe";
 import { jump_ind } from "./instructions/jump";
 import { trap } from "./instructions/misc";
 import { InstructionRun } from "./instructions/outcome";
-import { BasicBlocks, Mask, deblob, decodeArguments } from "./program";
+import { BasicBlocks, JumpTable, Mask, deblob, decodeArguments } from "./program";
 import { Assert, Test, test } from "./test";
 
 export function u8arr(data: number[]): Uint8Array {
@@ -37,7 +37,7 @@ export const TESTS: Test[] = [
     assert.isArrayEqual<u32>(
       mask.bytesToSkip.slice(),
       [
-        0, 24, 24, 24, 24, 24, 24, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
+        0, 25, 25, 25, 25, 25, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
         1, 0,
       ],
     );
@@ -130,6 +130,22 @@ export const TESTS: Test[] = [
       "Mask[0, 25, 25, 25, 25, 25, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ]",
     );
     assert.isEqual(basicBlocks.toString(), "BasicBlocks[0 -> startend, 26 -> start, 31 -> end, ]");
+    return assert;
+  }),
+  test("should parse jump table with large numbers", () => {
+    const jumpTable = new JumpTable(
+      10,
+      u8arr([
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  
+        0, 0, 0, 0, 2, 0, 2, 2, 2, 0,  
+      ]),
+    );
+    const assert = new Assert();
+    assert.isEqual(
+      jumpTable.toString(),
+      "JumpTable[0 -> 18446744073709551615, 1 -> 18446744073709551615, 2 -> 18446744073709551615, ]"
+    );
     return assert;
   }),
 ];

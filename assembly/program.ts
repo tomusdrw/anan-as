@@ -191,8 +191,12 @@ export class JumpTable {
     for (let i = 0; i < data.length; i += itemBytes) {
       let num: u64 = 0;
       for (let j: i32 = itemBytes - 1; j >= 0; j--) {
-        num = num << 8;
-        num += data[i + j];
+        let nextNum: u64 = num << 8;
+        let isOverflow = nextNum < num;
+        nextNum = nextNum + u64(data[i + j]);
+        isOverflow = isOverflow || nextNum < num;
+        // handle overflow
+        num = isOverflow ? u64.MAX_VALUE: nextNum;
       }
       jumps[i / itemBytes] = num;
     }
