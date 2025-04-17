@@ -4,7 +4,7 @@ import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions/outcome";
 import { reg } from "./instructions/utils";
 import { Memory, MemoryBuilder } from "./memory";
-import { PAGE_SIZE, PAGE_SIZE_SHIFT } from "./memory-page";
+import { PAGE_SIZE, PAGE_SIZE_SHIFT, RESERVED_MEMORY } from "./memory-page";
 import { BasicBlocks, JumpTable, Program, ProgramCounter, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
@@ -147,16 +147,15 @@ export class Interpreter {
           this.nextPc = this.pc + 1 + skipBytes;
           return false;
         }
-        if (outcome.result === Result.FAULT) {
+        if (outcome.result === Result.FAULT || outcome.result === Result.FAULT_ACCESS) {
           this.gas.sub(1);
-          this.status = Status.FAULT;
-          this.exitCode = outcome.exitCode;
-          return false;
-        }
-        if (outcome.result === Result.FAULT_ACCESS) {
-          this.gas.sub(1);
-          this.status = Status.PANIC;
-          // this.exitCode = outcome.exitCode;
+          // access to reserved memory should end with a panic.
+          if (outcome.exitCode < RESERVED_MEMORY) {
+            this.status = Status.PANIC;
+          } else {
+            this.status = Status.FAULT;
+            this.exitCode = outcome.exitCode;
+          }
           return false;
         }
         if (outcome.result === Result.PANIC) {
