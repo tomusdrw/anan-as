@@ -349,14 +349,15 @@ export class Memory {
   private getPage(access: Access, address: u32): PageData {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
     const relAddress = address % PAGE_SIZE;
+    const pageStart = pageIdx << PAGE_SIZE_SHIFT
 
     if (!this.pages.has(pageIdx)) {
-      return new PageData(fault(pageIdx << PAGE_SIZE_SHIFT), EMPTY_PAGE, relAddress);
+      return new PageData(fault(pageStart), EMPTY_PAGE, relAddress);
     }
 
     const page = this.pages.get(pageIdx);
     if (!page.can(access)) {
-      const f = fault(pageIdx << PAGE_SIZE_SHIFT);
+      const f = fault(pageStart);
       f.isAccess = true;
       return new PageData(f, EMPTY_PAGE, relAddress);
     }
@@ -391,13 +392,14 @@ export class Memory {
     }
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
+    const secondPageStart = secondPageIdx << PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
-      return new Chunks(fault(secondPageIdx << PAGE_SIZE_SHIFT));
+      return new Chunks(fault(secondPageStart));
     }
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
     if (!page.can(access)) {
-      const f = fault(secondPageIdx << PAGE_SIZE_SHIFT);
+      const f = fault(secondPageStart);
       f.isAccess = true;
       return new Chunks(f);
     }
