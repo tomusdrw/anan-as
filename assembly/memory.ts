@@ -398,7 +398,7 @@ export class Memory {
     }
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
-    if (!page.can(access)) {
+    if (!secondPage.can(access)) {
       const f = fault(secondPageStart);
       f.isAccess = true;
       return new Chunks(f);
