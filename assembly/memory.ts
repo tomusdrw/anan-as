@@ -349,7 +349,7 @@ export class Memory {
   private getPage(access: Access, address: u32): PageData {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
     const relAddress = address % PAGE_SIZE;
-    const pageStart = pageIdx << PAGE_SIZE_SHIFT
+    const pageStart = pageIdx << PAGE_SIZE_SHIFT;
 
     if (!this.pages.has(pageIdx)) {
       return new PageData(fault(pageStart), EMPTY_PAGE, relAddress);
