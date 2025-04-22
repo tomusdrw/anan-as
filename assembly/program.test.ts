@@ -147,5 +147,9 @@ export const TESTS: Test[] = [
 ];
 
 function opcode(search: InstructionRun): number {
-  return RUN.indexOf(search);
+  const idx = RUN.indexOf(search);
+  if (idx < 0) {
+    throw new Error(`Opcode not found in RUN table for instruction`);
+  }
+  return idx;
 }
