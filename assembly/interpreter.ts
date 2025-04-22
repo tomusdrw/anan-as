@@ -4,8 +4,8 @@ import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions/outcome";
 import { reg } from "./instructions/utils";
 import { Memory, MemoryBuilder } from "./memory";
-import { PAGE_SIZE, PAGE_SIZE_SHIFT } from "./memory-page";
-import { BasicBlocks, JumpTable, Program, decodeArguments } from "./program";
+import { PAGE_SIZE, PAGE_SIZE_SHIFT, RESERVED_MEMORY } from "./memory-page";
+import { BasicBlocks, JumpTable, Program, ProgramCounter, decodeArguments } from "./program";
 import { Registers } from "./registers";
 
 export enum Status {
@@ -93,7 +93,7 @@ export class Interpreter {
     }
 
     // get args and invoke instruction
-    const skipBytes = this.program.mask.bytesToNextInstruction(pc);
+    const skipBytes = this.program.mask.skipBytesToNextInstruction(pc);
     const args = decodeArguments(iData.kind, this.program.code.subarray(pc + 1), skipBytes);
 
     // additional gas cost of sbrk
@@ -149,8 +149,13 @@ export class Interpreter {
         }
         if (outcome.result === Result.FAULT) {
           this.gas.sub(1);
-          this.status = Status.FAULT;
-          this.exitCode = outcome.exitCode;
+          // access to reserved memory should end with a panic.
+          if (outcome.exitCode < RESERVED_MEMORY) {
+            this.status = Status.PANIC;
+          } else {
+            this.status = Status.FAULT;
+            this.exitCode = outcome.exitCode;
+          }
           return false;
         }
         if (outcome.result === Result.FAULT_ACCESS) {
@@ -203,7 +208,7 @@ enum DjumpStatus {
 // @unmanaged
 class DjumpResult {
   status: DjumpStatus = DjumpStatus.OK;
-  newPc: u32 = 0;
+  newPc: ProgramCounter = 0;
 }
 
 const EXIT = 0xff_ff_00_00;
@@ -226,6 +231,14 @@ function dJump(jumpTable: JumpTable, address: u32): DjumpResult {
     return r;
   }
 
-  r.newPc = jumpTable.jumps[index];
+  const newPc: u64 = jumpTable.jumps[index];
+  if (newPc >= MAX_U32) {
+    r.status = DjumpStatus.PANIC;
+    return r;
+  }
+
+  r.newPc = u32(newPc);
   return r;
 }
+
+const MAX_U32: u64 = 2 ** 32;

@@ -2,8 +2,8 @@ import { RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
-import { Access, PAGE_SIZE } from "./memory-page";
-import { Program, decodeArguments, decodeProgram, liftBytes, resolveArguments } from "./program";
+import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
+import { Program, deblob, decodeArguments, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
 export class InitialPage {
@@ -54,7 +54,7 @@ export function getAssembly(p: Program): string {
     v += changetype<string>(iData.namePtr);
     v += `(${instruction})`;
 
-    const skipBytes = p.mask.bytesToNextInstruction(i);
+    const skipBytes = p.mask.skipBytesToNextInstruction(i);
     const args = decodeArguments(iData.kind, p.code.subarray(i + 1), skipBytes);
     const argsArray = [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
@@ -67,7 +67,7 @@ export function getAssembly(p: Program): string {
 }
 
 export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  const p = decodeProgram(liftBytes(input.program));
+  const p = deblob(liftBytes(input.program));
 
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
   for (let r = 0; r < registers.length; r++) {
@@ -97,7 +97,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-      const skipBytes = p.mask.bytesToNextInstruction(int.pc);
+      const skipBytes = p.mask.skipBytesToNextInstruction(int.pc);
       const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
       const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);
@@ -162,9 +162,15 @@ export function getOutputChunks(memory: Memory): InitialChunk[] {
 }
 
 export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks: InitialChunk[]): Memory {
+  let sbrkIndex = RESERVED_MEMORY;
+
   for (let i = 0; i < pages.length; i++) {
     const initPage = pages[i];
     builder.setData(initPage.access, initPage.address, new Uint8Array(initPage.length));
+    // find the highest writeable page and set the sbrk index there.
+    if (initPage.access === Access.Write) {
+      sbrkIndex = initPage.address < sbrkIndex ? sbrkIndex : initPage.address;
+    }
   }
 
   for (let i = 0; i < chunks.length; i++) {
@@ -177,5 +183,5 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
     builder.setData(Access.None, initChunk.address, data);
   }
 
-  return builder.build(0);
+  return builder.build(sbrkIndex);
 }

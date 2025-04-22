@@ -6,6 +6,8 @@ import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
 
+const MAX_SKIP: u32 = 24;
+
 export function decodeSpi(data: Uint8Array): Program {
   const decoder = new Decoder(data);
 
@@ -21,7 +23,7 @@ export function decodeSpi(data: Uint8Array): Program {
   const code = decoder.bytes(codeLength);
   decoder.finish();
 
-  return decodeProgram(code);
+  return deblob(code);
 }
 
 export function liftBytes(data: u8[]): Uint8Array {
@@ -38,7 +40,7 @@ export function lowerBytes(data: Uint8Array): u8[] {
   return r;
 }
 
-export function decodeProgram(program: Uint8Array): Program {
+export function deblob(program: Uint8Array): Program {
   const decoder = new Decoder(program);
 
   // number of items in the jump table
@@ -63,7 +65,13 @@ export function decodeProgram(program: Uint8Array): Program {
 }
 
 export class Mask {
-  // NOTE: might be longer than code (bit-alignment)
+  /**
+   * NOTE: might be longer than code (bit-alignment).
+   * In this array we keep `skip(n) + 1` from the Gray Paper
+   * for non-instruction bytes.
+   * In case the in-code mask says there is an instruction at that location
+   * we store `0` here.
+   */
   readonly bytesToSkip: StaticArray<u32>;
 
   constructor(packedMask: Uint8Array, codeLength: i32) {
@@ -77,21 +85,29 @@ export class Mask {
         bits = bits << 1;
         if (index + b < codeLength) {
           lastInstructionOffset = isSet ? 0 : lastInstructionOffset + 1;
-          this.bytesToSkip[index + b] = lastInstructionOffset;
+          this.bytesToSkip[index + b] = lastInstructionOffset < MAX_SKIP + 1 ? lastInstructionOffset : MAX_SKIP + 1;
         }
       }
     }
   }
 
   isInstruction(index: ProgramCounter): boolean {
-    if (index >= <u32>this.bytesToSkip.length) {
+    if (index >= <u64>this.bytesToSkip.length) {
       return false;
     }
 
-    return this.bytesToSkip[index] === 0;
+    return this.bytesToSkip[u32(index)] === 0;
   }
 
-  bytesToNextInstruction(i: u32): u32 {
+  /**
+   * Given we are at instruction `i`, how many bytes should be skipped to
+   * reach the next instruction (i.e. `skip(i) + 1` from the GP).
+   *
+   * NOTE: we don't guarantee that `isInstruction()` will return true
+   * for the new program counter, since `skip` function is bounded by
+   * an upper limit of `24` bytes.
+   */
+  skipBytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
       return this.bytesToSkip[i + 1];
     }
@@ -120,19 +136,27 @@ export class BasicBlocks {
   constructor(code: Uint8Array, mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
-    let inBlock = false;
-    for (let i: i32 = 0; i < len; i += 1) {
-      const skip = mask.bytesToSkip[i];
-      const isInstruction = skip === 0;
-      if (isInstruction && !inBlock) {
-        inBlock = true;
-        isStartOrEnd[i] += BasicBlock.START;
+    isStartOrEnd[0] = BasicBlock.START;
+    for (let n: i32 = 0; n < len; n += 1) {
+      // we only track end-blocks for instructions.
+      const isInstructionInMask = mask.isInstruction(n);
+      if (!isInstructionInMask) {
+        continue;
       }
-      // in case of start blocks, some of them might be both start & end;
-      const iData = code[i] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[i]];
-      if (isInstruction && inBlock && iData.isTerminating) {
-        inBlock = false;
-        isStartOrEnd[i] += BasicBlock.END;
+
+      const skipArgs = mask.skipBytesToNextInstruction(n);
+      const iData = code[n] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[n]];
+      const isTerminating = iData.isTerminating;
+
+      if (isTerminating) {
+        // skip is always 0?
+        const newBlockStart = n + 1 + skipArgs;
+        // mark the beginning of the next block
+        if (newBlockStart < len) {
+          isStartOrEnd[newBlockStart] = BasicBlock.START;
+        }
+        // and mark current instruction as terminating
+        isStartOrEnd[n] |= BasicBlock.END;
       }
     }
     this.isStartOrEnd = isStartOrEnd;
@@ -153,23 +177,29 @@ export class BasicBlocks {
       t += isStart ? "start" : "";
       const isEnd = (this.isStartOrEnd[i] & BasicBlock.END) > 0;
       t += isEnd ? "end" : "";
-      v += `${i} -> ${t}, `;
+      if (t.length > 0) {
+        v += `${i} -> ${t}, `;
+      }
     }
     return `${v}]`;
   }
 }
 
 export class JumpTable {
-  readonly jumps: StaticArray<ProgramCounter>;
+  readonly jumps: StaticArray<u64>;
 
   constructor(itemBytes: u8, data: Uint8Array) {
-    const jumps = new StaticArray<ProgramCounter>(itemBytes > 0 ? data.length / itemBytes : 0);
+    const jumps = new StaticArray<u64>(itemBytes > 0 ? data.length / itemBytes : 0);
 
     for (let i = 0; i < data.length; i += itemBytes) {
-      let num = 0;
+      let num: u64 = 0;
       for (let j: i32 = itemBytes - 1; j >= 0; j--) {
-        num = num << 8;
-        num += data[i + j];
+        let nextNum: u64 = num << 8;
+        let isOverflow = nextNum < num;
+        nextNum = nextNum + u64(data[i + j]);
+        isOverflow = isOverflow || nextNum < num;
+        // handle overflow
+        num = isOverflow ? u64.MAX_VALUE : nextNum;
       }
       jumps[i / itemBytes] = num;
     }

@@ -1,5 +1,5 @@
 import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
-import { decodeProgram, decodeSpi, liftBytes } from "./program";
+import { deblob, decodeSpi, liftBytes } from "./program";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
@@ -13,7 +13,7 @@ export enum InputKind {
 export function disassemble(input: u8[], kind: InputKind): string {
   const program = liftBytes(input);
   if (kind === InputKind.Generic) {
-    const p = decodeProgram(program);
+    const p = deblob(program);
     return getAssembly(p);
   }
 

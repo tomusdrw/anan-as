@@ -16,7 +16,7 @@ export const TESTS: Test[] = [
     const regs = newRegisters();
     regs[reg(args.a)] = 0xdead_beef;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = rot_r_64_imm(args, regs, memo);
@@ -36,7 +36,7 @@ export const TESTS: Test[] = [
     const regs = newRegisters();
     regs[reg(args.a)] = 0x8;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = rot_r_64_imm_alt(args, regs, memo);
@@ -57,7 +57,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = 0x8;
     regs[reg(args.b)] = 0xdead_beef;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = rot_l_64(args, regs, memo);
@@ -78,7 +78,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = 0x8;
     regs[reg(args.b)] = 0xdead_beef;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = rot_l_32(args, regs, memo);

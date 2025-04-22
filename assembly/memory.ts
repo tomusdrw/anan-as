@@ -1,5 +1,15 @@
 import { u8SignExtend, u16SignExtend, u32SignExtend } from "./instructions/utils";
-import { Access, Arena, PAGE_SIZE, PAGE_SIZE_SHIFT, Page, PageIndex } from "./memory-page";
+import {
+  Access,
+  Arena,
+  PAGE_SIZE,
+  PAGE_SIZE_SHIFT,
+  Page,
+  PageIndex,
+  RESERVED_MEMORY,
+  RESERVED_PAGES,
+  RawPage,
+} from "./memory-page";
 
 // @unmanaged
 export class MaybePageFault {
@@ -13,6 +23,8 @@ export class Result {
   ok: u64 = 0;
   fault: MaybePageFault = new MaybePageFault();
 }
+
+const NO_PAGE_FAULT = new MaybePageFault();
 
 class Chunks {
   constructor(
@@ -29,19 +41,32 @@ class ChunkBytes {
   ) {}
 }
 
+class PageData {
+  constructor(
+    public readonly fault: MaybePageFault,
+    public readonly page: Page,
+    public readonly relativeAddress: u32,
+  ) {}
+}
+
 const MEMORY_SIZE = 0x1_0000_0000;
 
 const EMPTY_UINT8ARRAY = new Uint8Array(0);
+const EMPTY_PAGE = new Page(Access.None, new RawPage(-1, null));
 
 export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
   private arena: Arena = new Arena(128);
 
-  setData(access: Access, address: u32, data: Uint8Array): void {
+  setData(access: Access, address: u32, data: Uint8Array): MemoryBuilder {
     let currentAddress = address;
     let currentData = data;
     while (currentData.length > 0) {
       const pageIdx = u32(currentAddress >> PAGE_SIZE_SHIFT);
+      if (pageIdx < RESERVED_PAGES) {
+        throw new Error(`Attempting to allocate reserved page: ${pageIdx}`);
+      }
+
       if (!this.pages.has(pageIdx)) {
         const page = this.arena.acquire();
         this.pages.set(pageIdx, new Page(access, page));
@@ -49,28 +74,37 @@ export class MemoryBuilder {
 
       const relAddress = currentAddress % PAGE_SIZE;
       const page = this.pages.get(pageIdx);
+      const spaceInPage = PAGE_SIZE - relAddress;
 
-      const end = u32(currentData.length) < PAGE_SIZE ? currentData.length : PAGE_SIZE;
+      const end = u32(currentData.length) < spaceInPage ? currentData.length : spaceInPage;
       page.raw.data.set(currentData.subarray(0, end), relAddress);
 
       // move to the next address to write
-      currentAddress = currentAddress + (end - currentAddress);
+      currentAddress = currentAddress + end;
       currentData = currentData.subarray(end);
     }
+    return this;
   }
 
-  build(sbrkAddress: u32): Memory {
+  build(sbrkAddress: u32 = RESERVED_MEMORY): Memory {
     return new Memory(this.arena, this.pages, sbrkAddress);
   }
 }
 
 export class Memory {
+  private lastAllocatedPage: i32;
+
   constructor(
     private readonly arena: Arena,
     public readonly pages: Map<PageIndex, Page> = new Map(),
     private sbrkAddress: u32 = 0,
-    private lastAllocatedPage: i32 = -1,
-  ) {}
+  ) {
+    const sbrkPage = u32(sbrkAddress >> PAGE_SIZE_SHIFT);
+    if (sbrkPage < RESERVED_PAGES) {
+      throw new Error("sbrk within reserved memory is not allowed!");
+    }
+    this.lastAllocatedPage = pages.has(sbrkPage) ? sbrkPage : sbrkPage - 1;
+  }
 
   pageDump(index: PageIndex): Uint8Array | null {
     if (!this.pages.has(index)) {
@@ -269,45 +303,113 @@ export class Memory {
     return res.fault;
   }
 
-  private getChunks(access: Access, address: u32, bytes: u8): Chunks {
+  bytesRead(address: u32, destination: Uint8Array): MaybePageFault {
+    let nextAddress = address;
+    let destinationIndex = 0;
+
+    while (destinationIndex < destination.length) {
+      const bytesLeft = destination.length - destinationIndex;
+      const pageData = this.getPage(Access.Read, nextAddress);
+      if (pageData.fault.isFault) {
+        return pageData.fault;
+      }
+      const relAddress = pageData.relativeAddress;
+      const bytesToRead = relAddress + bytesLeft < PAGE_SIZE ? bytesLeft : PAGE_SIZE - pageData.relativeAddress;
+      // actually copy the bytes
+      const source = pageData.page.raw.data.subarray(relAddress, relAddress + bytesToRead);
+      destination.set(source, destinationIndex);
+      // move the pointers
+      destinationIndex += bytesToRead;
+      nextAddress += bytesToRead;
+    }
+
+    return NO_PAGE_FAULT;
+  }
+
+  bytesWrite(address: u32, source: Uint8Array): MaybePageFault {
+    let nextAddress = address;
+    let sourceIndex = 0;
+
+    while (sourceIndex < source.length) {
+      const bytesLeft = source.length - sourceIndex;
+      const pageData = this.getPage(Access.Write, nextAddress);
+      if (pageData.fault.isFault) {
+        return pageData.fault;
+      }
+      const relAddress = pageData.relativeAddress;
+      const bytesToWrite = relAddress + bytesLeft < PAGE_SIZE ? bytesLeft : PAGE_SIZE - pageData.relativeAddress;
+      // actually copy the bytes
+      const sourceData = source.subarray(sourceIndex, sourceIndex + bytesToWrite);
+      pageData.page.raw.data.set(sourceData, relAddress);
+      // move the pointers
+      sourceIndex += bytesToWrite;
+      nextAddress += bytesToWrite;
+    }
+
+    return NO_PAGE_FAULT;
+  }
+
+  private getPage(access: Access, address: u32): PageData {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
+    const relAddress = address % PAGE_SIZE;
+    const pageStart = pageIdx << PAGE_SIZE_SHIFT;
 
     if (!this.pages.has(pageIdx)) {
-      return fault(pageIdx << PAGE_SIZE_SHIFT);
+      return new PageData(fault(pageStart), EMPTY_PAGE, relAddress);
     }
 
     const page = this.pages.get(pageIdx);
     if (!page.can(access)) {
-      const f = fault(pageIdx << PAGE_SIZE_SHIFT);
-      f.fault.isAccess = true;
-      return f;
+      const f = fault(pageStart);
+      f.isAccess = true;
+      return new PageData(f, EMPTY_PAGE, relAddress);
     }
 
-    const relativeAddress = address % PAGE_SIZE;
+    return new PageData(NO_PAGE_FAULT, page, relAddress);
+  }
+
+  private getChunks(access: Access, address: u32, bytes: u8): Chunks {
+    /**
+     * Accessing empty set of bytes is always valid.
+     * https://graypaper.fluffylabs.dev/#/68eaa1f/24a80024a800?v=0.6.4
+     */
+    if (bytes === 0) {
+      return new Chunks(NO_PAGE_FAULT);
+    }
+
+    const pageData = this.getPage(access, address);
+    if (pageData.fault.isFault) {
+      return new Chunks(pageData.fault);
+    }
+
+    const page = pageData.page;
+    const relativeAddress = pageData.relativeAddress;
+
     const endAddress = relativeAddress + u32(bytes);
     const needSecondPage = endAddress > PAGE_SIZE;
 
     // everything is on one page - easy case
     if (!needSecondPage) {
       const first = page.raw.data.subarray(relativeAddress, endAddress);
-      return new Chunks(new MaybePageFault(), first);
+      return new Chunks(NO_PAGE_FAULT, first);
     }
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
+    const secondPageStart = secondPageIdx << PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
-      return fault(secondPageIdx << PAGE_SIZE_SHIFT);
+      return new Chunks(fault(secondPageStart));
     }
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
-    if (!page.can(access)) {
-      const f = fault(secondPageIdx << PAGE_SIZE_SHIFT);
-      f.fault.isAccess = true;
-      return f;
+    if (!secondPage.can(access)) {
+      const f = fault(secondPageStart);
+      f.isAccess = true;
+      return new Chunks(f);
     }
 
     const firstChunk = page.raw.data.subarray(relativeAddress);
     const secondChunk = secondPage.raw.data.subarray(0, relativeAddress + u32(bytes) - PAGE_SIZE);
-    return new Chunks(new MaybePageFault(), firstChunk, secondChunk);
+    return new Chunks(NO_PAGE_FAULT, firstChunk, secondChunk);
   }
 
   private getBytes(access: Access, address: u32, bytes: u8): ChunkBytes {
@@ -332,9 +434,9 @@ function getBytes(bytes: u8, first: Uint8Array, second: Uint8Array): StaticArray
   return res;
 }
 
-function fault(address: u32): Chunks {
+function fault(address: u32): MaybePageFault {
   const r = new MaybePageFault();
   r.isFault = true;
   r.fault = address;
-  return new Chunks(r);
+  return r;
 }

@@ -14,7 +14,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = -(2 ** 63);
     regs[reg(args.b)] = 2;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = math.max(args, regs, memo);
@@ -32,7 +32,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = -(2 ** 63);
     regs[reg(args.b)] = 2;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = math.max_u(args, regs, memo);
@@ -50,7 +50,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = -(2 ** 63);
     regs[reg(args.b)] = 2;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = math.min(args, regs, memo);
@@ -68,7 +68,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = -(2 ** 63);
     regs[reg(args.b)] = 2;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = math.min_u(args, regs, memo);
@@ -86,7 +86,7 @@ export const TESTS: Test[] = [
     regs[reg(args.a)] = 2 ** 64 - 1;
     regs[reg(args.b)] = 2 ** 64 - 1;
 
-    const memo = new MemoryBuilder().build(0);
+    const memo = new MemoryBuilder().build();
 
     // when
     const ret = math.add_32(args, regs, memo);
