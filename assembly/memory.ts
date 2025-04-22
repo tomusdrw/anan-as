@@ -24,6 +24,8 @@ export class Result {
   fault: MaybePageFault = new MaybePageFault();
 }
 
+const NO_PAGE_FAULT = new MaybePageFault();
+
 class Chunks {
   constructor(
     public readonly fault: MaybePageFault,
@@ -72,8 +74,9 @@ export class MemoryBuilder {
 
       const relAddress = currentAddress % PAGE_SIZE;
       const page = this.pages.get(pageIdx);
+      const spaceInPage = PAGE_SIZE - relAddress;
 
-      const end = u32(currentData.length) < PAGE_SIZE ? currentData.length : PAGE_SIZE;
+      const end = u32(currentData.length) < spaceInPage ? currentData.length : spaceInPage;
       page.raw.data.set(currentData.subarray(0, end), relAddress);
 
       // move to the next address to write
@@ -320,7 +323,7 @@ export class Memory {
       nextAddress += bytesToRead;
     }
 
-    return new MaybePageFault();
+    return NO_PAGE_FAULT;
   }
 
   bytesWrite(address: u32, source: Uint8Array): MaybePageFault {
@@ -343,7 +346,7 @@ export class Memory {
       nextAddress += bytesToWrite;
     }
 
-    return new MaybePageFault();
+    return NO_PAGE_FAULT;
   }
 
   private getPage(access: Access, address: u32): PageData {
@@ -362,7 +365,7 @@ export class Memory {
       return new PageData(f, EMPTY_PAGE, relAddress);
     }
 
-    return new PageData(new MaybePageFault(), page, relAddress);
+    return new PageData(NO_PAGE_FAULT, page, relAddress);
   }
 
   private getChunks(access: Access, address: u32, bytes: u8): Chunks {
@@ -371,7 +374,7 @@ export class Memory {
      * https://graypaper.fluffylabs.dev/#/68eaa1f/24a80024a800?v=0.6.4
      */
     if (bytes === 0) {
-      return new Chunks(new MaybePageFault());
+      return new Chunks(NO_PAGE_FAULT);
     }
 
     const pageData = this.getPage(access, address);
@@ -388,7 +391,7 @@ export class Memory {
     // everything is on one page - easy case
     if (!needSecondPage) {
       const first = page.raw.data.subarray(relativeAddress, endAddress);
-      return new Chunks(new MaybePageFault(), first);
+      return new Chunks(NO_PAGE_FAULT, first);
     }
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
@@ -406,7 +409,7 @@ export class Memory {
 
     const firstChunk = page.raw.data.subarray(relativeAddress);
     const secondChunk = secondPage.raw.data.subarray(0, relativeAddress + u32(bytes) - PAGE_SIZE);
-    return new Chunks(new MaybePageFault(), firstChunk, secondChunk);
+    return new Chunks(NO_PAGE_FAULT, firstChunk, secondChunk);
   }
 
   private getBytes(access: Access, address: u32, bytes: u8): ChunkBytes {

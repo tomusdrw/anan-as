@@ -231,7 +231,7 @@ function dJump(jumpTable: JumpTable, address: u32): DjumpResult {
     return r;
   }
 
-  const newPc = jumpTable.jumps[index];
+  const newPc: u64 = jumpTable.jumps[index];
   if (newPc >= MAX_U32) {
     r.status = DjumpStatus.PANIC;
     return r;

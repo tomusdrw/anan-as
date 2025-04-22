@@ -37,8 +37,8 @@ function run(tests: Test[], file: string): u64 {
       console.log(`  <<< ${tests[i].name} ✅`);
       ok += 1;
     } else {
-      for (let i = 0; i < res.errors.length; i++) {
-        console.log(`    ${res.errors[i]}`);
+      for (let j = 0; j < res.errors.length; j++) {
+        console.log(`    ${res.errors[j]}`);
       }
       console.log(`  <<< ${tests[i].name} 🔴`);
     }
