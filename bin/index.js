@@ -5,7 +5,7 @@ import {readFileSync, readdirSync} from 'node:fs';
 import {resolve, join} from 'node:path';
 import * as assert from 'node:assert';
 
-import { runVm, InputKind, disassemble } from "../build/release.js";
+import { runVm, InputKind, disassemble, HasMetadata } from "../build/release.js";
 
 const OK = '🟢';
 const ERR = '🔴';
