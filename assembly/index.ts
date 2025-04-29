@@ -1,5 +1,5 @@
 import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
-import { deblob, decodeSpi, liftBytes } from "./program";
+import { deblob, decodeSpi, extractCodeAndMetadata, liftBytes } from "./program";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
@@ -10,16 +10,32 @@ export enum InputKind {
   SPI = 1,
 }
 
-export function disassemble(input: u8[], kind: InputKind): string {
-  const program = liftBytes(input);
+export enum HasMetadata {
+  Yes = 0,
+  No = 1,
+}
+
+export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata): string {
+  let program = liftBytes(input);
+  let output = "";
+
+  if (withMetadata === HasMetadata.Yes) {
+    const data = extractCodeAndMetadata(program);
+    program = data.code;
+    output = "Metadata: \n";
+    output += "0x";
+    output += data.metadata.reduce((acc, x) => acc + x.toString(16).padStart(2, "0"), "");
+    output += "\n\n";
+  }
+
   if (kind === InputKind.Generic) {
     const p = deblob(program);
-    return getAssembly(p);
+    return output + getAssembly(p);
   }
 
   if (kind === InputKind.SPI) {
     const p = decodeSpi(program);
-    return getAssembly(p);
+    return output + getAssembly(p);
   }
 
   return `Unknown kind: ${kind}`;

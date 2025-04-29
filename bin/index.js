@@ -155,7 +155,7 @@ function processJson(data, options) {
   };
 
   if (options.isDebug) {
-    const assembly = disassemble(input.program, InputKind.Generic);
+    const assembly = disassemble(input.program, InputKind.Generic, HasMetadata.No);
     console.info('===========');
     console.info(assembly);
       console.info('\n^^^^^^^^^^^\n');

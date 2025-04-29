@@ -8,6 +8,21 @@ export type ProgramCounter = u32;
 
 const MAX_SKIP: u32 = 24;
 
+export class CodeAndMetadata {
+  constructor(
+    readonly code: Uint8Array,
+    readonly metadata: Uint8Array,
+  ) {}
+}
+
+export function extractCodeAndMetadata(data: Uint8Array): CodeAndMetadata {
+  const decoder = new Decoder(data);
+  const metadataLength = decoder.varU32();
+  const metadata = decoder.bytes(metadataLength);
+  const code = decoder.remainingBytes();
+  return new CodeAndMetadata(code, metadata);
+}
+
 export function decodeSpi(data: Uint8Array): Program {
   const decoder = new Decoder(data);
 
@@ -21,6 +36,7 @@ export function decodeSpi(data: Uint8Array): Program {
 
   const codeLength = decoder.u32();
   const code = decoder.bytes(codeLength);
+  const _arguments = decoder.remainingBytes();
   decoder.finish();
 
   return deblob(code);
