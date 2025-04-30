@@ -3,7 +3,7 @@
 <head>
 <link type="text/css" rel="stylesheet" href="./styles.css" />
 <script type="module" defer>
-import { disassemble, runProgram, InputKind } from "./build/release.js";
+import { disassemble, runProgram, InputKind, HasMetadata } from "./build/release.js";
 const $upload = document.querySelector('#upload');
 const $code = document.querySelector('#code');
 const $regs = document.querySelector('#registers');
@@ -12,6 +12,7 @@ const $run = document.querySelector('#run');
 const $dis = document.querySelector('#disassemble');
 const $out = document.querySelector('#output');
 const $spi = document.querySelector('#spi');
+const $meta = document.querySelector('#metadata');
 
 $file.addEventListener('change', (ev) => {
   if (!ev.target?.files?.length) {
@@ -83,7 +84,11 @@ function execute(shouldRun = false) {
     }
   };
   const isSpi = $spi.checked;
+  const hasMeta = $meta.checked;
+
   const kind = isSpi ? InputKind.SPI : InputKind.Generic;
+  const hasMetadata = hasMeta ? HasMetadata.Yes : HasMetadata.No;
+
   let program;
   try {
     program = parseCode($code.value);
@@ -104,7 +109,7 @@ function execute(shouldRun = false) {
   }
 
   try {
-    const asm = disassemble(program, kind);
+    const asm = disassemble(program, kind, hasMetadata);
     $out.innerHTML = asm;
   } catch (e) {
     console.error(e);
@@ -141,6 +146,9 @@ function execute(shouldRun = false) {
   </p>
   <label>
     <input type="checkbox" id="spi"> JAM SPI
+  </label>
+  <label>
+    <input type="checkbox" id="metadata"> Has Metadata
   </label>
   <textarea id="code" rows="10">[0,0,33,51,8,1,51,9,1,40,3,0,149,119,255,81,7,12,100,138,200,152,8,100,169,40,243,100,135,51,8,51,9,1,50,0,73,147,82,213,0]</textarea>
   <details>

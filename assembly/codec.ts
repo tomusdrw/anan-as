@@ -79,6 +79,13 @@ export class Decoder {
     this.offset += len;
     return v;
   }
+
+  /** Read remaining bytes into Uint8Array */
+  remainingBytes(): Uint8Array {
+    const v = this.source.subarray(this.offset);
+    this.offset += v.length;
+    return v;
+  }
 }
 
 // @unmanaged

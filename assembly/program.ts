@@ -8,6 +8,23 @@ export type ProgramCounter = u32;
 
 const MAX_SKIP: u32 = 24;
 
+export class CodeAndMetadata {
+  constructor(
+    readonly code: Uint8Array,
+    readonly metadata: Uint8Array,
+  ) {}
+}
+
+/** https://graypaper.fluffylabs.dev/#/cc17d7/109a01109a01?v=0.6.5 */
+export function extractCodeAndMetadata(data: Uint8Array): CodeAndMetadata {
+  const decoder = new Decoder(data);
+  const metadataLength = decoder.varU32();
+  const metadata = decoder.bytes(metadataLength);
+  const code = decoder.remainingBytes();
+  return new CodeAndMetadata(code, metadata);
+}
+
+/** https://graypaper.fluffylabs.dev/#/cc17d7/2bc1022bc102?v=0.6.5 */
 export function decodeSpi(data: Uint8Array): Program {
   const decoder = new Decoder(data);
 
@@ -21,6 +38,7 @@ export function decodeSpi(data: Uint8Array): Program {
 
   const codeLength = decoder.u32();
   const code = decoder.bytes(codeLength);
+  const _arguments = decoder.remainingBytes();
   decoder.finish();
 
   return deblob(code);
@@ -40,6 +58,7 @@ export function lowerBytes(data: Uint8Array): u8[] {
   return r;
 }
 
+/** https://graypaper.fluffylabs.dev/#/cc517d7/234f01234f01?v=0.6.5 */
 export function deblob(program: Uint8Array): Program {
   const decoder = new Decoder(program);
 
@@ -64,6 +83,9 @@ export function deblob(program: Uint8Array): Program {
   return new Program(rawCode, mask, jumpTable, basicBlocks);
 }
 
+/**
+ * https://graypaper.fluffylabs.dev/#/cc517d7/236e01236e01?v=0.6.5
+ */
 export class Mask {
   /**
    * NOTE: might be longer than code (bit-alignment).
@@ -130,6 +152,9 @@ export enum BasicBlock {
   END = 4,
 }
 
+/**
+ * https://graypaper.fluffylabs.dev/#/cc517d7/23fe0123fe01?v=0.6.5
+ */
 export class BasicBlocks {
   readonly isStartOrEnd: StaticArray<BasicBlock>;
 
