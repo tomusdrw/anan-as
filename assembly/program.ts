@@ -15,7 +15,7 @@ export class CodeAndMetadata {
   ) {}
 }
 
-/** https://graypaper.fluffylabs.dev/#/cc17d7/109a01109a01?v=0.6.5 */
+/** https://graypaper.fluffylabs.dev/#/cc517d7/109a01109a01?v=0.6.5 */
 export function extractCodeAndMetadata(data: Uint8Array): CodeAndMetadata {
   const decoder = new Decoder(data);
   const metadataLength = decoder.varU32();
@@ -24,7 +24,7 @@ export function extractCodeAndMetadata(data: Uint8Array): CodeAndMetadata {
   return new CodeAndMetadata(code, metadata);
 }
 
-/** https://graypaper.fluffylabs.dev/#/cc17d7/2bc1022bc102?v=0.6.5 */
+/** https://graypaper.fluffylabs.dev/#/9a08063/2cc5022cc502?v=0.6.6 */
 export function decodeSpi(data: Uint8Array): Program {
   const decoder = new Decoder(data);
 
@@ -38,7 +38,6 @@ export function decodeSpi(data: Uint8Array): Program {
 
   const codeLength = decoder.u32();
   const code = decoder.bytes(codeLength);
-  const _arguments = decoder.remainingBytes();
   decoder.finish();
 
   return deblob(code);
