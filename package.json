@@ -27,7 +27,7 @@
 	"description": "",
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@typeberry/pvm-debugger-adapter": "0.1.0-8456204",
+		"@typeberry/pvm-debugger-adapter": "0.1.0-9780926",
 		"assemblyscript": "^0.27.36"
 	},
 	"type": "module",
