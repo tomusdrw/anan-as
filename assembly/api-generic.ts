@@ -51,6 +51,7 @@ export function getAssembly(p: Program): string {
     const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
 
     v += "\n";
+    v += `${i}: `
     v += changetype<string>(iData.namePtr);
     v += `(${instruction})`;
 
