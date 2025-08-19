@@ -53,7 +53,8 @@ function parseRegisters(input) {
   return registers.map(x => BigInt(x));
 }
 
-function parseCode(code) {
+function parseCode(inCode) {
+  const code = inCode.trim();
   if (code.startsWith('0x')) {
     if (code.length % 2 !== 0) {
       throw new Error('uneven number of nibbles');
