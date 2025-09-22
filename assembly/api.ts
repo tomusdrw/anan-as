@@ -12,7 +12,7 @@ let interpreter: Interpreter | null = null;
 export function resetSpi(program: u8[], pc: number, gas: Gas): void {
   const p = decodeSpi(liftBytes(program), new Uint8Array(0));
   const int = new Interpreter(p, p.registers, p.memory);
-  int.pc = pc;
+  int.pc = <u32>pc;
   int.gas.set(gas);
 
   interpreter = int;

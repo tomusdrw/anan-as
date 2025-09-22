@@ -15,7 +15,12 @@ export enum HasMetadata {
   No = 1,
 }
 
-export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata): string {
+export enum HasArgs {
+  Yes = 0,
+  No = 1,
+}
+
+export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata, args: u8[] = []): string {
   let program = liftBytes(input);
   let output = "";
 
@@ -34,7 +39,7 @@ export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetad
   }
 
   if (kind === InputKind.SPI) {
-    const p = decodeSpi(program);
+    const p = decodeSpi(program, liftBytes(args));
     return output + getAssembly(p);
   }
 
