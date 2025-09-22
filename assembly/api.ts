@@ -4,10 +4,19 @@ import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
 import { MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
-import { deblob, liftBytes } from "./program";
+import { deblob, decodeSpi, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 
 let interpreter: Interpreter | null = null;
+
+export function resetSpi(program: u8[], pc: number, gas: Gas): void {
+  const p = decodeSpi(liftBytes(program), new Uint8Array(0));
+  const int = new Interpreter(p, p.registers, p.memory);
+  int.pc = pc;
+  int.gas.set(gas);
+
+  interpreter = int;
+}
 
 export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas): void {
   const p = deblob(liftBytes(program));
@@ -18,6 +27,7 @@ export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas
 
   interpreter = int;
 }
+
 export function resetGenericWithMemory(
   program: u8[],
   flatRegisters: u8[],
