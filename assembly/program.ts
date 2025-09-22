@@ -317,7 +317,7 @@ export class Program {
 }
 
 /**
- * Program with memory.
+ * SPI Program with memory and registers.
  *
  * https://graypaper.fluffylabs.dev/#/ab2cdbd/2d13002d1400?v=0.7.2
  */
