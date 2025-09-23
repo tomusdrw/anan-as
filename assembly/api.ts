@@ -16,7 +16,7 @@ export function resetSpi(program: u8[], pc: number, gas: Gas): void {
   int.gas.set(gas);
 
   if (interpreter !== null) {
-    interpreter.memory.free();
+    (<Interpreter>interpreter).memory.free();
   }
 
   interpreter = int;
@@ -30,7 +30,7 @@ export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas
   int.gas.set(initialGas);
 
   if (interpreter !== null) {
-    interpreter.memory.free();
+    (<Interpreter>interpreter).memory.free();
   }
 
   interpreter = int;
