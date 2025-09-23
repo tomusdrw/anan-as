@@ -323,7 +323,7 @@ export class Program {
  */
 export class StandardProgram extends Program {
   constructor(
-    public readonly program: Program,
+    program: Program,
     public readonly memory: Memory,
     public readonly registers: Registers,
   ) {
@@ -331,7 +331,7 @@ export class StandardProgram extends Program {
   }
 
   toString(): string {
-    return `StandardProgram { program: ${this.program}, memory_pages: ${this.memory.pages}, registers: ${this.registers} }`;
+    return `StandardProgram { code: ${this.code}, mask: ${this.mask}, jumpTable: ${this.jumpTable}, basicBlocks: ${this.basicBlocks} , memory_pages: ${this.memory.pages.size}, registers: ${this.registers} }`;
   }
 }
 
