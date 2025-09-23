@@ -42,7 +42,7 @@ $dis.addEventListener('click', () => {
 $run.click();
 
 function parseRegisters(input) {
-  const registers = eval(input);
+  const registers = JSON.parse(input);
   if (!Array.isArray(registers)) {
     throw new Error('Registers should be an array!');
   }
@@ -55,7 +55,7 @@ function parseRegisters(input) {
 }
 
 function parseArgs(input) {
-  const args = eval(input);
+  const args = JSON.parse(input);
 
   if (!Array.isArray(args)) {
     throw new Error('Args should be an array!');
@@ -88,6 +88,7 @@ function parseCode(inCode) {
 function execute(shouldRun = false) {
   $code.classList.remove('error');
   $regs.classList.remove('error');
+  $args.classList.remove('error');
   const markError = (isCode) => {
     if (isCode) {
       $code.classList.add('error');
@@ -126,12 +127,11 @@ function execute(shouldRun = false) {
   } catch (e) {
     console.error(e);
     $out.innerHTML = `Invalid args: ${e}`;
-    markError(false);
+    $args.classList.add('error');
     return;
   }
 
   try {
-    console.log("TEST");
     const asm = disassemble(program, kind, hasMetadata, args);
     $out.innerHTML = asm;
   } catch (e) {

@@ -12,8 +12,8 @@ export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE;
 /** Amount of memory to allocate eagerly */
 export const ALLOCATE_EAGERLY: u32 = 2 ** 29; // 512MB
 
-export const ARGS_SEGMENT_START = 0xfeff_0000;
-export const STACK_SEGMENT_END = 0xfefe_0000;
+export const ARGS_SEGMENT_START: u32 = 0xfeff_0000;
+export const STACK_SEGMENT_END: u32 = 0xfefe_0000;
 
 export enum Access {
   None = 0,

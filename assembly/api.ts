@@ -12,8 +12,12 @@ let interpreter: Interpreter | null = null;
 export function resetSpi(program: u8[], pc: number, gas: Gas): void {
   const p = decodeSpi(liftBytes(program), new Uint8Array(0));
   const int = new Interpreter(p, p.registers, p.memory);
-  int.pc = <u32>pc;
+  int.nextPc = <u32>pc;
   int.gas.set(gas);
+
+  if (interpreter !== null) {
+    interpreter.memory.free();
+  }
 
   interpreter = int;
 }
@@ -24,6 +28,10 @@ export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
   int.gas.set(initialGas);
+
+  if (interpreter !== null) {
+    interpreter.memory.free();
+  }
 
   interpreter = int;
 }
