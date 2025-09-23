@@ -151,7 +151,7 @@ function execute(shouldRun = false) {
   } catch (e) {
     console.error(e);
     $out.innerHTML += `\n\n Run error: ${e}`;
-    markError();
+    markError(true);
   }
 }
 </script>
@@ -168,7 +168,7 @@ function execute(shouldRun = false) {
     <a href="conway.html">Game of Life</a>
   </p>
   <label>
-    <input type="checkbox" id="spi" checked="true"> JAM SPI
+    <input type="checkbox" id="spi" checked> JAM SPI
   </label>
   <label>
     <input type="checkbox" id="metadata"> Has Metadata
