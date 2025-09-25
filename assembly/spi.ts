@@ -1,6 +1,6 @@
 import { Decoder } from "./codec";
 import { Memory, MemoryBuilder } from "./memory";
-import { Access, PAGE_SIZE, RESERVED_MEMORY, SEGMENT_SIZE } from "./memory-page";
+import { Access, PAGE_SIZE, SEGMENT_SIZE } from "./memory-page";
 import { Program, deblob } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
@@ -52,7 +52,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
 
   // readable memory
   if (roLength > 0) {
-    builder.setData(Access.Read, RESERVED_MEMORY, roMem);
+    builder.setData(Access.Read, SEGMENT_SIZE, roMem);
   }
   if (argsLength > 0) {
     builder.setData(Access.Read, ARGS_SEGMENT_START, args);
