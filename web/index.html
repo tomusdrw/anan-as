@@ -42,7 +42,7 @@ $dis.addEventListener('click', () => {
 $run.click();
 
 function parseRegisters(input) {
-  const registers = JSON.parse(input);
+  const registers = eval(input);
   if (!Array.isArray(registers)) {
     throw new Error('Registers should be an array!');
   }
@@ -55,7 +55,7 @@ function parseRegisters(input) {
 }
 
 function parseArgs(input) {
-  const args = JSON.parse(input);
+  const args = eval(input);
 
   if (!Array.isArray(args)) {
     throw new Error('Args should be an array!');

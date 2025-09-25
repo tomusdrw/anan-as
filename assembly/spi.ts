@@ -97,16 +97,14 @@ function alignToSegmentSize(size: number): u32 {
  *
  * https://graypaper.fluffylabs.dev/#/ab2cdbd/2d13002d1400?v=0.7.2
  */
-export class StandardProgram extends Program {
+export class StandardProgram {
   constructor(
-    program: Program,
+    public readonly program: Program,
     public readonly memory: Memory,
     public readonly registers: Registers,
-  ) {
-    super(program.code, program.mask, program.jumpTable, program.basicBlocks);
-  }
+  ) {}
 
   toString(): string {
-    return `StandardProgram { code: ${this.code}, mask: ${this.mask}, jumpTable: ${this.jumpTable}, basicBlocks: ${this.basicBlocks} , memory_pages: ${this.memory.pages.size}, registers: ${this.registers} }`;
+    return `StandardProgram { program: ${this.program}, memory_pages: ${this.memory.pages.size}, registers: ${this.registers} }`;
   }
 }

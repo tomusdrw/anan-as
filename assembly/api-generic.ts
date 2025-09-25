@@ -90,7 +90,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
         }
       }
 
-      int = new Interpreter(spi, registers, spi.memory);
+      int = new Interpreter(spi.program, registers, spi.memory);
       break;
     }
     case InputKind.Generic: {

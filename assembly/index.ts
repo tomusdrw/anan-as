@@ -36,7 +36,7 @@ export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetad
 
   if (kind === InputKind.SPI) {
     const p = decodeSpi(program, new Uint8Array(0));
-    return output + getAssembly(p);
+    return output + getAssembly(p.program);
   }
 
   return `Unknown kind: ${kind}`;
