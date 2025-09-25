@@ -9,7 +9,7 @@ import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 
 let interpreter: Interpreter | null = null;
 
-export function resetJAM(program: u8[], pc: number, gas: Gas, args: u8[] = []): void {
+export function resetJAM(program: u8[], pc: number, gas: Gas, args: u8[]): void {
   const p = decodeSpi(liftBytes(program), liftBytes(args));
   const int = new Interpreter(p, p.registers, p.memory);
   int.nextPc = <u32>pc;
