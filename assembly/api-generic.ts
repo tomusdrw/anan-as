@@ -4,8 +4,9 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
-import { Program, deblob, decodeArguments, decodeSpi, liftBytes, resolveArguments } from "./program";
+import { Program, deblob, decodeArguments, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
+import { decodeSpi } from "./spi";
 
 export class InitialPage {
   address: u32 = 0;

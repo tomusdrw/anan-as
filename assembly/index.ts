@@ -1,5 +1,6 @@
 import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
-import { deblob, decodeSpi, extractCodeAndMetadata, liftBytes } from "./program";
+import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
+import { decodeSpi } from "./spi";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
