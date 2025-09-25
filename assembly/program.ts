@@ -101,7 +101,7 @@ function alignToPageSize(size: number): u32 {
 }
 
 function alignToSegmentSize(size: number): u32 {
-  return RESERVED_MEMORY * <u32>Math.ceil(size / RESERVED_MEMORY);
+  return ((size + SEGMENT_SIZE - 1) >> SEGMENT_SIZE_SHIFT) << SEGMENT_SIZE_SHIFT;
 }
 
 /** Convert `u8` to `Uint8Array` */
