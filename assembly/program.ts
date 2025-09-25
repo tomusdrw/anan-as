@@ -3,7 +3,8 @@ import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { reg, u32SignExtend } from "./instructions/utils";
 import { Memory, MemoryBuilder } from "./memory";
-import { ARGS_SEGMENT_START, Access, PAGE_SIZE, RESERVED_MEMORY, STACK_SEGMENT_END } from "./memory-page";
+import { Access, PAGE_SIZE, RESERVED_MEMORY, SEGMENT_SIZE } from "./memory-page";
+import { ARGS_SEGMENT_START, DATA_LENGTH, STACK_SEGMENT_END } from "./memory-spi";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
 export type ProgramCounter = u32;
@@ -28,6 +29,11 @@ export function extractCodeAndMetadata(data: Uint8Array): CodeAndMetadata {
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/2da3002da300?v=0.7.2 */
 export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
+  const argsLength = <u32>args.length;
+  if (argsLength > DATA_LENGTH) {
+    throw new Error("Arguments length too big");
+  }
+
   const decoder = new Decoder(data);
 
   const roLength = decoder.u24();
@@ -42,14 +48,12 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   const code = decoder.bytes(codeLength);
   decoder.finish();
 
-  const argsLength = args.length;
-
   const program = deblob(code);
 
   // building memory
   const builder = new MemoryBuilder();
 
-  const heapStart = 2 * RESERVED_MEMORY + alignToSegmentSize(roLength);
+  const heapStart = 2 * SEGMENT_SIZE + alignToSegmentSize(roLength);
   const heapEnd = heapStart + alignToPageSize(rwLength);
   const heapZerosLength = heapPages * PAGE_SIZE;
   const heapZerosEnd = heapEnd + heapZerosLength;
@@ -101,7 +105,7 @@ function alignToPageSize(size: number): u32 {
 }
 
 function alignToSegmentSize(size: number): u32 {
-  return RESERVED_MEMORY * <u32>Math.ceil(size / RESERVED_MEMORY);
+  return SEGMENT_SIZE * <u32>Math.ceil(size / SEGMENT_SIZE);
 }
 
 /** Convert `u8` to `Uint8Array` */
