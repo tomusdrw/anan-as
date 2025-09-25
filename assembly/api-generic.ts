@@ -4,7 +4,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
-import { Program, deblob, decodeArguments, liftBytes, resolveArguments } from "./program";
+import { Program, deblob, decodeArguments, extractCodeAndMetadata, liftBytes, resolveArguments } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 import { decodeSpi } from "./spi";
 
@@ -27,6 +27,7 @@ export class VmInput {
   memory: InitialChunk[] = [];
   args: u8[] = [];
   kind: InputKind = InputKind.Generic;
+  withMetadata: boolean = false;
 }
 
 export class VmOutput {
@@ -74,27 +75,27 @@ export function getAssembly(p: Program): string {
 export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
   let int: Interpreter;
   let registers: Registers;
+  let program = liftBytes(input.program);
+
+  if (input.withMetadata) {
+    const data = extractCodeAndMetadata(program);
+    program = data.code;
+  }
 
   switch (input.kind) {
     case InputKind.SPI: {
-      const spi = decodeSpi(liftBytes(input.program), liftBytes(input.args));
+      const spi = decodeSpi(program, liftBytes(input.args));
 
       registers = new StaticArray(NO_OF_REGISTERS);
       for (let r = 0; r < registers.length; r++) {
         registers[r] = spi.registers[r];
-      }
-      for (let r = 0; r < registers.length; r++) {
-        const regVal = input.registers[r];
-        if (regVal > 0) {
-          registers[r] = input.registers[r];
-        }
       }
 
       int = new Interpreter(spi.program, registers, spi.memory);
       break;
     }
     case InputKind.Generic: {
-      const p = deblob(liftBytes(input.program));
+      const p = deblob(program);
 
       registers = new StaticArray(NO_OF_REGISTERS);
       for (let r = 0; r < registers.length; r++) {

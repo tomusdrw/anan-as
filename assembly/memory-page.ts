@@ -3,14 +3,14 @@ export type ArenaId = u32;
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/2dad002dad00?v=0.7.2 */
 export const PAGE_SIZE: u32 = 4096;
-export const PAGE_SIZE_SHIFT = 12;
+export const PAGE_SIZE_SHIFT: u32 = 12;
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/2daf002daf00?v=0.7.2 */
 export const SEGMENT_SIZE: u32 = 2 ** 16;
-export const SEGMENT_SIZE_SHIFT = 16;
+export const SEGMENT_SIZE_SHIFT: u32 = 16;
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/254401254a01?v=0.7.2 */
-export const RESERVED_MEMORY = SEGMENT_SIZE;
+export const RESERVED_MEMORY: u32 = SEGMENT_SIZE;
 export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE;
 
 /** Amount of memory to allocate eagerly */

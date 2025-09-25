@@ -84,11 +84,11 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   return new StandardProgram(program, memory, registers);
 }
 
-function alignToPageSize(size: number): u32 {
+function alignToPageSize(size: u32): u32 {
   return ((size + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) << PAGE_SIZE;
 }
 
-function alignToSegmentSize(size: number): u32 {
+function alignToSegmentSize(size: u32): u32 {
   return ((size + SEGMENT_SIZE - 1) >> SEGMENT_SIZE_SHIFT) << SEGMENT_SIZE_SHIFT;
 }
 

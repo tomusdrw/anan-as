@@ -7,7 +7,9 @@ import { disassemble, runProgram, InputKind, HasMetadata } from "./build/release
 const $upload = document.querySelector('#upload');
 const $code = document.querySelector('#code');
 const $regs = document.querySelector('#registers');
+const $regsBlock = document.querySelector('#registers-segment');
 const $args = document.querySelector('#args');
+const $argsBlock = document.querySelector('#arguments-segment');
 const $file = document.querySelector('#file');
 const $run = document.querySelector('#run');
 const $dis = document.querySelector('#disassemble');
@@ -39,6 +41,12 @@ $run.addEventListener('click', () => {
 $dis.addEventListener('click', () => {
   execute(false);
 });
+$spi.addEventListener('change', () => {
+  $regsBlock.classList.toggle('hidden', $spi.checked);
+  $argsBlock.classList.toggle('hidden', !$spi.checked);
+});
+$regsBlock.classList.toggle('hidden', $spi.checked);
+$argsBlock.classList.toggle('hidden', !$spi.checked);
 $run.click();
 
 function parseRegisters(input) {
@@ -113,7 +121,7 @@ function execute(shouldRun = false) {
 
   let args;
   try {
-    <!-- Args has the same format as program -->
+    // Args has the same format as program
     args = parseCode($args.value);
   } catch (e) {
     console.error(e);
@@ -137,7 +145,7 @@ function execute(shouldRun = false) {
   }
 
   try {
-    const out = runProgram(kind, program, registers, args);
+    const out = runProgram(kind, program, registers, args, hasMetadata);
     $out.innerHTML += `\n\nRun OK!\nStatus: ${out.status}\nPC: ${out.pc}\nGAS: ${out.gas}\nRegisters: ${out.registers}`;
   } catch (e) {
     console.error(e);
@@ -159,19 +167,19 @@ function execute(shouldRun = false) {
     <a href="conway.html">Game of Life</a>
   </p>
   <label>
-    <input type="checkbox" id="spi" checked> JAM SPI
+    <input type="checkbox" id="spi"> JAM SPI
   </label>
   <label>
     <input type="checkbox" id="metadata"> Has Metadata
   </label>
-  <textarea id="code" rows="10">[4,0,0,2,0,0,3,0,32,0,0,255,255,255,255,128,128,41,0,0,0,0,0,33,51,10,1,51,11,1,40,3,0,149,153,255,81,9,12,100,172,200,186,10,100,203,40,243,100,169,51,10,51,11,1,50,0,73,147,82,213,0]</textarea>
-  <details>
+  <textarea id="code" rows="10">[0,0,33,51,8,1,51,9,1,40,3,0,149,119,255,81,7,12,100,138,200,152,8,100,169,40,243,100,135,51,8,51,9,1,50,0,73,147,82,213,0]</textarea>
+  <details id="registers-segment">
     <summary>Initial Registers</summary>
-    <textarea id="registers" rows="3">[0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0]</textarea>
+    <textarea id="registers" rows="3">[0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0]</textarea>
   </details>
-  <details>
+  <details id="arguments-segment">
     <summary>Initial Arguments</summary>
-    <textarea id="args" rows="3">[1, 2, 3]</textarea>
+    <textarea id="args" rows="3">[]</textarea>
   </details>
   <div class="actions">
     <button id="upload">📂 Upload PVM file</button>

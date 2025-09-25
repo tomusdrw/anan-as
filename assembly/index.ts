@@ -42,13 +42,20 @@ export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetad
   return `Unknown kind: ${kind}`;
 }
 
-export function runProgram(kind: InputKind, input: u8[], registers: u64[], args: u8[]): VmOutput {
+export function runProgram(
+  kind: InputKind,
+  input: u8[],
+  registers: u64[],
+  args: u8[],
+  withMetadata: HasMetadata,
+): VmOutput {
   const vmInput = new VmInput();
   vmInput.registers = registers;
   vmInput.gas = 10_000;
   vmInput.program = input;
   vmInput.args = args;
   vmInput.kind = kind;
+  vmInput.withMetadata = withMetadata === HasMetadata.Yes;
 
   const output = runVm(vmInput, true);
   console.log(`Finished with status: ${output.status}`);
