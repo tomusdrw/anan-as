@@ -46,8 +46,10 @@ export function runProgram(kind: InputKind, input: u8[], registers: u64[], args:
   vmInput.registers = registers;
   vmInput.gas = 10_000;
   vmInput.program = input;
+  vmInput.args = args;
+  vmInput.kind = kind;
 
-  const output = runVm(kind, vmInput, args, true);
+  const output = runVm(vmInput, true);
   console.log(`Finished with status: ${output.status}`);
   return output;
 }

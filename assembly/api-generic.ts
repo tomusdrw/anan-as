@@ -24,6 +24,8 @@ export class VmInput {
   program: u8[] = [];
   pageMap: InitialPage[] = [];
   memory: InitialChunk[] = [];
+  args: u8[] = [];
+  kind: InputKind = InputKind.Generic;
 }
 
 export class VmOutput {
@@ -68,19 +70,13 @@ export function getAssembly(p: Program): string {
   return v;
 }
 
-export function runVm(
-  kind: InputKind,
-  input: VmInput,
-  args: u8[],
-  logs: boolean = false,
-  useSbrkGas: boolean = false,
-): VmOutput {
+export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
   let int: Interpreter;
   let registers: Registers;
 
-  switch (kind) {
+  switch (input.kind) {
     case InputKind.SPI: {
-      const spi = decodeSpi(liftBytes(input.program), liftBytes(args));
+      const spi = decodeSpi(liftBytes(input.program), liftBytes(input.args));
 
       registers = new StaticArray(NO_OF_REGISTERS);
       for (let r = 0; r < registers.length; r++) {
@@ -92,10 +88,8 @@ export function runVm(
           registers[r] = input.registers[r];
         }
       }
+
       int = new Interpreter(spi, registers, spi.memory);
-      int.useSbrkGas = useSbrkGas;
-      int.nextPc = input.pc;
-      int.gas.set(input.gas);
       break;
     }
     case InputKind.Generic: {
@@ -105,18 +99,20 @@ export function runVm(
       for (let r = 0; r < registers.length; r++) {
         registers[r] = input.registers[r];
       }
+
       const builder = new MemoryBuilder();
       const memory = buildMemory(builder, input.pageMap, input.memory);
 
       int = new Interpreter(p, registers, memory);
-      int.useSbrkGas = useSbrkGas;
-      int.nextPc = input.pc;
-      int.gas.set(input.gas);
       break;
     }
     default:
-      throw new Error(`Unknown kind: ${kind}`);
+      throw new Error(`Unknown program kind: ${input.kind}`);
   }
+
+  int.useSbrkGas = useSbrkGas;
+  int.nextPc = input.pc;
+  int.gas.set(input.gas);
 
   return executeProgram(int, registers, logs);
 }
