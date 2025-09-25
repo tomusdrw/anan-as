@@ -58,7 +58,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
     builder.setData(Access.Read, ARGS_SEGMENT_START, args);
   }
   if (argsEnd < argsZerosEnd) {
-    builder.setData(Access.Read, argsEnd, new Uint8Array(argsZerosLength));
+    builder.setEmpty(Access.Read, argsEnd, argsZerosLength);
   }
 
   // writable memory
@@ -66,10 +66,10 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
     builder.setData(Access.Write, heapStart, rwMem);
   }
   if (heapEnd < heapZerosEnd) {
-    builder.setData(Access.Write, heapEnd, new Uint8Array(heapZerosLength));
+    builder.setEmpty(Access.Write, heapEnd, heapZerosLength);
   }
   if (stackStart < stackEnd) {
-    builder.setData(Access.Write, stackStart, new Uint8Array(stackLength));
+    builder.setEmpty(Access.Write, stackStart, stackLength);
   }
 
   const memory = builder.build(heapZerosEnd);
