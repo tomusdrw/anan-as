@@ -54,16 +54,6 @@ function parseRegisters(input) {
   return registers.map(x => BigInt(x));
 }
 
-function parseArgs(input) {
-  const args = eval(input);
-
-  if (!Array.isArray(args)) {
-    throw new Error('Args should be an array!');
-  }
-
-  return args;
-}
-
 function parseCode(inCode) {
   const code = inCode.trim();
   if (code.startsWith('0x')) {
@@ -123,7 +113,8 @@ function execute(shouldRun = false) {
 
   let args;
   try {
-    args = parseArgs($args.value);
+    <!-- Args has the same format as program -->
+    args = parseCode($args.value);
   } catch (e) {
     console.error(e);
     $out.innerHTML = `Invalid args: ${e}`;
