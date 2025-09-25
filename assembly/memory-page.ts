@@ -7,6 +7,7 @@ export const PAGE_SIZE_SHIFT = 12;
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/2daf002daf00?v=0.7.2 */
 export const SEGMENT_SIZE: u32 = 2 ** 16;
+export const SEGMENT_SIZE_SHIFT = 16;
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/254401254a01?v=0.7.2 */
 export const RESERVED_MEMORY = SEGMENT_SIZE;
