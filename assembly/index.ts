@@ -1,4 +1,4 @@
-import { VmInput, VmOutput, getAssembly, runVm, runVmSpi } from "./api-generic";
+import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
 import { deblob, decodeSpi, extractCodeAndMetadata, liftBytes } from "./program";
 
 export * from "./api";
@@ -42,28 +42,13 @@ export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetad
   return `Unknown kind: ${kind}`;
 }
 
-export function runProgram(input: u8[], registers: u64[], kind: InputKind, args: u8[]): VmOutput {
-  if (kind === InputKind.Generic) {
-    const vmInput = new VmInput();
-    vmInput.registers = registers;
-    vmInput.gas = 10_000;
-    vmInput.program = input;
+export function runProgram(kind: InputKind, input: u8[], registers: u64[], args: u8[]): VmOutput {
+  const vmInput = new VmInput();
+  vmInput.registers = registers;
+  vmInput.gas = 10_000;
+  vmInput.program = input;
 
-    const output = runVm(vmInput, true);
-    console.log(`Finished with status: ${output.status}`);
-    return output;
-  }
-
-  if (kind === InputKind.SPI) {
-    const vmInput = new VmInput();
-    vmInput.registers = registers;
-    vmInput.gas = 10_000;
-    vmInput.program = input;
-
-    const output = runVmSpi(vmInput, args, true);
-    console.log(`Finished with status: ${output.status}`);
-    return output;
-  }
-
-  throw new Error(`Unknown kind: ${kind}`);
+  const output = runVm(kind, vmInput, args, true);
+  console.log(`Finished with status: ${output.status}`);
+  return output;
 }
