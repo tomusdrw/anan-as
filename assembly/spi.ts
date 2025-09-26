@@ -43,6 +43,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   const heapZerosEnd = heapEnd + heapZerosLength;
 
   const stackLength = alignToPageSize(stackSize);
+  // stackLength is bounded to `2**24`, so there is no risk of underflow here.
   const stackStart = STACK_SEGMENT_END - stackLength;
   const stackEnd = STACK_SEGMENT_END;
 
