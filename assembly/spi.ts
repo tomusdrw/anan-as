@@ -85,7 +85,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
 }
 
 function alignToPageSize(size: u32): u32 {
-  return ((size + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) << PAGE_SIZE;
+  return ((size + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) << PAGE_SIZE_SHIFT;
 }
 
 function alignToSegmentSize(size: u32): u32 {
