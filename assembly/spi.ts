@@ -38,11 +38,12 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   const builder = new MemoryBuilder();
 
   const heapStart = 2 * SEGMENT_SIZE + alignToSegmentSize(roLength);
-  const heapEnd = heapStart + rwLength;
+  const heapZerosStart = heapStart + alignToPageSize(rwLength);
   const heapZerosLength = heapPages * PAGE_SIZE;
-  const heapZerosEnd = heapEnd + heapZerosLength;
+  const heapZerosEnd = heapZerosStart + heapZerosLength;
 
   const stackLength = alignToPageSize(stackSize);
+  // stackLength is bounded to `2**24`, so there is no risk of underflow here.
   const stackStart = STACK_SEGMENT_END - stackLength;
 
   // readable memory
@@ -58,7 +59,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
     builder.setData(Access.Write, heapStart, rwMem);
   }
   if (heapZerosLength > 0) {
-    builder.setEmpty(Access.Write, heapEnd, heapZerosLength);
+    builder.setEmpty(Access.Write, heapZerosStart, heapZerosLength);
   }
   if (stackLength > 0) {
     builder.setEmpty(Access.Write, stackStart, stackLength);
@@ -77,7 +78,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
 }
 
 function alignToPageSize(size: u32): u32 {
-  return ((size + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) << PAGE_SIZE;
+  return ((size + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) << PAGE_SIZE_SHIFT;
 }
 
 function alignToSegmentSize(size: u32): u32 {
