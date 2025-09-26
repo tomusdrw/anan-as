@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import "json-bigint-patch";
-import {readFileSync, readdirSync} from 'node:fs';
-import {resolve, join} from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import * as assert from 'node:assert';
 
 import { runVm, InputKind, disassemble, HasMetadata } from "../build/release.js";
@@ -23,7 +23,7 @@ function main() {
   // Get the JSON file arguments from the command line
   let args = process.argv.slice(2);
 
-  for (;;) {
+  for (; ;) {
     if (args.length === 0) {
       break;
     }
@@ -92,7 +92,7 @@ function readFromStdin(options) {
   process.stderr.write('awaiting input\n');
 
   // Read from stdin
-  let buffer  = '';
+  let buffer = '';
   process.stdin.on('data', (data) => {
     buffer += data;
     if (buffer.endsWith("\n\n")) {
@@ -143,12 +143,16 @@ function processJson(data, options) {
     memory: asChunks(read(data, 'initial-memory')),
     gas: BigInt(read(data, 'initial-gas')),
     program: read(data, 'program'),
+    // default for this test
+    withMetadata: false,
+    args: [],
+    kind: 0,
   };
   // expected
   const expected = {
     status: read(data, 'expected-status'),
     registers: read(data, 'expected-regs').map(x => BigInt(x)),
-    pc: read(data,  'expected-pc'),
+    pc: read(data, 'expected-pc'),
     memory: asChunks(read(data, 'expected-memory')),
     gas: BigInt(read(data, 'expected-gas')),
     exitCode: read(data, 'expected-page-fault-address', 0),
@@ -158,7 +162,7 @@ function processJson(data, options) {
     const assembly = disassemble(input.program, InputKind.Generic, HasMetadata.No);
     console.info('===========');
     console.info(assembly);
-      console.info('\n^^^^^^^^^^^\n');
+    console.info('\n^^^^^^^^^^^\n');
   }
 
   const result = runVm(input, options.isDebug, options.useSbrkGas);
