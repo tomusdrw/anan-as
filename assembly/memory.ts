@@ -58,7 +58,7 @@ export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
   private arena: Arena = new Arena(128);
 
-  /** Allocates memory with given `access`, for given `address` and initialize with `zeroes` */
+  /** Allocates memory pages with given `access`, for given `address` and initialize with `zeroes` */
   setEmpty(access: Access, address: u32, len: u32): MemoryBuilder {
     const endAddress = address + len;
     for (let currentAddress = address; currentAddress < endAddress; currentAddress += PAGE_SIZE) {
@@ -67,7 +67,7 @@ export class MemoryBuilder {
     return this;
   }
 
-  /** Allocates memory with given `access`, for given `address` and writes there `data` */
+  /** Allocates memory pages with given `access`, for given `address` and writes there `data` */
   setData(access: Access, address: u32, data: Uint8Array): MemoryBuilder {
     let currentAddress = address;
     let currentData = data;

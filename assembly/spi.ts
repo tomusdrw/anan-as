@@ -38,17 +38,12 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   const builder = new MemoryBuilder();
 
   const heapStart = 2 * SEGMENT_SIZE + alignToSegmentSize(roLength);
-  const heapEnd = heapStart + alignToPageSize(rwLength);
+  const heapEnd = heapStart + rwLength;
   const heapZerosLength = heapPages * PAGE_SIZE;
   const heapZerosEnd = heapEnd + heapZerosLength;
 
   const stackLength = alignToPageSize(stackSize);
   const stackStart = STACK_SEGMENT_END - stackLength;
-  const stackEnd = STACK_SEGMENT_END;
-
-  const argsEnd = ARGS_SEGMENT_START + alignToPageSize(argsLength);
-  const argsZerosLength = alignToPageSize(argsLength);
-  const argsZerosEnd = argsEnd + argsZerosLength;
 
   // readable memory
   if (roLength > 0) {
@@ -57,18 +52,15 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   if (argsLength > 0) {
     builder.setData(Access.Read, ARGS_SEGMENT_START, args);
   }
-  if (argsEnd < argsZerosEnd) {
-    builder.setEmpty(Access.Read, argsEnd, argsZerosLength);
-  }
 
   // writable memory
   if (rwLength > 0) {
     builder.setData(Access.Write, heapStart, rwMem);
   }
-  if (heapEnd < heapZerosEnd) {
+  if (heapZerosLength > 0) {
     builder.setEmpty(Access.Write, heapEnd, heapZerosLength);
   }
-  if (stackStart < stackEnd) {
+  if (stackLength > 0) {
     builder.setEmpty(Access.Write, stackStart, stackLength);
   }
 
