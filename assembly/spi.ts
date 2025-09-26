@@ -46,6 +46,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
   const stackStart = STACK_SEGMENT_END - stackLength;
   const stackEnd = STACK_SEGMENT_END;
 
+  // `argsLength` is at most `DATA_SIZE`, so there is no risk of overflow
   const argsEnd = ARGS_SEGMENT_START + alignToPageSize(argsLength);
   const argsZerosLength = alignToPageSize(argsLength);
   const argsZerosEnd = argsEnd + argsZerosLength;
