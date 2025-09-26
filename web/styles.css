@@ -31,6 +31,9 @@ textarea {
   width: 100%;
   padding: 1rem;
 }
+details.hidden {
+  display: none;
+}
 textarea.error {
   border: 2px solid #e22;
 }

@@ -1,5 +1,6 @@
 import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
-import { deblob, decodeSpi, extractCodeAndMetadata, liftBytes } from "./program";
+import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
+import { decodeSpi } from "./spi";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
@@ -34,28 +35,29 @@ export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetad
   }
 
   if (kind === InputKind.SPI) {
-    const p = decodeSpi(program);
-    return output + getAssembly(p);
+    const p = decodeSpi(program, new Uint8Array(0));
+    return output + getAssembly(p.program);
   }
 
   return `Unknown kind: ${kind}`;
 }
 
-export function runProgram(input: u8[], registers: u64[], kind: InputKind): VmOutput {
-  if (kind === InputKind.Generic) {
-    const vmInput = new VmInput();
-    vmInput.registers = registers;
-    vmInput.gas = 10_000;
-    vmInput.program = input;
+export function runProgram(
+  kind: InputKind,
+  input: u8[],
+  registers: u64[],
+  args: u8[],
+  withMetadata: HasMetadata,
+): VmOutput {
+  const vmInput = new VmInput();
+  vmInput.registers = registers;
+  vmInput.gas = 10_000;
+  vmInput.program = input;
+  vmInput.args = args;
+  vmInput.kind = kind;
+  vmInput.withMetadata = withMetadata === HasMetadata.Yes;
 
-    const output = runVm(vmInput, true);
-    console.log(`Finished with status: ${output.status}`);
-    return output;
-  }
-
-  if (kind === InputKind.SPI) {
-    throw new Error("SPI running not supported yet");
-  }
-
-  throw new Error(`Unknown kind: ${kind}`);
+  const output = runVm(vmInput, true);
+  console.log(`Finished with status: ${output.status}`);
+  return output;
 }

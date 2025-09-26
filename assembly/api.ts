@@ -6,8 +6,22 @@ import { MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { deblob, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
+import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;
+
+export function resetJAM(program: u8[], pc: number, gas: Gas, args: u8[]): void {
+  const p = decodeSpi(liftBytes(program), liftBytes(args));
+  const int = new Interpreter(p.program, p.registers, p.memory);
+  int.nextPc = <u32>pc;
+  int.gas.set(gas);
+
+  if (interpreter !== null) {
+    (<Interpreter>interpreter).memory.free();
+  }
+
+  interpreter = int;
+}
 
 export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas): void {
   const p = deblob(liftBytes(program));
@@ -16,8 +30,13 @@ export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas
   const int = new Interpreter(p, registers);
   int.gas.set(initialGas);
 
+  if (interpreter !== null) {
+    (<Interpreter>interpreter).memory.free();
+  }
+
   interpreter = int;
 }
+
 export function resetGenericWithMemory(
   program: u8[],
   flatRegisters: u8[],
