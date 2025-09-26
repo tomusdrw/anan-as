@@ -3,7 +3,7 @@
 <head>
 <link type="text/css" rel="stylesheet" href="./styles.css" />
 <script type="module" defer>
-import { disassemble, runProgram, InputKind, HasMetadata } from "./build/release.js";
+import { disassemble, runProgram, prepareProgram, InputKind, HasMetadata } from "./build/release.js";
 const $upload = document.querySelector('#upload');
 const $code = document.querySelector('#code');
 const $regs = document.querySelector('#registers');
@@ -145,7 +145,16 @@ function execute(shouldRun = false) {
   }
 
   try {
-    const out = runProgram(kind, program, registers, args, hasMetadata);
+    const exe = prepareProgram(
+      kind,
+      hasMetadata,
+      program,
+      registers,
+      [], // initial page map
+      [], // initial memory
+      args,
+    );
+    const out = runProgram(exe, 100_000n, 0);
     $out.innerHTML += `\n\nRun OK!\nStatus: ${out.status}\nPC: ${out.pc}\nGAS: ${out.gas}\nRegisters: ${out.registers}`;
   } catch (e) {
     console.error(e);

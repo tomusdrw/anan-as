@@ -91,6 +91,10 @@ function alignToSegmentSize(size: u32): u32 {
  * https://graypaper.fluffylabs.dev/#/ab2cdbd/2d13002d1400?v=0.7.2
  */
 export class StandardProgram {
+  metadata: Uint8Array = new Uint8Array(0);
+  pc: u32 = 0;
+  gas: i64 = 0;
+
   constructor(
     public readonly program: Program,
     public readonly memory: Memory,

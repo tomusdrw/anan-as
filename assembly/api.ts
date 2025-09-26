@@ -4,17 +4,19 @@ import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
 import { MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
-import { deblob, liftBytes } from "./program";
+import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;
 
-export function resetJAM(program: u8[], pc: number, gas: Gas, args: u8[]): void {
-  const p = decodeSpi(liftBytes(program), liftBytes(args));
+export function resetJAM(program: u8[], pc: number, initialGas: Gas, args: u8[], hasMetadata: boolean = false): void {
+  const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
+
+  const p = decodeSpi(code, liftBytes(args));
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
-  int.gas.set(gas);
+  int.gas.set(initialGas);
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -23,8 +25,10 @@ export function resetJAM(program: u8[], pc: number, gas: Gas, args: u8[]): void 
   interpreter = int;
 }
 
-export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas): void {
-  const p = deblob(liftBytes(program));
+export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas, hasMetadata: boolean = false): void {
+  const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
+
+  const p = deblob(code);
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
@@ -43,8 +47,11 @@ export function resetGenericWithMemory(
   pageMap: Uint8Array,
   chunks: Uint8Array,
   initialGas: Gas,
+  hasMetadata: boolean = false,
 ): void {
-  const p = deblob(liftBytes(program));
+  const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
+
+  const p = deblob(code);
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
   fillRegisters(registers, flatRegisters);
 

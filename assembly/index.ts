@@ -1,6 +1,8 @@
-import { VmInput, VmOutput, getAssembly, runVm } from "./api-generic";
+import { InitialChunk, InitialPage, VmInput, VmOutput, buildMemory, getAssembly, runVm } from "./api-generic";
+import { MemoryBuilder } from "./memory";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
-import { decodeSpi } from "./spi";
+import { NO_OF_REGISTERS, Registers } from "./registers";
+import { StandardProgram, decodeSpi } from "./spi";
 
 export * from "./api";
 export { runVm, getAssembly } from "./api-generic";
@@ -42,20 +44,54 @@ export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetad
   return `Unknown kind: ${kind}`;
 }
 
-export function runProgram(
+export function prepareProgram(
   kind: InputKind,
-  input: u8[],
-  registers: u64[],
+  hasMetadata: HasMetadata,
+  program: u8[],
+  initialRegisters: u64[],
+  initialPageMap: InitialPage[],
+  initialMemory: InitialChunk[],
   args: u8[],
-  withMetadata: HasMetadata,
-): VmOutput {
-  const vmInput = new VmInput();
-  vmInput.registers = registers;
-  vmInput.gas = 10_000;
-  vmInput.program = input;
-  vmInput.args = args;
-  vmInput.kind = kind;
-  vmInput.withMetadata = withMetadata === HasMetadata.Yes;
+): StandardProgram {
+  let code = liftBytes(program);
+  let metadata = new Uint8Array(0);
+
+  if (hasMetadata === HasMetadata.Yes) {
+    const data = extractCodeAndMetadata(code);
+    code = data.code;
+    metadata = data.metadata;
+  }
+
+  if (kind === InputKind.Generic) {
+    const program = deblob(code);
+
+    const builder = new MemoryBuilder();
+    const memory = buildMemory(builder, initialPageMap, initialMemory);
+
+    const registers: Registers = new StaticArray(NO_OF_REGISTERS);
+    for (let r = 0; r < initialRegisters.length; r++) {
+      registers[r] = initialRegisters[r];
+    }
+
+    const exe: StandardProgram = new StandardProgram(program, memory, registers);
+    exe.metadata = metadata;
+
+    return exe;
+  }
+
+  if (kind === InputKind.SPI) {
+    const exe = decodeSpi(code, liftBytes(args));
+    exe.metadata = metadata;
+    return exe;
+  }
+
+  throw new Error(`Unknown kind: ${kind}`);
+}
+
+export function runProgram(program: StandardProgram, initialGas: i64 = 0, programCounter: u32 = 0): VmOutput {
+  const vmInput = new VmInput(program.program, program.memory, program.registers);
+  vmInput.gas = initialGas;
+  vmInput.pc = programCounter;
 
   const output = runVm(vmInput, true);
   console.log(`Finished with status: ${output.status}`);

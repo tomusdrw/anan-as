@@ -1,12 +1,10 @@
-import { InputKind } from ".";
 import { RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
-import { Program, deblob, decodeArguments, extractCodeAndMetadata, liftBytes, resolveArguments } from "./program";
-import { NO_OF_REGISTERS, Registers } from "./registers";
-import { decodeSpi } from "./spi";
+import { Program, decodeArguments, resolveArguments } from "./program";
+import { Registers } from "./registers";
 
 export class InitialPage {
   address: u32 = 0;
@@ -19,15 +17,14 @@ export class InitialChunk {
 }
 
 export class VmInput {
-  registers: u64[] = new Array<u64>(NO_OF_REGISTERS).fill(0);
   pc: u32 = 0;
   gas: i64 = 0;
-  program: u8[] = [];
-  pageMap: InitialPage[] = [];
-  memory: InitialChunk[] = [];
-  args: u8[] = [];
-  kind: InputKind = InputKind.Generic;
-  withMetadata: boolean = false;
+
+  constructor(
+    public readonly program: Program,
+    public readonly memory: Memory,
+    public readonly registers: Registers,
+  ) {}
 }
 
 export class VmOutput {
@@ -73,50 +70,12 @@ export function getAssembly(p: Program): string {
 }
 
 export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  let int: Interpreter;
-  let registers: Registers;
-  let program = liftBytes(input.program);
-
-  if (input.withMetadata) {
-    const data = extractCodeAndMetadata(program);
-    program = data.code;
-  }
-
-  switch (input.kind) {
-    case InputKind.SPI: {
-      const spi = decodeSpi(program, liftBytes(input.args));
-
-      registers = new StaticArray(NO_OF_REGISTERS);
-      for (let r = 0; r < registers.length; r++) {
-        registers[r] = spi.registers[r];
-      }
-
-      int = new Interpreter(spi.program, registers, spi.memory);
-      break;
-    }
-    case InputKind.Generic: {
-      const p = deblob(program);
-
-      registers = new StaticArray(NO_OF_REGISTERS);
-      for (let r = 0; r < registers.length; r++) {
-        registers[r] = input.registers[r];
-      }
-
-      const builder = new MemoryBuilder();
-      const memory = buildMemory(builder, input.pageMap, input.memory);
-
-      int = new Interpreter(p, registers, memory);
-      break;
-    }
-    default:
-      throw new Error(`Unknown program kind: ${input.kind}`);
-  }
-
+  const int = new Interpreter(input.program, input.registers, input.memory);
   int.useSbrkGas = useSbrkGas;
   int.nextPc = input.pc;
   int.gas.set(input.gas);
 
-  return executeProgram(int, registers, logs);
+  return executeProgram(int, logs);
 }
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
@@ -179,20 +138,20 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
   return builder.build(sbrkIndex);
 }
 
-function executeProgram(int: Interpreter, registers: Registers, logs: boolean = false): VmOutput {
+function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
   let isOk = true;
   for (;;) {
     if (!isOk) {
-      if (logs) console.log(`REGISTERS = ${registers.join(", ")} (final)`);
-      if (logs) console.log(`REGISTERS = ${registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
+      if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
+      if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
       if (logs) console.log(`Finished with status: ${int.status}`);
       break;
     }
 
     if (logs) console.log(`PC = ${int.pc}`);
     if (logs) console.log(`STATUS = ${int.status}`);
-    if (logs) console.log(`REGISTERS = ${registers.join(", ")}`);
-    if (logs) console.log(`REGISTERS = ${registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
+    if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
+    if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
     if (logs) {
       const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];

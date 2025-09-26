@@ -4,6 +4,7 @@
   "capabilities": {
     "resetJAM": true,
     "resetGeneric": true,
+    "resetGenericWithMemory": true,
     "resetPolkaVM": false
   },
   "wasmBlobUrl": "./build/release.wasm",
