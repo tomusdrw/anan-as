@@ -149,6 +149,7 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
     }
 
     if (logs) console.log(`PC = ${int.pc}`);
+    if (logs) console.log(`GAS = ${int.gas.get()}`);
     if (logs) console.log(`STATUS = ${int.status}`);
     if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
     if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);

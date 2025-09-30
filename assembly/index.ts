@@ -88,12 +88,18 @@ export function prepareProgram(
   throw new Error(`Unknown kind: ${kind}`);
 }
 
-export function runProgram(program: StandardProgram, initialGas: i64 = 0, programCounter: u32 = 0): VmOutput {
+export function runProgram(
+  program: StandardProgram,
+  initialGas: i64 = 0,
+  programCounter: u32 = 0,
+  logs: boolean = false,
+  useSbrkGas: boolean = false,
+): VmOutput {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
   vmInput.gas = initialGas;
   vmInput.pc = programCounter;
 
-  const output = runVm(vmInput, true);
+  const output = runVm(vmInput, logs, useSbrkGas);
   console.log(`Finished with status: ${output.status}`);
   return output;
 }

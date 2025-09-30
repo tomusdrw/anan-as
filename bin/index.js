@@ -5,7 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import * as assert from 'node:assert';
 
-import { runVm, InputKind, disassemble, HasMetadata } from "../build/release.js";
+import { prepareProgram, runProgram, InputKind, disassemble, HasMetadata } from "../build/release.js";
 
 const OK = '🟢';
 const ERR = '🔴';
@@ -143,10 +143,6 @@ function processJson(data, options) {
     memory: asChunks(read(data, 'initial-memory')),
     gas: BigInt(read(data, 'initial-gas')),
     program: read(data, 'program'),
-    // default for this test
-    withMetadata: false,
-    args: [],
-    kind: 0,
   };
   // expected
   const expected = {
@@ -165,7 +161,8 @@ function processJson(data, options) {
     console.info('\n^^^^^^^^^^^\n');
   }
 
-  const result = runVm(input, options.isDebug, options.useSbrkGas);
+  const exe = prepareProgram(InputKind.Generic, HasMetadata.No, input.program, input.registers, input.pageMap, input.memory, []);
+  const result = runProgram(exe, input.gas, 0, options.isDebug, options.useSbrkGas);
   result.status = statusAsString(result.status);
 
   try {
