@@ -3,8 +3,8 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
-import { Program, deblob, decodeArguments, liftBytes, resolveArguments } from "./program";
-import { NO_OF_REGISTERS, Registers } from "./registers";
+import { Program, decodeArguments, resolveArguments } from "./program";
+import { Registers } from "./registers";
 
 export class InitialPage {
   address: u32 = 0;
@@ -17,12 +17,14 @@ export class InitialChunk {
 }
 
 export class VmInput {
-  registers: u64[] = new Array<u64>(NO_OF_REGISTERS).fill(0);
   pc: u32 = 0;
   gas: i64 = 0;
-  program: u8[] = [];
-  pageMap: InitialPage[] = [];
-  memory: InitialChunk[] = [];
+
+  constructor(
+    public readonly program: Program,
+    public readonly memory: Memory,
+    public readonly registers: Registers,
+  ) {}
 }
 
 export class VmOutput {
@@ -68,63 +70,12 @@ export function getAssembly(p: Program): string {
 }
 
 export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  const p = deblob(liftBytes(input.program));
-
-  const registers: Registers = new StaticArray(NO_OF_REGISTERS);
-  for (let r = 0; r < registers.length; r++) {
-    registers[r] = input.registers[r];
-  }
-  const builder = new MemoryBuilder();
-  const memory = buildMemory(builder, input.pageMap, input.memory);
-
-  const int = new Interpreter(p, registers, memory);
+  const int = new Interpreter(input.program, input.registers, input.memory);
   int.useSbrkGas = useSbrkGas;
   int.nextPc = input.pc;
   int.gas.set(input.gas);
 
-  let isOk = true;
-  for (;;) {
-    if (!isOk) {
-      if (logs) console.log(`REGISTERS = ${registers.join(", ")} (final)`);
-      if (logs) console.log(`REGISTERS = ${registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
-      if (logs) console.log(`Finished with status: ${int.status}`);
-      break;
-    }
-
-    if (logs) console.log(`PC = ${int.pc}`);
-    if (logs) console.log(`STATUS = ${int.status}`);
-    if (logs) console.log(`REGISTERS = ${registers.join(", ")}`);
-    if (logs) console.log(`REGISTERS = ${registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
-    if (logs) {
-      const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
-      const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-      const skipBytes = p.mask.skipBytesToNextInstruction(int.pc);
-      const name = changetype<string>(iData.namePtr);
-      console.log(`INSTRUCTION = ${name} (${instruction})`);
-      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);
-      if (args !== null) {
-        console.log(`ARGUMENTS:
-  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
-  ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
-  ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
-  ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
-      }
-    }
-
-    isOk = int.nextStep();
-  }
-  const output = new VmOutput();
-  output.status = int.status;
-  output.registers = int.registers.slice(0);
-  output.pc = int.pc;
-  output.gas = int.gas.get();
-  output.memory = getOutputChunks(int.memory);
-  output.exitCode = int.exitCode;
-
-  // release used pages back
-  int.memory.free();
-
-  return output;
+  return executeProgram(int, logs);
 }
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
@@ -185,4 +136,52 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
   }
 
   return builder.build(sbrkIndex);
+}
+
+function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
+  let isOk = true;
+  for (;;) {
+    if (!isOk) {
+      if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
+      if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
+      if (logs) console.log(`Finished with status: ${int.status}`);
+      break;
+    }
+
+    if (logs) console.log(`PC = ${int.pc}`);
+    if (logs) console.log(`GAS = ${int.gas.get()}`);
+    if (logs) console.log(`STATUS = ${int.status}`);
+    if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
+    if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
+    if (logs) {
+      const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
+      const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
+      const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
+      const name = changetype<string>(iData.namePtr);
+      console.log(`INSTRUCTION = ${name} (${instruction})`);
+      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);
+      if (args !== null) {
+        console.log(`ARGUMENTS:
+  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
+  ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
+  ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
+  ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
+      }
+    }
+
+    isOk = int.nextStep();
+  }
+
+  const output = new VmOutput();
+  output.status = int.status;
+  output.registers = int.registers.slice(0);
+  output.pc = int.pc;
+  output.gas = int.gas.get();
+  output.memory = getOutputChunks(int.memory);
+  output.exitCode = int.exitCode;
+
+  // release used pages back
+  int.memory.free();
+
+  return output;
 }

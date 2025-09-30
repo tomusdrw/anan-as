@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import "json-bigint-patch";
-import {readFileSync, readdirSync} from 'node:fs';
-import {resolve, join} from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import * as assert from 'node:assert';
 
-import { runVm, InputKind, disassemble, HasMetadata } from "../build/release.js";
+import { prepareProgram, runProgram, InputKind, disassemble, HasMetadata } from "../build/release.js";
 
 const OK = '🟢';
 const ERR = '🔴';
@@ -23,7 +23,7 @@ function main() {
   // Get the JSON file arguments from the command line
   let args = process.argv.slice(2);
 
-  for (;;) {
+  for (; ;) {
     if (args.length === 0) {
       break;
     }
@@ -92,7 +92,7 @@ function readFromStdin(options) {
   process.stderr.write('awaiting input\n');
 
   // Read from stdin
-  let buffer  = '';
+  let buffer = '';
   process.stdin.on('data', (data) => {
     buffer += data;
     if (buffer.endsWith("\n\n")) {
@@ -148,7 +148,7 @@ function processJson(data, options) {
   const expected = {
     status: read(data, 'expected-status'),
     registers: read(data, 'expected-regs').map(x => BigInt(x)),
-    pc: read(data,  'expected-pc'),
+    pc: read(data, 'expected-pc'),
     memory: asChunks(read(data, 'expected-memory')),
     gas: BigInt(read(data, 'expected-gas')),
     exitCode: read(data, 'expected-page-fault-address', 0),
@@ -158,10 +158,11 @@ function processJson(data, options) {
     const assembly = disassemble(input.program, InputKind.Generic, HasMetadata.No);
     console.info('===========');
     console.info(assembly);
-      console.info('\n^^^^^^^^^^^\n');
+    console.info('\n^^^^^^^^^^^\n');
   }
 
-  const result = runVm(input, options.isDebug, options.useSbrkGas);
+  const exe = prepareProgram(InputKind.Generic, HasMetadata.No, input.program, input.registers, input.pageMap, input.memory, []);
+  const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
   result.status = statusAsString(result.status);
 
   try {
@@ -192,8 +193,8 @@ function statusAsString(status) {
   const map = {
     255: 'ok',
     0: 'halt',
-    1: 'panic', // panic
-    2: 'page-fault', // page fault
+    1: 'panic',
+    2: 'page-fault',
     3: 'host',
     4: 'oog'
   };
