@@ -15,7 +15,7 @@ export const TESTS: Test[] = [
     const assert = new Assert();
     assert.isEqual(
       spi.toString(),
-      "StandardProgram { program: Program { code: 200,135,9, mask: Mask[0, 2, 1, ], jumpTable: JumpTable[], basicBlocks: BasicBlocks[0 -> start, ] }, memory_pages: 6, registers: 4294901760,4278059008,0,0,0,0,0,4278124544,3,0,0,0,0 }",
+      "StandardProgram { program: Program { code: 200,135,9, mask: Mask[0, 2, 1, ], jumpTable: JumpTable[], basicBlocks: BasicBlocks[0 -> start, ] }, memory_pages: 7, registers: 4294901760,4278059008,0,0,0,0,0,4278124544,3,0,0,0,0 }",
     );
     return assert;
   }),
