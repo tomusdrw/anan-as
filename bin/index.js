@@ -162,7 +162,7 @@ function processJson(data, options) {
   }
 
   const exe = prepareProgram(InputKind.Generic, HasMetadata.No, input.program, input.registers, input.pageMap, input.memory, []);
-  const result = runProgram(exe, input.gas, 0, options.isDebug, options.useSbrkGas);
+  const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
   result.status = statusAsString(result.status);
 
   try {
@@ -193,8 +193,8 @@ function statusAsString(status) {
   const map = {
     255: 'ok',
     0: 'halt',
-    1: 'panic', // panic
-    2: 'page-fault', // page fault
+    1: 'panic',
+    2: 'page-fault',
     3: 'host',
     4: 'oog'
   };
