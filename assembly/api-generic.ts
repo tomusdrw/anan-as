@@ -3,7 +3,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
-import { Program, decodeArguments, resolveArguments } from "./program";
+import { decodeArguments, Program, resolveArguments } from "./program";
 import { Registers } from "./registers";
 
 export class InitialPage {

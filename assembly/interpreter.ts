@@ -1,11 +1,11 @@
 import { GasCounter, gasCounter } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
-import { RUN } from "./instructions-exe";
 import { Outcome, Result } from "./instructions/outcome";
 import { reg } from "./instructions/utils";
+import { RUN } from "./instructions-exe";
 import { Memory, MemoryBuilder } from "./memory";
 import { PAGE_SIZE, PAGE_SIZE_SHIFT, RESERVED_MEMORY } from "./memory-page";
-import { BasicBlocks, JumpTable, Program, ProgramCounter, decodeArguments } from "./program";
+import { BasicBlocks, decodeArguments, JumpTable, Program, ProgramCounter } from "./program";
 import { Registers } from "./registers";
 
 export enum Status {

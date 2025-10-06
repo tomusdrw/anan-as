@@ -1,4 +1,4 @@
-import { InstructionRun, dJump, staticJump } from "./outcome";
+import { dJump, InstructionRun, staticJump } from "./outcome";
 import { reg, u32SignExtend } from "./utils";
 
 // JUMP

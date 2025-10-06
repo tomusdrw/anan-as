@@ -6,9 +6,9 @@ import {
   PAGE_SIZE_SHIFT,
   Page,
   PageIndex,
+  RawPage,
   RESERVED_MEMORY,
   RESERVED_PAGES,
-  RawPage,
 } from "./memory-page";
 
 // @unmanaged
