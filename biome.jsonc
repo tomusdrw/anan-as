@@ -1,9 +1,9 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.5/schema.json",
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
-    "ignore": [],
+    "includes": ["**"],
     "attributePosition": "auto",
     "indentStyle": "space",
     "indentWidth": 2,
@@ -16,17 +16,16 @@
     },
     "formatter": {}
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
       "style": {
         "useImportType": "off",
-        "useShorthandArrayType": "error",
-        "noInferrableTypes": "off"
+        "noInferrableTypes": "off",
+        "useConsistentArrayType": { "level": "error", "options": { "syntax": "shorthand" } },
+        "noSubstr": "error"
       },
       "complexity": {
         "noStaticOnlyClass": "off"
@@ -40,13 +39,10 @@
       "suspicious": {
         "noEvolvingTypes": "error"
       },
-      "nursery": {
-        "noSubstr": "error",
-        "useExplicitType": "error"
-      }
+      "nursery": {}
     }
   },
   "files": {
-    "include": ["assembly/*"]
+    "includes": ["**/assembly/**/*"]
   }
 }

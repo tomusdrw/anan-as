@@ -1,7 +1,7 @@
 import { Decoder } from "./codec";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, PAGE_SIZE_SHIFT, SEGMENT_SIZE, SEGMENT_SIZE_SHIFT } from "./memory-page";
-import { Program, deblob } from "./program";
+import { deblob, Program } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 
 /** `Z_I`: https://graypaper.fluffylabs.dev/#/ab2cdbd/2daf002daf00?v=0.7.2 */

@@ -1,4 +1,4 @@
-import { InstructionRun, hostCall, ok, okOrFault, panic } from "./outcome";
+import { hostCall, InstructionRun, ok, okOrFault, panic } from "./outcome";
 import { reg } from "./utils";
 
 // INVALID

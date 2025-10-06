@@ -1,11 +1,11 @@
-import { InitialChunk, InitialPage, VmInput, VmOutput, buildMemory, getAssembly, runVm } from "./api-generic";
+import { buildMemory, getAssembly, InitialChunk, InitialPage, runVm, VmInput, VmOutput } from "./api-generic";
 import { MemoryBuilder } from "./memory";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
-import { StandardProgram, decodeSpi } from "./spi";
+import { decodeSpi, StandardProgram } from "./spi";
 
 export * from "./api";
-export { runVm, getAssembly } from "./api-generic";
+export { getAssembly, runVm } from "./api-generic";
 export { wrapAsProgram } from "./program-build";
 
 export enum InputKind {
