@@ -1,3 +1,3 @@
 #!/bin/bash
 SCRIPT_DIR="$(dirname "$(readlink -f "$BASH_SOURCE")")"
-${SCRIPT_DIR}/index.js -
+${SCRIPT_DIR}/w3f-testvectors.js -
