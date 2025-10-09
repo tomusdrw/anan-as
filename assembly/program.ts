@@ -143,7 +143,9 @@ export class BasicBlocks {
   constructor(code: Uint8Array, mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
-    isStartOrEnd[0] = BasicBlock.START;
+    if (len > 0) {
+      isStartOrEnd[0] = BasicBlock.START;
+    }
     for (let n: i32 = 0; n < len; n += 1) {
       // we only track end-blocks for instructions.
       const isInstructionInMask = mask.isInstruction(n);

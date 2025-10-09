@@ -2,44 +2,46 @@
 
 import "json-bigint-patch";
 import fs from 'node:fs';
-import { Pvm } from "@typeberry/pvm-debugger-adapter";
-import { wrapAsProgram, runVm, disassemble, InputKind } from "../build/release.js";
+import { pvm } from "@typeberry/lib";
+import { wrapAsProgram, runProgram, disassemble, InputKind, prepareProgram, HasMetadata } from "../build/release.js";
 
 let runNumber = 0;
 
 export function fuzz(data) {
   const gas = 200n;
   const pc = 0;
-  const pvm = new Pvm();
+  const vm = new pvm.Pvm();
   const program = wrapAsProgram(new Uint8Array(data));
   if (program.length > 100) {
     return;
   }
 
   try {
-    pvm.reset(
+    vm.reset(
       program,
       pc,
       gas,
     );
-    while(pvm.nSteps(100)) {}
+    while(vm.nSteps(100)) {}
 
     const printDebugInfo = false;
     const registers = Array(13).join(',').split(',').map(() => BigInt(0));
-    const output = runVm({
-      registers,
-      pc,
-      pageMap: [],
-      memory: [],
-      gas,
+    const exe = prepareProgram(
+      InputKind.Generic,
+      HasMetadata.No,
       program,
-    }, printDebugInfo);
+      registers,
+      [],
+      [],
+      []
+    );
+    const output = runProgram(exe, gas, pc, printDebugInfo);
     
     collectErrors((assert) => {
-      assert(pvm.getStatus(), normalizeStatus(output.status), 'status');
-      assert(pvm.getGasLeft(), output.gas, 'gas');
-      assert(Array.from(pvm.getRegisters()), output.registers, 'registers');
-      assert(pvm.getProgramCounter(), output.pc, 'pc');
+      assert(normalizeStatus(vm.getStatus()), normalizeStatus(output.status), 'status');
+      assert(vm.getGasLeft(), output.gas, 'gas');
+      assert(Array.from(vm.getRegisters()), output.registers, 'registers');
+      assert(vm.getProgramCounter(), output.pc, 'pc');
     });
 
     try {
@@ -52,10 +54,10 @@ export function fuzz(data) {
             registers,
           },
           {
-            status: pvm.getStatus(),
-            gasLeft: pvm.getGasLeft(),
-            pc: pvm.getProgramCounter(),
-            registers: pvm.getRegisters()
+            status: normalizeStatus(vm.getStatus()),
+            gasLeft: vm.getGasLeft(),
+            pc: vm.getProgramCounter(),
+            registers: vm.getRegisters()
           },
         );
       }
@@ -66,7 +68,7 @@ export function fuzz(data) {
     const hex = programHex(program);
     console.log(program);
     console.log(linkTo(hex));
-    console.log(disassemble(Array.from(program), InputKind.Generic));
+    console.log(disassemble(Array.from(program), InputKind.Generic, HasMetadata.No));
     throw e;
   }
 }
@@ -74,8 +76,9 @@ export function fuzz(data) {
 function programHex(program) {
   return Array.from(program).map(x => x.toString(16).padStart(2, '0')).join('');
 }
+  
 function linkTo(programHex) {
-  return `https://pvm-debugger.netlify.app/#/load?program=0x${programHex}`;
+  return `https://pvm.fluffylabs.dev/?program=0x${programHex}#/`;
 }
 
 function normalizeStatus(status) {

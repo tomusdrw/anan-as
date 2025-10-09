@@ -5,7 +5,7 @@ import { NO_OF_REGISTERS, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
 
 export * from "./api";
-export { getAssembly, runVm } from "./api-generic";
+export { getAssembly } from "./api-generic";
 export { wrapAsProgram } from "./program-build";
 
 export enum InputKind {
@@ -99,7 +99,5 @@ export function runProgram(
   vmInput.gas = initialGas;
   vmInput.pc = programCounter;
 
-  const output = runVm(vmInput, logs, useSbrkGas);
-  console.log(`Finished with status: ${output.status}`);
-  return output;
+  return runVm(vmInput, logs, useSbrkGas);
 }
