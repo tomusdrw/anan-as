@@ -38,7 +38,7 @@ export function fuzz(data) {
     const output = runProgram(exe, gas, pc, printDebugInfo);
     
     collectErrors((assert) => {
-      assert(vm.getStatus(), normalizeStatus(output.status), 'status');
+      assert(normalizeStatus(vm.getStatus()), normalizeStatus(output.status), 'status');
       assert(vm.getGasLeft(), output.gas, 'gas');
       assert(Array.from(vm.getRegisters()), output.registers, 'registers');
       assert(vm.getProgramCounter(), output.pc, 'pc');
@@ -54,7 +54,7 @@ export function fuzz(data) {
             registers,
           },
           {
-            status: vm.getStatus(),
+            status: normalizeStatus(vm.getStatus()),
             gasLeft: vm.getGasLeft(),
             pc: vm.getProgramCounter(),
             registers: vm.getRegisters()
