@@ -68,9 +68,7 @@ export function fuzz(data) {
     const hex = programHex(program);
     console.log(program);
     console.log(linkTo(hex));
-    try {
-      console.log(disassemble(Array.from(program), InputKind.Generic));
-    } catch {}
+    console.log(disassemble(Array.from(program), InputKind.Generic, HasMetadata.No));
     throw e;
   }
 }

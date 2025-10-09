@@ -105,7 +105,8 @@ function readFromStdin(options) {
         gas: BigInt(read(json, 'initial-gas')),
         program: read(json, 'program'),
       };
-      const result = runVm(input, options.isDebug, options.useSbrkGas);
+      const exe = prepareProgram(InputKind.Generic, HasMetadata.No, input.program, input.registers, input.pageMap, input.memory, []);
+      const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
 
       json['expected-pc'] = result.pc;
       json['expected-gas'] = result.gas;
