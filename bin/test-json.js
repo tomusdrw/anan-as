@@ -33,8 +33,8 @@ export function run(
 
   if (args.length === 0) {
     console.error("Error: No JSON files provided.");
-    console.error("Usage: index.js [--debug] <file1.json> [file2.json ...]");
-    console.error("read from stdin: index.js [--debug] -");
+    console.error("Usage: index.js [--debug] [--sbrk-gas] <file1.json> [file2.json ...]");
+    console.error("read from stdin: index.js [--debug] [--sbrk-gas] -");
     process.exit(1);
   }
 
@@ -59,6 +59,7 @@ export function run(
     try {
       dir = readdirSync(filePath);
     } catch (e) {
+      // Not a directory or inaccessible, will try as file
     }
 
     if (dir !== null) {
