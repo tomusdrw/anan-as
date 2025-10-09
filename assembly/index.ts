@@ -99,7 +99,5 @@ export function runProgram(
   vmInput.gas = initialGas;
   vmInput.pc = programCounter;
 
-  const output = runVm(vmInput, logs, useSbrkGas);
-  console.log(`Finished with status: ${output.status}`);
-  return output;
+  return runVm(vmInput, logs, useSbrkGas);
 }
