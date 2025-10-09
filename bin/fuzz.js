@@ -76,8 +76,9 @@ export function fuzz(data) {
 function programHex(program) {
   return Array.from(program).map(x => x.toString(16).padStart(2, '0')).join('');
 }
+  
 function linkTo(programHex) {
-  return `https://pvm.fluffylabs.dev/#/load?program=0x${programHex}`;
+  return `https://pvm.fluffylabs.dev/?program=0x${programHex}#/`;
 }
 
 function normalizeStatus(status) {
