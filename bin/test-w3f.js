@@ -2,7 +2,7 @@
 
 import "json-bigint-patch";
 import * as assert from 'node:assert';
-import { OK, ERR, run } from './test-json.js';
+import { OK, ERR, run, read } from './test-json.js';
 
 import { prepareProgram, runProgram, InputKind, disassemble, HasMetadata } from "../build/release.js";
 
@@ -21,16 +21,6 @@ function main() {
   };
 
   run(processW3f, options);
-}
-
-function read(data, field, defaultValue = undefined) {
-  if (field in data) {
-    return data[field];
-  }
-  if (defaultValue !== undefined) {
-    return defaultValue;
-  }
-  throw new Error(`Required field ${field} missing in ${JSON.stringify(data, null, 2)}`);
 }
 
 function processW3f(data, options) {
