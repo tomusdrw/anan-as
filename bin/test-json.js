@@ -73,8 +73,10 @@ export function run(
     }
   });
 
-  const icon = status.ok.length === status.all ? OK : ERR;
-  console.log(`${icon} Tests status: ${status.ok.length}/${status.all}`);
+  if (!options.isSilent) {
+    const icon = status.ok.length === status.all ? OK : ERR;
+    console.log(`${icon} Tests status: ${status.ok.length}/${status.all}`);
+  }
   if (status.fail.length) {
     console.error('Failures:');
     for (const e of status.fail) {
@@ -95,7 +97,7 @@ function readFromStdin(processJson, options) {
     buffer += data;
     if (buffer.endsWith("\n\n")) {
       const json = JSON.parse(buffer);
-      const out = processJson(json, options);
+      const out = processJson(json, options, '-');
       // clear previous buffer
       buffer = '';
 
@@ -125,7 +127,7 @@ function processFile(processJson, options, status, filePath) {
 
   try {
     // Process the parsed JSON
-    const result = processJson(jsonData, options);
+    const result = processJson(jsonData, options, filePath);
     status.ok.push({ filePath, name: jsonData.name });
     return result;
   } catch (error) {
@@ -136,3 +138,12 @@ function processFile(processJson, options, status, filePath) {
   }
 }
 
+export function read(data, field, defaultValue = undefined) {
+  if (field in data) {
+    return data[field];
+  }
+  if (defaultValue !== undefined) {
+    return defaultValue;
+  }
+  throw new Error(`Required field ${field} missing in ${JSON.stringify(data, null, 2)}`);
+}
