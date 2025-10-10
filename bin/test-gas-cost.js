@@ -45,7 +45,9 @@ function processGasCost(data, options, filePath) {
   // silent mode - just put our vals into expected (comparison done externally)
   if (options.isSilent) {
     data['block_gas_costs'] = result;
-    console.log(JSON.stringify(data, null, 2));
+    if (filePath !== '-') {
+      console.log(JSON.stringify(data, null, 2));
+    }
     return data;
   }
 
