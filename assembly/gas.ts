@@ -34,6 +34,10 @@ class GasCounterU64 implements GasCounter {
 
   sub(g: Gas): boolean {
     this.gas = this.gas - g;
-    return this.gas < 0;
+    if (this.gas < 0) {
+      this.gas = 0;
+      return true;
+    }
+    return false;
   }
 }

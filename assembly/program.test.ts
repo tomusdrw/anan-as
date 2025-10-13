@@ -1,9 +1,9 @@
 import { Arguments } from "./arguments";
-import { RUN } from "./instructions-exe";
 import { jump_ind } from "./instructions/jump";
 import { trap } from "./instructions/misc";
 import { InstructionRun } from "./instructions/outcome";
-import { BasicBlocks, JumpTable, Mask, deblob, decodeArguments } from "./program";
+import { RUN } from "./instructions-exe";
+import { BasicBlocks, deblob, decodeArguments, JumpTable, Mask } from "./program";
 import { Assert, Test, test } from "./test";
 
 export function u8arr(data: number[]): Uint8Array {

@@ -1,13 +1,17 @@
 export type PageIndex = u32;
 export type ArenaId = u32;
 
-/** https://graypaper.fluffylabs.dev/#/68eaa1f/0a78010a7801?v=0.6.4 **/
-export const PAGE_SIZE: u32 = 4096;
-export const PAGE_SIZE_SHIFT = 12;
+/** `Z_P`: https://graypaper.fluffylabs.dev/#/ab2cdbd/44d20044d200?v=0.7.2 */
+export const PAGE_SIZE: u32 = 2 ** 12; // 4_096
+export const PAGE_SIZE_SHIFT: u32 = 12;
 
-/** https://graypaper.fluffylabs.dev/#/68eaa1f/24ee0024ee00?v=0.6.4 */
+/** `Z_Z`: https://graypaper.fluffylabs.dev/#/ab2cdbd/2daf002daf00?v=0.7.2 */
+export const SEGMENT_SIZE: u32 = 2 ** 16; //65_536
+export const SEGMENT_SIZE_SHIFT: u32 = 16;
+
+/** https://graypaper.fluffylabs.dev/#/ab2cdbd/254401254a01?v=0.7.2 */
 export const RESERVED_MEMORY: u32 = 2 ** 16;
-export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE;
+export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE; // 16
 
 /** Amount of memory to allocate eagerly */
 export const ALLOCATE_EAGERLY: u32 = 2 ** 29; // 512MB

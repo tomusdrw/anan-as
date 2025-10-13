@@ -5,6 +5,7 @@ import * as math from "./instructions/math.test";
 import * as rot from "./instructions/rot.test";
 import * as memory from "./memory.test";
 import * as program from "./program.test";
+import * as spi from "./spi.test";
 import { Assert, Test } from "./test";
 
 export function runAllTests(): void {
@@ -17,6 +18,7 @@ export function runAllTests(): void {
   a += run(memory.TESTS, "memory.ts");
   a += run(program.TESTS, "program.ts");
   a += run(rot.TESTS, "rot.ts");
+  a += run(spi.TESTS, "spi.ts");
 
   const okay = u32(a >> 32);
   const total = u32(a);

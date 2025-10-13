@@ -6,9 +6,9 @@ import {
   PAGE_SIZE_SHIFT,
   Page,
   PageIndex,
+  RawPage,
   RESERVED_MEMORY,
   RESERVED_PAGES,
-  RawPage,
 } from "./memory-page";
 
 // @unmanaged
@@ -58,24 +58,24 @@ export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
   private arena: Arena = new Arena(128);
 
+  /** Allocates memory pages with given `access`, for given `address` and initialize with `zeroes` */
+  setEmpty(access: Access, address: u32, len: u32): MemoryBuilder {
+    const endAddress = address + len;
+    for (let currentAddress = address; currentAddress < endAddress; currentAddress += PAGE_SIZE) {
+      this.getOrCreatePageForAddress(access, currentAddress);
+    }
+    return this;
+  }
+
+  /** Allocates memory pages with given `access`, for given `address` and writes there `data` */
   setData(access: Access, address: u32, data: Uint8Array): MemoryBuilder {
     let currentAddress = address;
     let currentData = data;
     while (currentData.length > 0) {
-      const pageIdx = u32(currentAddress >> PAGE_SIZE_SHIFT);
-      if (pageIdx < RESERVED_PAGES) {
-        throw new Error(`Attempting to allocate reserved page: ${pageIdx}`);
-      }
-
-      if (!this.pages.has(pageIdx)) {
-        const page = this.arena.acquire();
-        this.pages.set(pageIdx, new Page(access, page));
-      }
+      const page = this.getOrCreatePageForAddress(access, currentAddress);
 
       const relAddress = currentAddress % PAGE_SIZE;
-      const page = this.pages.get(pageIdx);
       const spaceInPage = PAGE_SIZE - relAddress;
-
       const end = u32(currentData.length) < spaceInPage ? currentData.length : spaceInPage;
       page.raw.data.set(currentData.subarray(0, end), relAddress);
 
@@ -84,6 +84,21 @@ export class MemoryBuilder {
       currentData = currentData.subarray(end);
     }
     return this;
+  }
+
+  /** Returns memory page for given address (creates if not exists) */
+  getOrCreatePageForAddress(access: Access, address: u32): Page {
+    const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
+    if (pageIdx < RESERVED_PAGES) {
+      throw new Error(`Attempting to allocate reserved page: ${pageIdx}`);
+    }
+
+    if (!this.pages.has(pageIdx)) {
+      const page = this.arena.acquire();
+      this.pages.set(pageIdx, new Page(access, page));
+    }
+
+    return this.pages.get(pageIdx);
   }
 
   build(sbrkAddress: u32 = RESERVED_MEMORY): Memory {

@@ -24,31 +24,14 @@ export function extractCodeAndMetadata(data: Uint8Array): CodeAndMetadata {
   return new CodeAndMetadata(code, metadata);
 }
 
-/** https://graypaper.fluffylabs.dev/#/9a08063/2cc5022cc502?v=0.6.6 */
-export function decodeSpi(data: Uint8Array): Program {
-  const decoder = new Decoder(data);
-
-  const roLength = decoder.u24();
-  const rwLength = decoder.u24();
-  const _heapPages = decoder.u16();
-  const _stackSize = decoder.u24();
-
-  const _roMem = decoder.bytes(roLength);
-  const _rwMem = decoder.bytes(rwLength);
-
-  const codeLength = decoder.u32();
-  const code = decoder.bytes(codeLength);
-  decoder.finish();
-
-  return deblob(code);
-}
-
+/** Convert `u8` to `Uint8Array` */
 export function liftBytes(data: u8[]): Uint8Array {
   const p = new Uint8Array(data.length);
   p.set(data, 0);
   return p;
 }
 
+/**  Convert `Uint8Array` to `u8` */
 export function lowerBytes(data: Uint8Array): u8[] {
   const r = new Array<u8>(data.length);
   for (let i = 0; i < data.length; i++) {
@@ -160,7 +143,9 @@ export class BasicBlocks {
   constructor(code: Uint8Array, mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
-    isStartOrEnd[0] = BasicBlock.START;
+    if (len > 0) {
+      isStartOrEnd[0] = BasicBlock.START;
+    }
     for (let n: i32 = 0; n < len; n += 1) {
       // we only track end-blocks for instructions.
       const isInstructionInMask = mask.isInstruction(n);

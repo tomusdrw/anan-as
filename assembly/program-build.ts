@@ -1,4 +1,4 @@
-import { Arguments, REQUIRED_BYTES, nibbles } from "./arguments";
+import { Arguments, nibbles, REQUIRED_BYTES } from "./arguments";
 import { encodeVarU32 } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 

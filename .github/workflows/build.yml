@@ -27,7 +27,7 @@ jobs:
         repository: FluffyLabs/jamtestvectors
         path: "./jamtestvectors"
         ref: ba76542dbf7a0c72d414a87ad2e30ce4da380448 # New test vectors.
-    - run: npm start ./jamtestvectors/pvm/programs/*.json
+    - run: npm run test:w3f ./jamtestvectors/pvm/programs/*.json
 
   build-and-test:
     runs-on: ubuntu-latest

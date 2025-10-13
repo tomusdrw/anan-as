@@ -4,14 +4,13 @@ import * as jump from "./instructions/jump";
 import * as load from "./instructions/load";
 import * as logic from "./instructions/logic";
 import * as math from "./instructions/math";
+import { ecalli, fallthrough, INVALID, sbrk, trap } from "./instructions/misc";
 import * as mov from "./instructions/mov";
+import { InstructionRun } from "./instructions/outcome";
 import * as rot from "./instructions/rot";
 import * as set from "./instructions/set";
 import * as shift from "./instructions/shift";
 import * as store from "./instructions/store";
-
-import { INVALID, ecalli, fallthrough, sbrk, trap } from "./instructions/misc";
-import { InstructionRun } from "./instructions/outcome";
 
 export const RUN: InstructionRun[] = [
   /* 000 */ trap,
