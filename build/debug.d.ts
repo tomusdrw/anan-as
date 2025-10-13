@@ -1,45 +1,7 @@
 /** Exported memory */
 export declare const memory: WebAssembly.Memory;
-/** assembly/index/InputKind */
-export declare enum InputKind {
-  /** @type `i32` */
-  Generic,
-  /** @type `i32` */
-  SPI,
-}
-/** assembly/index/HasMetadata */
-export declare enum HasMetadata {
-  /** @type `i32` */
-  Yes,
-  /** @type `i32` */
-  No,
-}
 /**
- * assembly/index/disassemble
- * @param input `~lib/array/Array<u8>`
- * @param kind `i32`
- * @param withMetadata `i32`
- * @returns `~lib/string/String`
- */
-export declare function disassemble(input: Array<number>, kind: number, withMetadata: number): string;
-/**
- * assembly/index/runProgram
- * @param input `~lib/array/Array<u8>`
- * @param registers `~lib/array/Array<u64>`
- * @param kind `i32`
- * @returns `assembly/api-generic/VmOutput`
- */
-export declare function runProgram(input: Array<number>, registers: Array<bigint>, kind: number): __Record44<never>;
-/**
- * assembly/api-generic/runVm
- * @param input `assembly/api-generic/VmInput`
- * @param logs `bool`
- * @param useSbrkGas `bool`
- * @returns `assembly/api-generic/VmOutput`
- */
-export declare function runVm(input: __Record47<undefined>, logs?: boolean, useSbrkGas?: boolean): __Record44<never>;
-/**
- * assembly/api-generic/getAssembly
+ * assembly/api-internal/getAssembly
  * @param p `assembly/program/Program`
  * @returns `~lib/string/String`
  */
@@ -51,107 +13,160 @@ export declare function getAssembly(p: __Internref30): string;
  */
 export declare function wrapAsProgram(bytecode: Uint8Array): Uint8Array;
 /**
- * assembly/api/resetGeneric
+ * assembly/api-debugger/resetJAM
+ * @param program `~lib/array/Array<u8>`
+ * @param pc `f64`
+ * @param initialGas `i64`
+ * @param args `~lib/array/Array<u8>`
+ * @param hasMetadata `bool`
+ */
+export declare function resetJAM(program: Array<number>, pc: number, initialGas: bigint, args: Array<number>, hasMetadata?: boolean): void;
+/**
+ * assembly/api-debugger/resetGeneric
  * @param program `~lib/array/Array<u8>`
  * @param flatRegisters `~lib/array/Array<u8>`
  * @param initialGas `i64`
+ * @param hasMetadata `bool`
  */
-export declare function resetGeneric(program: Array<number>, flatRegisters: Array<number>, initialGas: bigint): void;
+export declare function resetGeneric(program: Array<number>, flatRegisters: Array<number>, initialGas: bigint, hasMetadata?: boolean): void;
 /**
- * assembly/api/resetGenericWithMemory
+ * assembly/api-debugger/resetGenericWithMemory
  * @param program `~lib/array/Array<u8>`
  * @param flatRegisters `~lib/array/Array<u8>`
  * @param pageMap `~lib/typedarray/Uint8Array`
  * @param chunks `~lib/typedarray/Uint8Array`
  * @param initialGas `i64`
+ * @param hasMetadata `bool`
  */
-export declare function resetGenericWithMemory(program: Array<number>, flatRegisters: Array<number>, pageMap: Uint8Array, chunks: Uint8Array, initialGas: bigint): void;
+export declare function resetGenericWithMemory(program: Array<number>, flatRegisters: Array<number>, pageMap: Uint8Array, chunks: Uint8Array, initialGas: bigint, hasMetadata?: boolean): void;
 /**
- * assembly/api/nextStep
+ * assembly/api-debugger/nextStep
  * @returns `bool`
  */
 export declare function nextStep(): boolean;
 /**
- * assembly/api/nSteps
+ * assembly/api-debugger/nSteps
  * @param steps `u32`
  * @returns `bool`
  */
 export declare function nSteps(steps: number): boolean;
 /**
- * assembly/api/getProgramCounter
+ * assembly/api-debugger/getProgramCounter
  * @returns `u32`
  */
 export declare function getProgramCounter(): number;
 /**
- * assembly/api/setNextProgramCounter
+ * assembly/api-debugger/setNextProgramCounter
  * @param pc `u32`
  */
 export declare function setNextProgramCounter(pc: number): void;
 /**
- * assembly/api/getStatus
+ * assembly/api-debugger/getStatus
  * @returns `u8`
  */
 export declare function getStatus(): number;
 /**
- * assembly/api/getExitArg
+ * assembly/api-debugger/getExitArg
  * @returns `u32`
  */
 export declare function getExitArg(): number;
 /**
- * assembly/api/getGasLeft
+ * assembly/api-debugger/getGasLeft
  * @returns `i64`
  */
 export declare function getGasLeft(): bigint;
 /**
- * assembly/api/setGasLeft
+ * assembly/api-debugger/setGasLeft
  * @param gas `i64`
  */
 export declare function setGasLeft(gas: bigint): void;
 /**
- * assembly/api/getRegisters
+ * assembly/api-debugger/getRegisters
  * @returns `~lib/typedarray/Uint8Array`
  */
 export declare function getRegisters(): Uint8Array;
 /**
- * assembly/api/setRegisters
+ * assembly/api-debugger/setRegisters
  * @param flatRegisters `~lib/array/Array<u8>`
  */
 export declare function setRegisters(flatRegisters: Array<number>): void;
 /**
- * assembly/api/getPageDump
+ * assembly/api-debugger/getPageDump
  * @param index `u32`
  * @returns `~lib/typedarray/Uint8Array`
  */
 export declare function getPageDump(index: number): Uint8Array;
 /**
- * assembly/api/setMemory
+ * assembly/api-debugger/setMemory
  * @param address `u32`
  * @param data `~lib/typedarray/Uint8Array`
  */
 export declare function setMemory(address: number, data: Uint8Array): void;
-/** assembly/api-generic/InitialChunk */
-declare interface __Record45<TOmittable> {
-  /** @type `u32` */
-  address: number | TOmittable;
-  /** @type `~lib/array/Array<u8>` */
-  data: Array<number>;
-}
-/** assembly/api-generic/VmOutput */
-declare interface __Record44<TOmittable> {
+/** assembly/api-utils/InputKind */
+export declare enum InputKind {
   /** @type `i32` */
-  status: number | TOmittable;
-  /** @type `~lib/array/Array<u64>` */
-  registers: Array<bigint>;
+  Generic,
+  /** @type `i32` */
+  SPI,
+}
+/** assembly/api-utils/HasMetadata */
+export declare enum HasMetadata {
+  /** @type `i32` */
+  Yes,
+  /** @type `i32` */
+  No,
+}
+/**
+ * assembly/api-utils/getGasCosts
+ * @param input `~lib/array/Array<u8>`
+ * @param kind `i32`
+ * @param withMetadata `i32`
+ * @returns `~lib/array/Array<assembly/gas-costs/BlockGasCost>`
+ */
+export declare function getGasCosts(input: Array<number>, kind: number, withMetadata: number): Array<__Record54<never>>;
+/**
+ * assembly/api-utils/disassemble
+ * @param input `~lib/array/Array<u8>`
+ * @param kind `i32`
+ * @param withMetadata `i32`
+ * @returns `~lib/string/String`
+ */
+export declare function disassemble(input: Array<number>, kind: number, withMetadata: number): string;
+/**
+ * assembly/api-utils/prepareProgram
+ * @param kind `i32`
+ * @param hasMetadata `i32`
+ * @param program `~lib/array/Array<u8>`
+ * @param initialRegisters `~lib/array/Array<u64>`
+ * @param initialPageMap `~lib/array/Array<assembly/api-internal/InitialPage>`
+ * @param initialMemory `~lib/array/Array<assembly/api-internal/InitialChunk>`
+ * @param args `~lib/array/Array<u8>`
+ * @returns `assembly/spi/StandardProgram`
+ */
+export declare function prepareProgram(kind: number, hasMetadata: number, program: Array<number>, initialRegisters: Array<bigint>, initialPageMap: Array<__Record48<undefined>>, initialMemory: Array<__Record50<undefined>>, args: Array<number>): __Internref44;
+/**
+ * assembly/api-utils/runProgram
+ * @param program `assembly/spi/StandardProgram`
+ * @param initialGas `i64`
+ * @param programCounter `u32`
+ * @param logs `bool`
+ * @param useSbrkGas `bool`
+ * @returns `assembly/api-internal/VmOutput`
+ */
+export declare function runProgram(program: __Internref44, initialGas?: bigint, programCounter?: number, logs?: boolean, useSbrkGas?: boolean): __Record59<never>;
+/** assembly/program/Program */
+declare class __Internref30 extends Number {
+  private __nominal30: symbol;
+  private __nominal0: symbol;
+}
+/** assembly/gas-costs/BlockGasCost */
+declare interface __Record54<TOmittable> {
   /** @type `u32` */
   pc: number | TOmittable;
-  /** @type `~lib/array/Array<assembly/api-generic/InitialChunk>` */
-  memory: Array<__Record45<never>>;
-  /** @type `i64` */
+  /** @type `u64` */
   gas: bigint | TOmittable;
-  /** @type `u32` */
-  exitCode: number | TOmittable;
 }
-/** assembly/api-generic/InitialPage */
+/** assembly/api-internal/InitialPage */
 declare interface __Record48<TOmittable> {
   /** @type `u32` */
   address: number | TOmittable;
@@ -160,23 +175,30 @@ declare interface __Record48<TOmittable> {
   /** @type `i32` */
   access: number | TOmittable;
 }
-/** assembly/api-generic/VmInput */
-declare interface __Record47<TOmittable> {
+/** assembly/api-internal/InitialChunk */
+declare interface __Record50<TOmittable> {
+  /** @type `u32` */
+  address: number | TOmittable;
+  /** @type `~lib/array/Array<u8>` */
+  data: Array<number>;
+}
+/** assembly/spi/StandardProgram */
+declare class __Internref44 extends Number {
+  private __nominal44: symbol;
+  private __nominal0: symbol;
+}
+/** assembly/api-internal/VmOutput */
+declare interface __Record59<TOmittable> {
+  /** @type `i32` */
+  status: number | TOmittable;
   /** @type `~lib/array/Array<u64>` */
   registers: Array<bigint>;
   /** @type `u32` */
   pc: number | TOmittable;
+  /** @type `~lib/array/Array<assembly/api-internal/InitialChunk>` */
+  memory: Array<__Record50<never>>;
   /** @type `i64` */
   gas: bigint | TOmittable;
-  /** @type `~lib/array/Array<u8>` */
-  program: Array<number>;
-  /** @type `~lib/array/Array<assembly/api-generic/InitialPage>` */
-  pageMap: Array<__Record48<undefined>>;
-  /** @type `~lib/array/Array<assembly/api-generic/InitialChunk>` */
-  memory: Array<__Record45<undefined>>;
-}
-/** assembly/program/Program */
-declare class __Internref30 extends Number {
-  private __nominal30: symbol;
-  private __nominal0: symbol;
+  /** @type `u32` */
+  exitCode: number | TOmittable;
 }

@@ -22,43 +22,8 @@ async function instantiate(module, imports = {}) {
   const { exports } = await WebAssembly.instantiate(module, adaptedImports);
   const memory = exports.memory || imports.env.memory;
   const adaptedExports = Object.setPrototypeOf({
-    InputKind: (values => (
-      // assembly/index/InputKind
-      values[values.Generic = exports["InputKind.Generic"].valueOf()] = "Generic",
-      values[values.SPI = exports["InputKind.SPI"].valueOf()] = "SPI",
-      values
-    ))({}),
-    HasMetadata: (values => (
-      // assembly/index/HasMetadata
-      values[values.Yes = exports["HasMetadata.Yes"].valueOf()] = "Yes",
-      values[values.No = exports["HasMetadata.No"].valueOf()] = "No",
-      values
-    ))({}),
-    disassemble(input, kind, withMetadata) {
-      // assembly/index/disassemble(~lib/array/Array<u8>, i32, i32) => ~lib/string/String
-      input = __lowerArray(__setU8, 27, 0, input) || __notnull();
-      return __liftString(exports.disassemble(input, kind, withMetadata) >>> 0);
-    },
-    runProgram(input, registers, kind) {
-      // assembly/index/runProgram(~lib/array/Array<u8>, ~lib/array/Array<u64>, i32) => assembly/api-generic/VmOutput
-      input = __retain(__lowerArray(__setU8, 27, 0, input) || __notnull());
-      registers = __lowerArray(__setU64, 43, 3, registers) || __notnull();
-      try {
-        return __liftRecord44(exports.runProgram(input, registers, kind) >>> 0);
-      } finally {
-        __release(input);
-      }
-    },
-    runVm(input, logs, useSbrkGas) {
-      // assembly/api-generic/runVm(assembly/api-generic/VmInput, bool?, bool?) => assembly/api-generic/VmOutput
-      input = __lowerRecord47(input) || __notnull();
-      logs = logs ? 1 : 0;
-      useSbrkGas = useSbrkGas ? 1 : 0;
-      exports.__setArgumentsLength(arguments.length);
-      return __liftRecord44(exports.runVm(input, logs, useSbrkGas) >>> 0);
-    },
     getAssembly(p) {
-      // assembly/api-generic/getAssembly(assembly/program/Program) => ~lib/string/String
+      // assembly/api-internal/getAssembly(assembly/program/Program) => ~lib/string/String
       p = __lowerInternref(p) || __notnull();
       return __liftString(exports.getAssembly(p) >>> 0);
     },
@@ -67,26 +32,43 @@ async function instantiate(module, imports = {}) {
       bytecode = __lowerTypedArray(Uint8Array, 5, 0, bytecode) || __notnull();
       return __liftTypedArray(Uint8Array, exports.wrapAsProgram(bytecode) >>> 0);
     },
-    resetGeneric(program, flatRegisters, initialGas) {
-      // assembly/api/resetGeneric(~lib/array/Array<u8>, ~lib/array/Array<u8>, i64) => void
+    resetJAM(program, pc, initialGas, args, hasMetadata) {
+      // assembly/api-debugger/resetJAM(~lib/array/Array<u8>, f64, i64, ~lib/array/Array<u8>, bool?) => void
       program = __retain(__lowerArray(__setU8, 27, 0, program) || __notnull());
-      flatRegisters = __lowerArray(__setU8, 27, 0, flatRegisters) || __notnull();
       initialGas = initialGas || 0n;
+      args = __lowerArray(__setU8, 27, 0, args) || __notnull();
+      hasMetadata = hasMetadata ? 1 : 0;
       try {
-        exports.resetGeneric(program, flatRegisters, initialGas);
+        exports.__setArgumentsLength(arguments.length);
+        exports.resetJAM(program, pc, initialGas, args, hasMetadata);
       } finally {
         __release(program);
       }
     },
-    resetGenericWithMemory(program, flatRegisters, pageMap, chunks, initialGas) {
-      // assembly/api/resetGenericWithMemory(~lib/array/Array<u8>, ~lib/array/Array<u8>, ~lib/typedarray/Uint8Array, ~lib/typedarray/Uint8Array, i64) => void
+    resetGeneric(program, flatRegisters, initialGas, hasMetadata) {
+      // assembly/api-debugger/resetGeneric(~lib/array/Array<u8>, ~lib/array/Array<u8>, i64, bool?) => void
+      program = __retain(__lowerArray(__setU8, 27, 0, program) || __notnull());
+      flatRegisters = __lowerArray(__setU8, 27, 0, flatRegisters) || __notnull();
+      initialGas = initialGas || 0n;
+      hasMetadata = hasMetadata ? 1 : 0;
+      try {
+        exports.__setArgumentsLength(arguments.length);
+        exports.resetGeneric(program, flatRegisters, initialGas, hasMetadata);
+      } finally {
+        __release(program);
+      }
+    },
+    resetGenericWithMemory(program, flatRegisters, pageMap, chunks, initialGas, hasMetadata) {
+      // assembly/api-debugger/resetGenericWithMemory(~lib/array/Array<u8>, ~lib/array/Array<u8>, ~lib/typedarray/Uint8Array, ~lib/typedarray/Uint8Array, i64, bool?) => void
       program = __retain(__lowerArray(__setU8, 27, 0, program) || __notnull());
       flatRegisters = __retain(__lowerArray(__setU8, 27, 0, flatRegisters) || __notnull());
       pageMap = __retain(__lowerTypedArray(Uint8Array, 5, 0, pageMap) || __notnull());
       chunks = __lowerTypedArray(Uint8Array, 5, 0, chunks) || __notnull();
       initialGas = initialGas || 0n;
+      hasMetadata = hasMetadata ? 1 : 0;
       try {
-        exports.resetGenericWithMemory(program, flatRegisters, pageMap, chunks, initialGas);
+        exports.__setArgumentsLength(arguments.length);
+        exports.resetGenericWithMemory(program, flatRegisters, pageMap, chunks, initialGas, hasMetadata);
       } finally {
         __release(program);
         __release(flatRegisters);
@@ -94,69 +76,103 @@ async function instantiate(module, imports = {}) {
       }
     },
     nextStep() {
-      // assembly/api/nextStep() => bool
+      // assembly/api-debugger/nextStep() => bool
       return exports.nextStep() != 0;
     },
     nSteps(steps) {
-      // assembly/api/nSteps(u32) => bool
+      // assembly/api-debugger/nSteps(u32) => bool
       return exports.nSteps(steps) != 0;
     },
     getProgramCounter() {
-      // assembly/api/getProgramCounter() => u32
+      // assembly/api-debugger/getProgramCounter() => u32
       return exports.getProgramCounter() >>> 0;
     },
     getExitArg() {
-      // assembly/api/getExitArg() => u32
+      // assembly/api-debugger/getExitArg() => u32
       return exports.getExitArg() >>> 0;
     },
     setGasLeft(gas) {
-      // assembly/api/setGasLeft(i64) => void
+      // assembly/api-debugger/setGasLeft(i64) => void
       gas = gas || 0n;
       exports.setGasLeft(gas);
     },
     getRegisters() {
-      // assembly/api/getRegisters() => ~lib/typedarray/Uint8Array
+      // assembly/api-debugger/getRegisters() => ~lib/typedarray/Uint8Array
       return __liftTypedArray(Uint8Array, exports.getRegisters() >>> 0);
     },
     setRegisters(flatRegisters) {
-      // assembly/api/setRegisters(~lib/array/Array<u8>) => void
+      // assembly/api-debugger/setRegisters(~lib/array/Array<u8>) => void
       flatRegisters = __lowerArray(__setU8, 27, 0, flatRegisters) || __notnull();
       exports.setRegisters(flatRegisters);
     },
     getPageDump(index) {
-      // assembly/api/getPageDump(u32) => ~lib/typedarray/Uint8Array
+      // assembly/api-debugger/getPageDump(u32) => ~lib/typedarray/Uint8Array
       return __liftTypedArray(Uint8Array, exports.getPageDump(index) >>> 0);
     },
     setMemory(address, data) {
-      // assembly/api/setMemory(u32, ~lib/typedarray/Uint8Array) => void
+      // assembly/api-debugger/setMemory(u32, ~lib/typedarray/Uint8Array) => void
       data = __lowerTypedArray(Uint8Array, 5, 0, data) || __notnull();
       exports.setMemory(address, data);
     },
+    InputKind: (values => (
+      // assembly/api-utils/InputKind
+      values[values.Generic = exports["InputKind.Generic"].valueOf()] = "Generic",
+      values[values.SPI = exports["InputKind.SPI"].valueOf()] = "SPI",
+      values
+    ))({}),
+    HasMetadata: (values => (
+      // assembly/api-utils/HasMetadata
+      values[values.Yes = exports["HasMetadata.Yes"].valueOf()] = "Yes",
+      values[values.No = exports["HasMetadata.No"].valueOf()] = "No",
+      values
+    ))({}),
+    getGasCosts(input, kind, withMetadata) {
+      // assembly/api-utils/getGasCosts(~lib/array/Array<u8>, i32, i32) => ~lib/array/Array<assembly/gas-costs/BlockGasCost>
+      input = __lowerArray(__setU8, 27, 0, input) || __notnull();
+      return __liftArray(pointer => __liftRecord54(__getU32(pointer)), 2, exports.getGasCosts(input, kind, withMetadata) >>> 0);
+    },
+    disassemble(input, kind, withMetadata) {
+      // assembly/api-utils/disassemble(~lib/array/Array<u8>, i32, i32) => ~lib/string/String
+      input = __lowerArray(__setU8, 27, 0, input) || __notnull();
+      return __liftString(exports.disassemble(input, kind, withMetadata) >>> 0);
+    },
+    prepareProgram(kind, hasMetadata, program, initialRegisters, initialPageMap, initialMemory, args) {
+      // assembly/api-utils/prepareProgram(i32, i32, ~lib/array/Array<u8>, ~lib/array/Array<u64>, ~lib/array/Array<assembly/api-internal/InitialPage>, ~lib/array/Array<assembly/api-internal/InitialChunk>, ~lib/array/Array<u8>) => assembly/spi/StandardProgram
+      program = __retain(__lowerArray(__setU8, 27, 0, program) || __notnull());
+      initialRegisters = __retain(__lowerArray(__setU64, 56, 3, initialRegisters) || __notnull());
+      initialPageMap = __retain(__lowerArray((pointer, value) => { __setU32(pointer, __lowerRecord48(value) || __notnull()); }, 49, 2, initialPageMap) || __notnull());
+      initialMemory = __retain(__lowerArray((pointer, value) => { __setU32(pointer, __lowerRecord50(value) || __notnull()); }, 51, 2, initialMemory) || __notnull());
+      args = __lowerArray(__setU8, 27, 0, args) || __notnull();
+      try {
+        return __liftInternref(exports.prepareProgram(kind, hasMetadata, program, initialRegisters, initialPageMap, initialMemory, args) >>> 0);
+      } finally {
+        __release(program);
+        __release(initialRegisters);
+        __release(initialPageMap);
+        __release(initialMemory);
+      }
+    },
+    runProgram(program, initialGas, programCounter, logs, useSbrkGas) {
+      // assembly/api-utils/runProgram(assembly/spi/StandardProgram, i64?, u32?, bool?, bool?) => assembly/api-internal/VmOutput
+      program = __lowerInternref(program) || __notnull();
+      initialGas = initialGas || 0n;
+      logs = logs ? 1 : 0;
+      useSbrkGas = useSbrkGas ? 1 : 0;
+      exports.__setArgumentsLength(arguments.length);
+      return __liftRecord59(exports.runProgram(program, initialGas, programCounter, logs, useSbrkGas) >>> 0);
+    },
   }, exports);
-  function __liftRecord45(pointer) {
-    // assembly/api-generic/InitialChunk
+  function __liftRecord54(pointer) {
+    // assembly/gas-costs/BlockGasCost
     // Hint: Opt-out from lifting as a record by providing an empty constructor
     if (!pointer) return null;
     return {
-      address: __getU32(pointer + 0),
-      data: __liftArray(__getU8, 0, __getU32(pointer + 4)),
-    };
-  }
-  function __liftRecord44(pointer) {
-    // assembly/api-generic/VmOutput
-    // Hint: Opt-out from lifting as a record by providing an empty constructor
-    if (!pointer) return null;
-    return {
-      status: __getI32(pointer + 0),
-      registers: __liftArray(pointer => BigInt.asUintN(64, __getU64(pointer)), 3, __getU32(pointer + 4)),
-      pc: __getU32(pointer + 8),
-      memory: __liftArray(pointer => __liftRecord45(__getU32(pointer)), 2, __getU32(pointer + 12)),
-      gas: __getI64(pointer + 16),
-      exitCode: __getU32(pointer + 24),
+      pc: __getU32(pointer + 0),
+      gas: __getU64(pointer + 8),
     };
   }
   function __lowerRecord48(value) {
-    // assembly/api-generic/InitialPage
+    // assembly/api-internal/InitialPage
     // Hint: Opt-out from lowering as a record by providing an empty constructor
     if (value == null) return 0;
     const pointer = exports.__pin(exports.__new(12, 48));
@@ -166,29 +182,37 @@ async function instantiate(module, imports = {}) {
     exports.__unpin(pointer);
     return pointer;
   }
-  function __lowerRecord45(value) {
-    // assembly/api-generic/InitialChunk
+  function __lowerRecord50(value) {
+    // assembly/api-internal/InitialChunk
     // Hint: Opt-out from lowering as a record by providing an empty constructor
     if (value == null) return 0;
-    const pointer = exports.__pin(exports.__new(8, 45));
+    const pointer = exports.__pin(exports.__new(8, 50));
     __setU32(pointer + 0, value.address);
     __setU32(pointer + 4, __lowerArray(__setU8, 27, 0, value.data) || __notnull());
     exports.__unpin(pointer);
     return pointer;
   }
-  function __lowerRecord47(value) {
-    // assembly/api-generic/VmInput
-    // Hint: Opt-out from lowering as a record by providing an empty constructor
-    if (value == null) return 0;
-    const pointer = exports.__pin(exports.__new(28, 47));
-    __setU32(pointer + 0, __lowerArray(__setU64, 43, 3, value.registers) || __notnull());
-    __setU32(pointer + 4, value.pc);
-    __setU64(pointer + 8, value.gas || 0n);
-    __setU32(pointer + 16, __lowerArray(__setU8, 27, 0, value.program) || __notnull());
-    __setU32(pointer + 20, __lowerArray((pointer, value) => { __setU32(pointer, __lowerRecord48(value) || __notnull()); }, 49, 2, value.pageMap) || __notnull());
-    __setU32(pointer + 24, __lowerArray((pointer, value) => { __setU32(pointer, __lowerRecord45(value) || __notnull()); }, 46, 2, value.memory) || __notnull());
-    exports.__unpin(pointer);
-    return pointer;
+  function __liftRecord50(pointer) {
+    // assembly/api-internal/InitialChunk
+    // Hint: Opt-out from lifting as a record by providing an empty constructor
+    if (!pointer) return null;
+    return {
+      address: __getU32(pointer + 0),
+      data: __liftArray(__getU8, 0, __getU32(pointer + 4)),
+    };
+  }
+  function __liftRecord59(pointer) {
+    // assembly/api-internal/VmOutput
+    // Hint: Opt-out from lifting as a record by providing an empty constructor
+    if (!pointer) return null;
+    return {
+      status: __getI32(pointer + 0),
+      registers: __liftArray(pointer => BigInt.asUintN(64, __getU64(pointer)), 3, __getU32(pointer + 4)),
+      pc: __getU32(pointer + 8),
+      memory: __liftArray(pointer => __liftRecord50(__getU32(pointer)), 2, __getU32(pointer + 12)),
+      gas: __getI64(pointer + 16),
+      exitCode: __getU32(pointer + 24),
+    };
   }
   function __liftString(pointer) {
     if (!pointer) return null;
@@ -247,6 +271,13 @@ async function instantiate(module, imports = {}) {
     return header;
   }
   class Internref extends Number {}
+  const registry = new FinalizationRegistry(__release);
+  function __liftInternref(pointer) {
+    if (!pointer) return null;
+    const sentinel = new Internref(__retain(pointer));
+    registry.register(sentinel, pointer);
+    return sentinel;
+  }
   function __lowerInternref(value) {
     if (value == null) return 0;
     if (value instanceof Internref) return value.valueOf();
@@ -341,13 +372,9 @@ async function instantiate(module, imports = {}) {
 }
 export const {
   memory,
-  InputKind,
-  HasMetadata,
-  disassemble,
-  runProgram,
-  runVm,
   getAssembly,
   wrapAsProgram,
+  resetJAM,
   resetGeneric,
   resetGenericWithMemory,
   nextStep,
@@ -362,6 +389,12 @@ export const {
   setRegisters,
   getPageDump,
   setMemory,
+  InputKind,
+  HasMetadata,
+  getGasCosts,
+  disassemble,
+  prepareProgram,
+  runProgram,
 } = await (async url => instantiate(
   await (async () => {
     const isNodeOrBun = typeof process != "undefined" && process.versions != null && (process.versions.node != null || process.versions.bun != null);
