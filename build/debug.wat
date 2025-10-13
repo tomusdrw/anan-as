@@ -695,6 +695,7 @@
  (export "getExitArg" (func $assembly/api-debugger/getExitArg))
  (export "getGasLeft" (func $assembly/api-debugger/getGasLeft))
  (export "setGasLeft" (func $assembly/api-debugger/setGasLeft))
+ (export "getMemory" (func $assembly/api-debugger/getMemory))
  (export "getRegisters" (func $assembly/api-debugger/getRegisters))
  (export "getPageDump" (func $assembly/api-debugger/getPageDump))
  (export "InputKind.Generic" (global $assembly/api-utils/InputKind.Generic))
@@ -35263,7 +35264,7 @@
    local.get $9
    call $~lib/staticarray/StaticArray<~lib/string/String>#join
    i32.const 18336
-   i32.const 192
+   i32.const 200
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -38803,6 +38804,74 @@
   i32.add
   global.set $~lib/memory/__stack_pointer
  )
+ (func $assembly/api-debugger/getMemory (result i32)
+  (local $0 i32)
+  (local $int i32)
+  (local $2 i32)
+  global.get $~lib/memory/__stack_pointer
+  i32.const 16
+  i32.sub
+  global.set $~lib/memory/__stack_pointer
+  call $~stack_check
+  global.get $~lib/memory/__stack_pointer
+  i64.const 0
+  i64.store
+  global.get $~lib/memory/__stack_pointer
+  i64.const 0
+  i64.store offset=8
+  global.get $assembly/api-debugger/interpreter
+  i32.const 0
+  i32.eq
+  if
+   i32.const 0
+   call $"~lib/map/Map<u32,assembly/memory-page/Page>#constructor"
+   local.set $2
+   global.get $~lib/memory/__stack_pointer
+   i32.const 16
+   i32.add
+   global.set $~lib/memory/__stack_pointer
+   local.get $2
+   return
+  end
+  global.get $~lib/memory/__stack_pointer
+  global.get $~lib/memory/__stack_pointer
+  global.get $assembly/api-debugger/interpreter
+  local.tee $0
+  i32.store
+  local.get $0
+  if (result i32)
+   local.get $0
+  else
+   i32.const 9488
+   i32.const 18336
+   i32.const 141
+   i32.const 28
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.tee $int
+  i32.store offset=4
+  local.get $int
+  local.set $2
+  global.get $~lib/memory/__stack_pointer
+  local.get $2
+  i32.store offset=12
+  local.get $2
+  call $assembly/interpreter/Interpreter#get:memory
+  local.set $2
+  global.get $~lib/memory/__stack_pointer
+  local.get $2
+  i32.store offset=8
+  local.get $2
+  call $assembly/memory/Memory#get:pages
+  local.set $2
+  global.get $~lib/memory/__stack_pointer
+  i32.const 16
+  i32.add
+  global.set $~lib/memory/__stack_pointer
+  local.get $2
+  return
+ )
  (func $assembly/api-debugger/getRegisters (result i32)
   (local $flat i32)
   (local $1 i32)
@@ -38864,7 +38933,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 143
+   i32.const 151
    i32.const 28
    call $~lib/builtins/abort
    unreachable
@@ -38993,7 +39062,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 160
+   i32.const 168
    i32.const 28
    call $~lib/builtins/abort
    unreachable
@@ -39147,7 +39216,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 168
+   i32.const 176
    i32.const 28
    call $~lib/builtins/abort
    unreachable
@@ -39244,7 +39313,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 181
+   i32.const 189
    i32.const 28
    call $~lib/builtins/abort
    unreachable

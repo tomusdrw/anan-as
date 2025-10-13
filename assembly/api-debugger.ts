@@ -3,7 +3,7 @@ import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
 import { MemoryBuilder } from "./memory";
-import { Access, PAGE_SIZE } from "./memory-page";
+import { Access, Page, PAGE_SIZE } from "./memory-page";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 import { decodeSpi } from "./spi";
@@ -132,6 +132,14 @@ export function setGasLeft(gas: i64): void {
     const int = <Interpreter>interpreter;
     int.gas.set(gas);
   }
+}
+
+export function getMemory(): Map<u32, Page> {
+  if (interpreter === null) {
+    return new Map<u32, Page>();
+  }
+  const int = <Interpreter>interpreter;
+  return int.memory.pages;
 }
 
 export function getRegisters(): Uint8Array {

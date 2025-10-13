@@ -81,6 +81,11 @@ export declare function getGasLeft(): bigint;
  */
 export declare function setGasLeft(gas: bigint): void;
 /**
+ * assembly/api-debugger/getMemory
+ * @returns `~lib/map/Map<u32,assembly/memory-page/Page>`
+ */
+export declare function getMemory(): __Internref18;
+/**
  * assembly/api-debugger/getRegisters
  * @returns `~lib/typedarray/Uint8Array`
  */
@@ -157,6 +162,11 @@ export declare function runProgram(program: __Internref44, initialGas?: bigint, 
 /** assembly/program/Program */
 declare class __Internref30 extends Number {
   private __nominal30: symbol;
+  private __nominal0: symbol;
+}
+/** ~lib/map/Map<u32,assembly/memory-page/Page> */
+declare class __Internref18 extends Number {
+  private __nominal18: symbol;
   private __nominal0: symbol;
 }
 /** assembly/gas-costs/BlockGasCost */

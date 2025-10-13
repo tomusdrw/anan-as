@@ -96,6 +96,10 @@ async function instantiate(module, imports = {}) {
       gas = gas || 0n;
       exports.setGasLeft(gas);
     },
+    getMemory() {
+      // assembly/api-debugger/getMemory() => ~lib/map/Map<u32,assembly/memory-page/Page>
+      return __liftInternref(exports.getMemory() >>> 0);
+    },
     getRegisters() {
       // assembly/api-debugger/getRegisters() => ~lib/typedarray/Uint8Array
       return __liftTypedArray(Uint8Array, exports.getRegisters() >>> 0);
@@ -385,6 +389,7 @@ export const {
   getExitArg,
   getGasLeft,
   setGasLeft,
+  getMemory,
   getRegisters,
   setRegisters,
   getPageDump,
