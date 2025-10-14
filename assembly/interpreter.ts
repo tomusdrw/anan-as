@@ -30,6 +30,11 @@ export class Interpreter {
   public nextPc: u32;
   public useSbrkGas: boolean;
 
+  private djumpRes: DjumpResult = new DjumpResult();
+  private argsRes: Args = new Args();
+  private outcomeRes: OutcomeData = new OutcomeData();
+  private branchRes: BranchResult = new BranchResult();
+
   constructor(program: Program, registers: Registers, memory: Memory = new MemoryBuilder().build(0)) {
     this.program = program;
     this.registers = registers;
@@ -43,10 +48,9 @@ export class Interpreter {
   }
 
   nextStep(): boolean {
-    const r = new DjumpResult();
-    const argsRes = new Args();
-    const outcomeRes = new OutcomeData();
-    const branchRes = new BranchResult();
+    // TODO [ToDr] Something is not setting this stuff correctly.
+    this.outcomeRes.result = Result.PANIC;
+    this.outcomeRes.outcome = Outcome.Ok;
 
     // resuming after host call
     if (this.status === Status.HOST) {
@@ -100,7 +104,7 @@ export class Interpreter {
 
     // get args and invoke instruction
     const skipBytes = this.program.mask.skipBytesToNextInstruction(pc);
-    const args = decodeArguments(argsRes, iData.kind, this.program.code.subarray(pc + 1), skipBytes);
+    const args = decodeArguments(this.argsRes, iData.kind, this.program.code.subarray(pc + 1), skipBytes);
 
     // additional gas cost of sbrk
     if (iData === SBRK && this.useSbrkGas) {
@@ -113,12 +117,12 @@ export class Interpreter {
     }
 
     const exe = RUN[instruction];
-    const outcome = exe(outcomeRes, args, this.registers, this.memory);
+    const outcome = exe(this.outcomeRes, args, this.registers, this.memory);
 
     // TODO [ToDr] Spaghetti
     switch (outcome.outcome) {
       case Outcome.DynamicJump: {
-        const res = dJump(r, this.program.jumpTable, outcome.dJump);
+        const res = dJump(this.djumpRes, this.program.jumpTable, outcome.dJump);
         if (res.status === DjumpStatus.HALT) {
           this.status = Status.HALT;
           return true;
@@ -127,7 +131,7 @@ export class Interpreter {
           this.status = Status.PANIC;
           return false;
         }
-        const branchResult = branch(branchRes, this.program.basicBlocks, res.newPc, 0);
+        const branchResult = branch(this.branchRes, this.program.basicBlocks, res.newPc, 0);
         if (!branchResult.isOkay) {
           this.status = Status.PANIC;
           return false;
@@ -136,7 +140,7 @@ export class Interpreter {
         return true;
       }
       case Outcome.StaticJump: {
-        const branchResult = branch(branchRes, this.program.basicBlocks, pc, outcome.staticJump);
+        const branchResult = branch(this.branchRes, this.program.basicBlocks, pc, outcome.staticJump);
         if (!branchResult.isOkay) {
           this.status = Status.PANIC;
           return false;
