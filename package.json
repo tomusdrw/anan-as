@@ -41,7 +41,7 @@
 		}
 	},
 	"dependencies": {
-		"@typeberry/lib": "^0.1.3",
+		"@typeberry/lib": "^0.2.0",
 		"json-bigint-patch": "^0.0.8"
 	}
 }
