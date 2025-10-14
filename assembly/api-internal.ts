@@ -1,4 +1,4 @@
-import { RELEVANT_ARGS } from "./arguments";
+import { Args, RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
@@ -43,6 +43,7 @@ export function getAssembly(p: Program): string {
   }
 
   let v = "";
+  const argsRes = new Args();
   for (let i = 0; i < len; i++) {
     if (!p.mask.isInstruction(i)) {
       throw new Error("We should iterate only over instructions!");
@@ -58,7 +59,7 @@ export function getAssembly(p: Program): string {
     v += `(${instruction})`;
 
     const skipBytes = p.mask.skipBytesToNextInstruction(i);
-    const args = decodeArguments(iData.kind, p.code.subarray(i + 1), skipBytes);
+    const args = decodeArguments(argsRes, iData.kind, p.code.subarray(i + 1), skipBytes);
     const argsArray = [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
     for (let i = 0; i < relevantArgs; i++) {
@@ -140,6 +141,7 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
 
 function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
   let isOk = true;
+  const argsRes = new Args();
   for (;;) {
     if (!isOk) {
       if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
@@ -159,7 +161,13 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
       const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
       const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
-      const args = resolveArguments(iData.kind, int.program.code.subarray(int.pc + 1), skipBytes, int.registers);
+      const args = resolveArguments(
+        argsRes,
+        iData.kind,
+        int.program.code.subarray(int.pc + 1),
+        skipBytes,
+        int.registers,
+      );
       if (args !== null) {
         console.log(`ARGUMENTS:
   ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 

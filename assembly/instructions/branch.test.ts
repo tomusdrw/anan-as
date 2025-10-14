@@ -3,12 +3,13 @@ import { MemoryBuilder } from "../memory";
 import { newRegisters } from "../registers";
 import { Assert, Test, test } from "../test";
 import { branch_eq_imm } from "./branch";
-import { Outcome } from "./outcome";
+import { Outcome, OutcomeData } from "./outcome";
 import { reg } from "./utils";
 
 export const TESTS: Test[] = [
   test("branch_eq_imm", () => {
     // when
+    const r = new OutcomeData();
     const args = new Args();
     args.a = 0;
     args.b = 0xfe;
@@ -19,7 +20,7 @@ export const TESTS: Test[] = [
     const memo = new MemoryBuilder().build();
 
     // when
-    const ret = branch_eq_imm(args, regs, memo);
+    const ret = branch_eq_imm(r, args, regs, memo);
 
     // then
     const assert = new Assert();
