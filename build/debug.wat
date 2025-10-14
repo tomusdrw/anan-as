@@ -268,10 +268,10 @@
  (global $assembly/api-utils/HasMetadata.Yes i32 (i32.const 0))
  (global $assembly/api-utils/HasMetadata.No i32 (i32.const 1))
  (global $~lib/builtins/u32.MAX_VALUE i32 (i32.const -1))
- (global $~lib/rt/__rtti_base i32 (i32.const 20480))
- (global $~lib/memory/__data_end i32 (i32.const 20740))
- (global $~lib/memory/__stack_pointer (mut i32) (i32.const 53508))
- (global $~lib/memory/__heap_base i32 (i32.const 53508))
+ (global $~lib/rt/__rtti_base i32 (i32.const 20528))
+ (global $~lib/memory/__data_end i32 (i32.const 20788))
+ (global $~lib/memory/__stack_pointer (mut i32) (i32.const 53556))
+ (global $~lib/memory/__heap_base i32 (i32.const 53556))
  (memory $0 1)
  (data $0 (i32.const 12) "L\00\00\00\00\00\00\00\00\00\00\00\01\00\00\004\00\00\00\00\00\00\00\01\00\00\00\02\00\00\00\01\00\00\00\02\00\00\00\03\00\00\00\03\00\00\00\03\00\00\00\02\00\00\00\03\00\00\00\03\00\00\00\04\00\00\00\03\00\00\00\00\00\00\00\00\00\00\00")
  (data $1 (i32.const 92) ",\00\00\00\00\00\00\00\00\00\00\00\04\00\00\00\10\00\00\00 \00\00\00 \00\00\004\00\00\00\r\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
@@ -666,25 +666,26 @@
  (data $390 (i32.const 19516) "\1c\00\00\00\03\00\00\00\00\00\00\00%\00\00\00\0c\00\00\00\d0K\00\00\00\00\00\00\00L\00\00")
  (data $391 (i32.const 19548) "\1c\00\00\00\00\00\00\00\00\00\00\00>\00\00\00\08\00\00\00\9c\00\00\00\00\00\00\00\00\00\00\00")
  (data $392 (i32.const 19580) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00,\00\00\00F\00i\00n\00i\00s\00h\00e\00d\00 \00w\00i\00t\00h\00 \00s\00t\00a\00t\00u\00s\00:\00 \00")
- (data $393 (i32.const 19644) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\n\00\00\00P\00C\00 \00=\00 \00\00\00")
- (data $394 (i32.const 19676) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\0c\00\00\00G\00A\00S\00 \00=\00 \00")
- (data $395 (i32.const 19708) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\12\00\00\00S\00T\00A\00T\00U\00S\00 \00=\00 \00\00\00\00\00\00\00\00\00\00\00")
- (data $396 (i32.const 19756) "\1c\00\00\00\00\00\00\00\00\00\00\00>\00\00\00\08\00\00\00\9d\00\00\00\00\00\00\00\00\00\00\00")
- (data $397 (i32.const 19788) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\1c\00\00\00I\00N\00S\00T\00R\00U\00C\00T\00I\00O\00N\00 \00=\00 \00")
- (data $398 (i32.const 19836) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\04\00\00\00 \00(\00\00\00\00\00\00\00\00\00")
- (data $399 (i32.const 19868) ",\00\00\00\03\00\00\00\00\00\00\00%\00\00\00\14\00\00\00`M\00\00\00\00\00\00\90M\00\00\00\00\00\00@A\00\00\00\00\00\00\00\00\00\00")
- (data $400 (i32.const 19916) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00&\00\00\00a\00s\00s\00e\00m\00b\00l\00y\00/\00p\00r\00o\00g\00r\00a\00m\00.\00t\00s\00\00\00\00\00\00\00")
- (data $401 (i32.const 19980) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\1a\00\00\00A\00R\00G\00U\00M\00E\00N\00T\00S\00:\00\n\00 \00 \00\00\00")
- (data $402 (i32.const 20028) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\0c\00\00\00)\00 \00=\00 \000\00x\00")
- (data $403 (i32.const 20060) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\n\00\00\00,\00 \00\n\00 \00 \00\00\00")
- (data $404 (i32.const 20092) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\08\00\00\00,\00\n\00 \00 \00\00\00\00\00")
- (data $405 (i32.const 20124) "|\00\00\00\03\00\00\00\00\00\00\00%\00\00\00`\00\00\00 N\00\00\00\00\00\00\90M\00\00\00\00\00\00PN\00\00\00\00\00\00pN\00\00\00\00\00\00\90M\00\00\00\00\00\00PN\00\00\00\00\00\00\90N\00\00\00\00\00\00\90M\00\00\00\00\00\00PN\00\00\00\00\00\00\90N\00\00\00\00\00\00\90M\00\00\00\00\00\00PN\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
- (data $406 (i32.const 20252) "\1c\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
- (data $407 (i32.const 20284) "\1c\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
- (data $408 (i32.const 20316) "\1c\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
- (data $409 (i32.const 20348) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00*\00\00\00O\00b\00j\00e\00c\00t\00 \00a\00l\00r\00e\00a\00d\00y\00 \00p\00i\00n\00n\00e\00d\00\00\00")
- (data $410 (i32.const 20412) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00(\00\00\00O\00b\00j\00e\00c\00t\00 \00i\00s\00 \00n\00o\00t\00 \00p\00i\00n\00n\00e\00d\00\00\00\00\00")
- (data $411 (i32.const 20480) "@\00\00\00 \00\00\00 \00\00\00 \00\00\00\00\00\00\00\02\t\00\00A\00\00\00 \00\00\00\02A\00\00\00\00\00\00 \00\00\00\02\01\00\00 \00\00\00\00\00\00\00\00\00\00\00$\02\00\00\00\00\00\00\00\00\00\00\02A\00\00\10A\02\00 \00\00\00\00\00\00\00\00\00\00\00\00\00\00\00d\00\00\00\00\00\00\00\00\00\00\00\02A\00\00B\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00$\01\00\00\00\00\00\00\00\00\00\00$\t\00\00 \00\00\00\04A\00\00\02\01\00\00d\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00 \00\00\00\00\00\00\00\00\00\00\00 \00\00\00\02A\00\00 \00\00\00\02A\00\00\00\00\00\00\02A\00\00 \00\00\00 \00\00\00 \00\00\00\02A\00\00\02\02\00\00\10A\02\00\00\00\00\00\00\00\00\00\00\00\00\00\02A\00\00\00\00\00\00\00\00\00\00")
+ (data $393 (i32.const 19644) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\16\00\00\00E\00x\00i\00t\00 \00c\00o\00d\00e\00:\00 \00\00\00\00\00\00\00")
+ (data $394 (i32.const 19692) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\n\00\00\00P\00C\00 \00=\00 \00\00\00")
+ (data $395 (i32.const 19724) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\0c\00\00\00G\00A\00S\00 \00=\00 \00")
+ (data $396 (i32.const 19756) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\12\00\00\00S\00T\00A\00T\00U\00S\00 \00=\00 \00\00\00\00\00\00\00\00\00\00\00")
+ (data $397 (i32.const 19804) "\1c\00\00\00\00\00\00\00\00\00\00\00>\00\00\00\08\00\00\00\9d\00\00\00\00\00\00\00\00\00\00\00")
+ (data $398 (i32.const 19836) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\1c\00\00\00I\00N\00S\00T\00R\00U\00C\00T\00I\00O\00N\00 \00=\00 \00")
+ (data $399 (i32.const 19884) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\04\00\00\00 \00(\00\00\00\00\00\00\00\00\00")
+ (data $400 (i32.const 19916) ",\00\00\00\03\00\00\00\00\00\00\00%\00\00\00\14\00\00\00\90M\00\00\00\00\00\00\c0M\00\00\00\00\00\00@A\00\00\00\00\00\00\00\00\00\00")
+ (data $401 (i32.const 19964) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00&\00\00\00a\00s\00s\00e\00m\00b\00l\00y\00/\00p\00r\00o\00g\00r\00a\00m\00.\00t\00s\00\00\00\00\00\00\00")
+ (data $402 (i32.const 20028) ",\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\1a\00\00\00A\00R\00G\00U\00M\00E\00N\00T\00S\00:\00\n\00 \00 \00\00\00")
+ (data $403 (i32.const 20076) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\0c\00\00\00)\00 \00=\00 \000\00x\00")
+ (data $404 (i32.const 20108) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\n\00\00\00,\00 \00\n\00 \00 \00\00\00")
+ (data $405 (i32.const 20140) "\1c\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00\08\00\00\00,\00\n\00 \00 \00\00\00\00\00")
+ (data $406 (i32.const 20172) "|\00\00\00\03\00\00\00\00\00\00\00%\00\00\00`\00\00\00PN\00\00\00\00\00\00\c0M\00\00\00\00\00\00\80N\00\00\00\00\00\00\a0N\00\00\00\00\00\00\c0M\00\00\00\00\00\00\80N\00\00\00\00\00\00\c0N\00\00\00\00\00\00\c0M\00\00\00\00\00\00\80N\00\00\00\00\00\00\c0N\00\00\00\00\00\00\c0M\00\00\00\00\00\00\80N\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data $407 (i32.const 20300) "\1c\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data $408 (i32.const 20332) "\1c\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data $409 (i32.const 20364) "\1c\00\00\00\00\00\00\00\00\00\00\00\01\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data $410 (i32.const 20396) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00*\00\00\00O\00b\00j\00e\00c\00t\00 \00a\00l\00r\00e\00a\00d\00y\00 \00p\00i\00n\00n\00e\00d\00\00\00")
+ (data $411 (i32.const 20460) "<\00\00\00\00\00\00\00\00\00\00\00\02\00\00\00(\00\00\00O\00b\00j\00e\00c\00t\00 \00i\00s\00 \00n\00o\00t\00 \00p\00i\00n\00n\00e\00d\00\00\00\00\00")
+ (data $412 (i32.const 20528) "@\00\00\00 \00\00\00 \00\00\00 \00\00\00\00\00\00\00\02\t\00\00A\00\00\00 \00\00\00\02A\00\00\00\00\00\00 \00\00\00\02\01\00\00 \00\00\00\00\00\00\00\00\00\00\00$\02\00\00\00\00\00\00\00\00\00\00\02A\00\00\10A\02\00 \00\00\00\00\00\00\00\00\00\00\00\00\00\00\00d\00\00\00\00\00\00\00\00\00\00\00\02A\00\00B\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00$\01\00\00\00\00\00\00\00\00\00\00$\t\00\00 \00\00\00\04A\00\00\02\01\00\00d\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00 \00\00\00\00\00\00\00\00\00\00\00 \00\00\00\02A\00\00 \00\00\00\02A\00\00\00\00\00\00\02A\00\00 \00\00\00 \00\00\00 \00\00\00\02A\00\00\02\02\00\00\10A\02\00\00\00\00\00\00\00\00\00\00\00\00\00\02A\00\00\00\00\00\00\00\00\00\00")
  (table $0 158 158 funcref)
  (elem $0 (i32.const 1) $start:assembly/arguments~anonymous|0 $start:assembly/arguments~anonymous|1 $start:assembly/arguments~anonymous|2 $start:assembly/arguments~anonymous|3 $start:assembly/arguments~anonymous|4 $start:assembly/arguments~anonymous|5 $start:assembly/arguments~anonymous|6 $start:assembly/arguments~anonymous|7 $start:assembly/arguments~anonymous|8 $start:assembly/arguments~anonymous|9 $start:assembly/arguments~anonymous|10 $start:assembly/arguments~anonymous|11 $start:assembly/arguments~anonymous|12 $start:assembly/instructions/bit~anonymous|0 $start:assembly/instructions/bit~anonymous|1 $start:assembly/instructions/bit~anonymous|2 $start:assembly/instructions/bit~anonymous|3 $start:assembly/instructions/bit~anonymous|4 $start:assembly/instructions/bit~anonymous|5 $start:assembly/instructions/bit~anonymous|6 $start:assembly/instructions/bit~anonymous|7 $start:assembly/instructions/bit~anonymous|8 $start:assembly/instructions/bit~anonymous|9 $start:assembly/instructions/branch~anonymous|0 $start:assembly/instructions/branch~anonymous|1 $start:assembly/instructions/branch~anonymous|2 $start:assembly/instructions/branch~anonymous|3 $start:assembly/instructions/branch~anonymous|4 $start:assembly/instructions/branch~anonymous|5 $start:assembly/instructions/branch~anonymous|6 $start:assembly/instructions/branch~anonymous|7 $start:assembly/instructions/branch~anonymous|8 $start:assembly/instructions/branch~anonymous|9 $start:assembly/instructions/branch~anonymous|10 $start:assembly/instructions/branch~anonymous|11 $start:assembly/instructions/branch~anonymous|12 $start:assembly/instructions/branch~anonymous|13 $start:assembly/instructions/branch~anonymous|14 $start:assembly/instructions/branch~anonymous|15 $start:assembly/instructions/jump~anonymous|0 $start:assembly/instructions/jump~anonymous|1 $start:assembly/instructions/jump~anonymous|2 $start:assembly/instructions/jump~anonymous|3 $start:assembly/instructions/load~anonymous|0 $start:assembly/instructions/load~anonymous|1 $start:assembly/instructions/load~anonymous|2 $start:assembly/instructions/load~anonymous|3 $start:assembly/instructions/load~anonymous|4 $start:assembly/instructions/load~anonymous|5 $start:assembly/instructions/load~anonymous|6 $start:assembly/instructions/load~anonymous|7 $start:assembly/instructions/load~anonymous|8 $start:assembly/instructions/load~anonymous|9 $start:assembly/instructions/load~anonymous|10 $start:assembly/instructions/load~anonymous|11 $start:assembly/instructions/load~anonymous|12 $start:assembly/instructions/load~anonymous|13 $start:assembly/instructions/load~anonymous|14 $start:assembly/instructions/load~anonymous|15 $start:assembly/instructions/logic~anonymous|0 $start:assembly/instructions/logic~anonymous|1 $start:assembly/instructions/logic~anonymous|2 $start:assembly/instructions/logic~anonymous|3 $start:assembly/instructions/logic~anonymous|4 $start:assembly/instructions/logic~anonymous|5 $start:assembly/instructions/logic~anonymous|6 $start:assembly/instructions/logic~anonymous|7 $start:assembly/instructions/logic~anonymous|8 $start:assembly/instructions/math~anonymous|0 $start:assembly/instructions/math~anonymous|1 $start:assembly/instructions/math~anonymous|2 $start:assembly/instructions/math~anonymous|3 $start:assembly/instructions/math~anonymous|4 $start:assembly/instructions/math~anonymous|5 $start:assembly/instructions/math~anonymous|6 $start:assembly/instructions/math~anonymous|7 $start:assembly/instructions/math~anonymous|8 $start:assembly/instructions/math~anonymous|9 $start:assembly/instructions/math~anonymous|10 $start:assembly/instructions/math~anonymous|11 $start:assembly/instructions/math~anonymous|12 $start:assembly/instructions/math~anonymous|13 $start:assembly/instructions/math~anonymous|14 $start:assembly/instructions/math~anonymous|15 $start:assembly/instructions/math~anonymous|16 $start:assembly/instructions/math~anonymous|17 $start:assembly/instructions/math~anonymous|18 $start:assembly/instructions/math~anonymous|19 $start:assembly/instructions/math~anonymous|20 $start:assembly/instructions/math~anonymous|21 $start:assembly/instructions/math~anonymous|22 $start:assembly/instructions/math~anonymous|23 $start:assembly/instructions/math~anonymous|24 $start:assembly/instructions/math~anonymous|25 $start:assembly/instructions/math~anonymous|26 $start:assembly/instructions/misc~anonymous|0 $start:assembly/instructions/misc~anonymous|1 $start:assembly/instructions/misc~anonymous|2 $start:assembly/instructions/misc~anonymous|3 $start:assembly/instructions/misc~anonymous|4 $start:assembly/instructions/mov~anonymous|0 $start:assembly/instructions/mov~anonymous|1 $start:assembly/instructions/mov~anonymous|2 $start:assembly/instructions/mov~anonymous|3 $start:assembly/instructions/mov~anonymous|4 $start:assembly/instructions/rot~anonymous|0 $start:assembly/instructions/rot~anonymous|1 $start:assembly/instructions/rot~anonymous|2 $start:assembly/instructions/rot~anonymous|3 $start:assembly/instructions/rot~anonymous|4 $start:assembly/instructions/rot~anonymous|5 $start:assembly/instructions/rot~anonymous|6 $start:assembly/instructions/rot~anonymous|7 $start:assembly/instructions/set~anonymous|0 $start:assembly/instructions/set~anonymous|1 $start:assembly/instructions/set~anonymous|2 $start:assembly/instructions/set~anonymous|3 $start:assembly/instructions/set~anonymous|4 $start:assembly/instructions/set~anonymous|5 $start:assembly/instructions/shift~anonymous|0 $start:assembly/instructions/shift~anonymous|1 $start:assembly/instructions/shift~anonymous|2 $start:assembly/instructions/shift~anonymous|3 $start:assembly/instructions/shift~anonymous|4 $start:assembly/instructions/shift~anonymous|5 $start:assembly/instructions/shift~anonymous|6 $start:assembly/instructions/shift~anonymous|7 $start:assembly/instructions/shift~anonymous|8 $start:assembly/instructions/shift~anonymous|9 $start:assembly/instructions/shift~anonymous|10 $start:assembly/instructions/shift~anonymous|11 $start:assembly/instructions/shift~anonymous|12 $start:assembly/instructions/shift~anonymous|13 $start:assembly/instructions/shift~anonymous|14 $start:assembly/instructions/shift~anonymous|15 $start:assembly/instructions/shift~anonymous|16 $start:assembly/instructions/shift~anonymous|17 $start:assembly/instructions/store~anonymous|0 $start:assembly/instructions/store~anonymous|1 $start:assembly/instructions/store~anonymous|2 $start:assembly/instructions/store~anonymous|3 $start:assembly/instructions/store~anonymous|4 $start:assembly/instructions/store~anonymous|5 $start:assembly/instructions/store~anonymous|6 $start:assembly/instructions/store~anonymous|7 $start:assembly/instructions/store~anonymous|8 $start:assembly/instructions/store~anonymous|9 $start:assembly/instructions/store~anonymous|10 $start:assembly/instructions/store~anonymous|11 $start:assembly/instructions/store~anonymous|12 $start:assembly/instructions/store~anonymous|13 $start:assembly/instructions/store~anonymous|14 $start:assembly/instructions/store~anonymous|15 $start:assembly/codec~anonymous|0 $assembly/api-utils/disassemble~anonymous|0 $assembly/api-internal/executeProgram~anonymous|0 $assembly/api-internal/executeProgram~anonymous|1)
  (export "nextStep" (func $assembly/api-debugger/nextStep))
@@ -6526,7 +6527,7 @@
    i32.const 3
    i32.eq
    if
-    i32.const 20368
+    i32.const 20416
     i32.const 352
     i32.const 338
     i32.const 7
@@ -6559,7 +6560,7 @@
   i32.const 3
   i32.ne
   if
-   i32.const 20432
+   i32.const 20480
    i32.const 352
    i32.const 352
    i32.const 5
@@ -6716,10 +6717,10 @@
   i32.const 288
   local.get $0
   call $~lib/rt/itcms/__visit
-  i32.const 20368
+  i32.const 20416
   local.get $0
   call $~lib/rt/itcms/__visit
-  i32.const 20432
+  i32.const 20480
   local.get $0
   call $~lib/rt/itcms/__visit
   i32.const 15488
@@ -7738,8 +7739,8 @@
   global.get $~lib/memory/__data_end
   i32.lt_s
   if
-   i32.const 53536
    i32.const 53584
+   i32.const 53632
    i32.const 1
    i32.const 1
    call $~lib/builtins/abort
@@ -37313,6 +37314,14 @@
    local.get $14
    i32.const -1
    call $assembly/interpreter/Interpreter#set:nextPc
+   local.get $this
+   local.set $14
+   global.get $~lib/memory/__stack_pointer
+   local.get $14
+   i32.store
+   local.get $14
+   i32.const 0
+   call $assembly/interpreter/Interpreter#set:exitCode
   end
   local.get $this
   local.set $14
@@ -37374,14 +37383,6 @@
    local.get $14
    return
   end
-  local.get $this
-  local.set $14
-  global.get $~lib/memory/__stack_pointer
-  local.get $14
-  i32.store
-  local.get $14
-  i32.const 0
-  call $assembly/interpreter/Interpreter#set:exitCode
   local.get $this
   local.set $14
   global.get $~lib/memory/__stack_pointer
@@ -38236,7 +38237,7 @@
     end
     i32.const 18704
     i32.const 18752
-    i32.const 173
+    i32.const 171
     i32.const 9
     call $~lib/builtins/abort
     unreachable
@@ -43466,7 +43467,7 @@
   i32.store offset=12
   local.get $7
   call $~lib/string/String#concat
-  i32.const 19936
+  i32.const 19984
   i32.const 332
   i32.const 7
   call $~lib/builtins/abort
@@ -43524,7 +43525,7 @@
   i32.const 0
   i32.const 3
   i32.const 56
-  i32.const 20272
+  i32.const 20320
   call $~lib/rt/__newArray
   local.set $3
   global.get $~lib/memory/__stack_pointer
@@ -43549,7 +43550,7 @@
   i32.const 0
   i32.const 2
   i32.const 51
-  i32.const 20304
+  i32.const 20352
   call $~lib/rt/__newArray
   local.set $3
   global.get $~lib/memory/__stack_pointer
@@ -44151,7 +44152,7 @@
   i32.const 0
   i32.const 2
   i32.const 51
-  i32.const 20336
+  i32.const 20384
   call $~lib/rt/__newArray
   local.tee $chunks
   i32.store
@@ -44611,11 +44612,41 @@
        local.get $25
        call $~lib/console/console.log
       end
+      local.get $logs
+      if
+       i32.const 19664
+       local.set $25
+       global.get $~lib/memory/__stack_pointer
+       local.get $25
+       i32.store offset=4
+       local.get $25
+       local.get $int
+       local.set $25
+       global.get $~lib/memory/__stack_pointer
+       local.get $25
+       i32.store offset=12
+       local.get $25
+       call $assembly/interpreter/Interpreter#get:exitCode
+       i32.const 10
+       call $~lib/number/U32#toString
+       local.set $25
+       global.get $~lib/memory/__stack_pointer
+       local.get $25
+       i32.store offset=8
+       local.get $25
+       call $~lib/string/String#concat
+       local.set $25
+       global.get $~lib/memory/__stack_pointer
+       local.get $25
+       i32.store
+       local.get $25
+       call $~lib/console/console.log
+      end
       br $for-break0
      end
      local.get $logs
      if
-      i32.const 19664
+      i32.const 19712
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -44645,7 +44676,7 @@
      end
      local.get $logs
      if
-      i32.const 19696
+      i32.const 19744
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -44681,7 +44712,7 @@
      end
      local.get $logs
      if
-      i32.const 19728
+      i32.const 19776
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -44769,7 +44800,7 @@
       local.get $25
       i32.store offset=24
       local.get $25
-      i32.const 19776
+      i32.const 19824
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -44927,7 +44958,7 @@
       call $~lib/number/U8#toString
       local.tee $10
       i32.store offset=48
-      i32.const 19888
+      i32.const 19936
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -44941,7 +44972,7 @@
       i32.store offset=8
       local.get $25
       call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-      i32.const 19888
+      i32.const 19936
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -44955,7 +44986,7 @@
       i32.store offset=8
       local.get $25
       call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-      i32.const 19888
+      i32.const 19936
       local.set $25
       global.get $~lib/memory/__stack_pointer
       local.get $25
@@ -45201,7 +45232,7 @@
        call $~lib/number/U64#toString
        local.tee $23
        i32.store offset=100
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45215,7 +45246,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45229,7 +45260,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45243,7 +45274,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45257,7 +45288,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45271,7 +45302,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45285,7 +45316,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45299,7 +45330,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45313,7 +45344,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45327,7 +45358,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45341,7 +45372,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45355,7 +45386,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45369,7 +45400,7 @@
        i32.store offset=8
        local.get $25
        call $~lib/staticarray/StaticArray<~lib/string/String>#__uset
-       i32.const 20144
+       i32.const 20192
        local.set $25
        global.get $~lib/memory/__stack_pointer
        local.get $25
@@ -45523,19 +45554,6 @@
   local.get $25
   call $assembly/interpreter/Interpreter#get:exitCode
   call $assembly/api-internal/VmOutput#set:exitCode
-  local.get $int
-  local.set $25
-  global.get $~lib/memory/__stack_pointer
-  local.get $25
-  i32.store offset=4
-  local.get $25
-  call $assembly/interpreter/Interpreter#get:memory
-  local.set $25
-  global.get $~lib/memory/__stack_pointer
-  local.get $25
-  i32.store
-  local.get $25
-  call $assembly/memory/Memory#free
   local.get $output
   local.set $25
   global.get $~lib/memory/__stack_pointer
