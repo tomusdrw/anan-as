@@ -67,7 +67,7 @@ export declare function setNextProgramCounter(pc: number): void;
 export declare function getStatus(): number;
 /**
  * assembly/api-debugger/getExitArg
- * @returns `u32`
+ * @returns `i32`
  */
 export declare function getExitArg(): number;
 /**

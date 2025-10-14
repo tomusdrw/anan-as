@@ -87,10 +87,6 @@ async function instantiate(module, imports = {}) {
       // assembly/api-debugger/getProgramCounter() => u32
       return exports.getProgramCounter() >>> 0;
     },
-    getExitArg() {
-      // assembly/api-debugger/getExitArg() => u32
-      return exports.getExitArg() >>> 0;
-    },
     setGasLeft(gas) {
       // assembly/api-debugger/setGasLeft(i64) => void
       gas = gas || 0n;

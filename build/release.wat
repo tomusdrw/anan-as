@@ -28838,7 +28838,7 @@
    local.get $3
    i32.store offset=4
    local.get $3
-   i32.const 0
+   i32.const -1
    i32.store offset=24
    global.get $~lib/memory/__stack_pointer
    local.get $3
@@ -30474,7 +30474,7 @@
     local.get $0
     i32.store
     local.get $0
-    i32.const 0
+    i32.const -1
     i32.store offset=24
    end
    global.get $~lib/memory/__stack_pointer
@@ -31604,7 +31604,7 @@
    i32.const 12
    i32.add
    global.set $~lib/memory/__stack_pointer
-   i32.const 0
+   i32.const -1
    return
   end
   global.get $~lib/memory/__stack_pointer
@@ -31632,7 +31632,7 @@
   local.tee $0
   i32.eqz
   if
-   i32.const 0
+   i32.const -1
    local.set $0
   end
   global.get $~lib/memory/__stack_pointer

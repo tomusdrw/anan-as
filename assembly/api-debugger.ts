@@ -111,12 +111,12 @@ export function getStatus(): u8 {
   return <u8>int.status;
 }
 
-export function getExitArg(): u32 {
+export function getExitArg(): i32 {
   if (interpreter === null) {
-    return 0;
+    return -1;
   }
   const int = <Interpreter>interpreter;
-  return int.exitCode || 0;
+  return int.exitCode || -1;
 }
 
 export function getGasLeft(): i64 {

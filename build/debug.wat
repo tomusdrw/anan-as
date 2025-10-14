@@ -34194,7 +34194,7 @@
   local.get $4
   i32.store offset=4
   local.get $4
-  i32.const 0
+  i32.const -1
   call $assembly/interpreter/Interpreter#set:exitCode
   local.get $this
   local.set $4
@@ -37320,7 +37320,7 @@
    local.get $14
    i32.store
    local.get $14
-   i32.const 0
+   i32.const -1
    call $assembly/interpreter/Interpreter#set:exitCode
   end
   local.get $this
@@ -38634,7 +38634,7 @@
   i32.const 0
   i32.eq
   if
-   i32.const 0
+   i32.const -1
    local.set $3
    global.get $~lib/memory/__stack_pointer
    i32.const 12
@@ -38672,7 +38672,7 @@
   if (result i32)
    local.get $2
   else
-   i32.const 0
+   i32.const -1
   end
   local.set $3
   global.get $~lib/memory/__stack_pointer
