@@ -6,8 +6,8 @@
  (type $4 (func (param i32 i32 i32)))
  (type $5 (func (param i32 i32 i32 i32) (result i32)))
  (type $6 (func (param i32)))
- (type $7 (func))
- (type $8 (func (param i32) (result i64)))
+ (type $7 (func (param i32) (result i64)))
+ (type $8 (func))
  (type $9 (func (param i32 i64)))
  (type $10 (func (result i32)))
  (type $11 (func (param i64 i64) (result i64)))
@@ -695,9 +695,11 @@
  (export "getExitArg" (func $assembly/api-debugger/getExitArg))
  (export "getGasLeft" (func $assembly/api-debugger/getGasLeft))
  (export "setGasLeft" (func $assembly/api-debugger/setGasLeft))
- (export "getMemory" (func $assembly/api-debugger/getMemory))
+ (export "getRegister" (func $assembly/api-debugger/getRegister))
+ (export "setRegister" (func $assembly/api-debugger/setRegister))
  (export "getRegisters" (func $assembly/api-debugger/getRegisters))
  (export "getPageDump" (func $assembly/api-debugger/getPageDump))
+ (export "getMemory" (func $assembly/api-debugger/getMemory))
  (export "InputKind.Generic" (global $assembly/api-utils/InputKind.Generic))
  (export "InputKind.SPI" (global $assembly/api-utils/InputKind.SPI))
  (export "HasMetadata.Yes" (global $assembly/api-utils/HasMetadata.Yes))
@@ -35264,7 +35266,7 @@
    local.get $9
    call $~lib/staticarray/StaticArray<~lib/string/String>#join
    i32.const 18336
-   i32.const 200
+   i32.const 221
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -38804,10 +38806,11 @@
   i32.add
   global.set $~lib/memory/__stack_pointer
  )
- (func $assembly/api-debugger/getMemory (result i32)
-  (local $0 i32)
+ (func $assembly/api-debugger/getRegister (param $reg i32) (result i64)
+  (local $1 i32)
   (local $int i32)
-  (local $2 i32)
+  (local $3 i32)
+  (local $4 i64)
   global.get $~lib/memory/__stack_pointer
   i32.const 16
   i32.sub
@@ -38823,24 +38826,23 @@
   i32.const 0
   i32.eq
   if
-   i32.const 0
-   call $"~lib/map/Map<u32,assembly/memory-page/Page>#constructor"
-   local.set $2
+   i64.const 0
+   local.set $4
    global.get $~lib/memory/__stack_pointer
    i32.const 16
    i32.add
    global.set $~lib/memory/__stack_pointer
-   local.get $2
+   local.get $4
    return
   end
   global.get $~lib/memory/__stack_pointer
   global.get $~lib/memory/__stack_pointer
   global.get $assembly/api-debugger/interpreter
-  local.tee $0
+  local.tee $1
   i32.store
-  local.get $0
+  local.get $1
   if (result i32)
-   local.get $0
+   local.get $1
   else
    i32.const 9488
    i32.const 18336
@@ -38852,25 +38854,93 @@
   local.tee $int
   i32.store offset=4
   local.get $int
-  local.set $2
+  local.set $3
   global.get $~lib/memory/__stack_pointer
-  local.get $2
+  local.get $3
   i32.store offset=12
-  local.get $2
-  call $assembly/interpreter/Interpreter#get:memory
-  local.set $2
+  local.get $3
+  call $assembly/interpreter/Interpreter#get:registers
+  local.set $3
   global.get $~lib/memory/__stack_pointer
-  local.get $2
+  local.get $3
   i32.store offset=8
-  local.get $2
-  call $assembly/memory/Memory#get:pages
-  local.set $2
+  local.get $3
+  local.get $reg
+  i32.const 255
+  i32.and
+  call $~lib/staticarray/StaticArray<u64>#__get
+  local.set $4
   global.get $~lib/memory/__stack_pointer
   i32.const 16
   i32.add
   global.set $~lib/memory/__stack_pointer
-  local.get $2
+  local.get $4
   return
+ )
+ (func $assembly/api-debugger/setRegister (param $reg i32) (param $value i64)
+  (local $2 i32)
+  (local $int i32)
+  (local $4 i32)
+  global.get $~lib/memory/__stack_pointer
+  i32.const 16
+  i32.sub
+  global.set $~lib/memory/__stack_pointer
+  call $~stack_check
+  global.get $~lib/memory/__stack_pointer
+  i64.const 0
+  i64.store
+  global.get $~lib/memory/__stack_pointer
+  i64.const 0
+  i64.store offset=8
+  global.get $assembly/api-debugger/interpreter
+  i32.const 0
+  i32.eq
+  if
+   global.get $~lib/memory/__stack_pointer
+   i32.const 16
+   i32.add
+   global.set $~lib/memory/__stack_pointer
+   return
+  end
+  global.get $~lib/memory/__stack_pointer
+  global.get $~lib/memory/__stack_pointer
+  global.get $assembly/api-debugger/interpreter
+  local.tee $2
+  i32.store
+  local.get $2
+  if (result i32)
+   local.get $2
+  else
+   i32.const 9488
+   i32.const 18336
+   i32.const 149
+   i32.const 28
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.tee $int
+  i32.store offset=4
+  local.get $int
+  local.set $4
+  global.get $~lib/memory/__stack_pointer
+  local.get $4
+  i32.store offset=12
+  local.get $4
+  call $assembly/interpreter/Interpreter#get:registers
+  local.set $4
+  global.get $~lib/memory/__stack_pointer
+  local.get $4
+  i32.store offset=8
+  local.get $4
+  local.get $reg
+  i32.const 255
+  i32.and
+  local.get $value
+  call $~lib/staticarray/StaticArray<u64>#__set
+  global.get $~lib/memory/__stack_pointer
+  i32.const 16
+  i32.add
+  global.set $~lib/memory/__stack_pointer
  )
  (func $assembly/api-debugger/getRegisters (result i32)
   (local $flat i32)
@@ -38933,7 +39003,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 151
+   i32.const 159
    i32.const 28
    call $~lib/builtins/abort
    unreachable
@@ -39062,7 +39132,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 168
+   i32.const 176
    i32.const 28
    call $~lib/builtins/abort
    unreachable
@@ -39216,7 +39286,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 176
+   i32.const 184
    i32.const 28
    call $~lib/builtins/abort
    unreachable
@@ -39275,6 +39345,288 @@
   local.get $4
   return
  )
+ (func $assembly/memory/Memory#bytesRead (param $this i32) (param $address i32) (param $destination i32) (result i32)
+  (local $nextAddress i32)
+  (local $destinationIndex i32)
+  (local $bytesLeft i32)
+  (local $pageData i32)
+  (local $relAddress i32)
+  (local $bytesToRead i32)
+  (local $source i32)
+  (local $10 i32)
+  global.get $~lib/memory/__stack_pointer
+  i32.const 24
+  i32.sub
+  global.set $~lib/memory/__stack_pointer
+  call $~stack_check
+  global.get $~lib/memory/__stack_pointer
+  i32.const 0
+  i32.const 24
+  memory.fill
+  local.get $address
+  local.set $nextAddress
+  i32.const 0
+  local.set $destinationIndex
+  loop $while-continue|0
+   local.get $destinationIndex
+   local.get $destination
+   local.set $10
+   global.get $~lib/memory/__stack_pointer
+   local.get $10
+   i32.store
+   local.get $10
+   call $~lib/typedarray/Uint8Array#get:length
+   i32.lt_s
+   if
+    local.get $destination
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store
+    local.get $10
+    call $~lib/typedarray/Uint8Array#get:length
+    local.get $destinationIndex
+    i32.sub
+    local.set $bytesLeft
+    global.get $~lib/memory/__stack_pointer
+    local.get $this
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store
+    local.get $10
+    global.get $assembly/memory-page/Access.Read
+    local.get $nextAddress
+    call $assembly/memory/Memory#getPage
+    local.tee $pageData
+    i32.store offset=4
+    local.get $pageData
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store offset=8
+    local.get $10
+    call $assembly/memory/PageData#get:fault
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store
+    local.get $10
+    call $assembly/memory/MaybePageFault#get:isFault
+    if
+     local.get $pageData
+     local.set $10
+     global.get $~lib/memory/__stack_pointer
+     local.get $10
+     i32.store
+     local.get $10
+     call $assembly/memory/PageData#get:fault
+     local.set $10
+     global.get $~lib/memory/__stack_pointer
+     i32.const 24
+     i32.add
+     global.set $~lib/memory/__stack_pointer
+     local.get $10
+     return
+    end
+    local.get $pageData
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store
+    local.get $10
+    call $assembly/memory/PageData#get:relativeAddress
+    local.set $relAddress
+    local.get $relAddress
+    local.get $bytesLeft
+    i32.add
+    global.get $assembly/memory-page/PAGE_SIZE
+    i32.lt_u
+    if (result i32)
+     local.get $bytesLeft
+    else
+     global.get $assembly/memory-page/PAGE_SIZE
+     local.get $pageData
+     local.set $10
+     global.get $~lib/memory/__stack_pointer
+     local.get $10
+     i32.store
+     local.get $10
+     call $assembly/memory/PageData#get:relativeAddress
+     i32.sub
+    end
+    local.set $bytesToRead
+    global.get $~lib/memory/__stack_pointer
+    local.get $pageData
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store offset=16
+    local.get $10
+    call $assembly/memory/PageData#get:page
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store offset=12
+    local.get $10
+    call $assembly/memory-page/Page#get:raw
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store offset=8
+    local.get $10
+    call $assembly/memory-page/RawPage#get:data
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store
+    local.get $10
+    local.get $relAddress
+    local.get $relAddress
+    local.get $bytesToRead
+    i32.add
+    call $~lib/typedarray/Uint8Array#subarray
+    local.tee $source
+    i32.store offset=20
+    local.get $destination
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store
+    local.get $10
+    local.get $source
+    local.set $10
+    global.get $~lib/memory/__stack_pointer
+    local.get $10
+    i32.store offset=8
+    local.get $10
+    local.get $destinationIndex
+    call $~lib/typedarray/Uint8Array#set<~lib/typedarray/Uint8Array>
+    local.get $destinationIndex
+    local.get $bytesToRead
+    i32.add
+    local.set $destinationIndex
+    local.get $nextAddress
+    local.get $bytesToRead
+    i32.add
+    local.set $nextAddress
+    br $while-continue|0
+   end
+  end
+  global.get $assembly/memory/NO_PAGE_FAULT
+  local.set $10
+  global.get $~lib/memory/__stack_pointer
+  i32.const 24
+  i32.add
+  global.set $~lib/memory/__stack_pointer
+  local.get $10
+  return
+ )
+ (func $assembly/api-debugger/getMemory (param $address i32) (param $length i32) (result i32)
+  (local $2 i32)
+  (local $int i32)
+  (local $result i32)
+  (local $fault i32)
+  (local $6 i32)
+  global.get $~lib/memory/__stack_pointer
+  i32.const 28
+  i32.sub
+  global.set $~lib/memory/__stack_pointer
+  call $~stack_check
+  global.get $~lib/memory/__stack_pointer
+  i32.const 0
+  i32.const 28
+  memory.fill
+  global.get $assembly/api-debugger/interpreter
+  i32.const 0
+  i32.eq
+  if
+   i32.const 0
+   i32.const 0
+   call $~lib/typedarray/Uint8Array#constructor
+   local.set $6
+   global.get $~lib/memory/__stack_pointer
+   i32.const 28
+   i32.add
+   global.set $~lib/memory/__stack_pointer
+   local.get $6
+   return
+  end
+  global.get $~lib/memory/__stack_pointer
+  global.get $~lib/memory/__stack_pointer
+  global.get $assembly/api-debugger/interpreter
+  local.tee $2
+  i32.store
+  local.get $2
+  if (result i32)
+   local.get $2
+  else
+   i32.const 9488
+   i32.const 18336
+   i32.const 197
+   i32.const 28
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.tee $int
+  i32.store offset=4
+  global.get $~lib/memory/__stack_pointer
+  i32.const 0
+  local.get $length
+  call $~lib/typedarray/Uint8Array#constructor
+  local.tee $result
+  i32.store offset=8
+  global.get $~lib/memory/__stack_pointer
+  local.get $int
+  local.set $6
+  global.get $~lib/memory/__stack_pointer
+  local.get $6
+  i32.store offset=20
+  local.get $6
+  call $assembly/interpreter/Interpreter#get:memory
+  local.set $6
+  global.get $~lib/memory/__stack_pointer
+  local.get $6
+  i32.store offset=12
+  local.get $6
+  local.get $address
+  local.get $result
+  local.set $6
+  global.get $~lib/memory/__stack_pointer
+  local.get $6
+  i32.store offset=16
+  local.get $6
+  call $assembly/memory/Memory#bytesRead
+  local.tee $fault
+  i32.store offset=24
+  local.get $fault
+  local.set $6
+  global.get $~lib/memory/__stack_pointer
+  local.get $6
+  i32.store offset=12
+  local.get $6
+  call $assembly/memory/MaybePageFault#get:isFault
+  if
+   i32.const 0
+   i32.const 0
+   call $~lib/typedarray/Uint8Array#constructor
+   local.set $6
+   global.get $~lib/memory/__stack_pointer
+   i32.const 28
+   i32.add
+   global.set $~lib/memory/__stack_pointer
+   local.get $6
+   return
+  end
+  local.get $result
+  local.set $6
+  global.get $~lib/memory/__stack_pointer
+  i32.const 28
+  i32.add
+  global.set $~lib/memory/__stack_pointer
+  local.get $6
+  return
+ )
  (func $assembly/api-debugger/setMemory (param $address i32) (param $data i32)
   (local $2 i32)
   (local $int i32)
@@ -39313,7 +39665,7 @@
   else
    i32.const 9488
    i32.const 18336
-   i32.const 189
+   i32.const 210
    i32.const 28
    call $~lib/builtins/abort
    unreachable

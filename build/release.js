@@ -96,9 +96,14 @@ async function instantiate(module, imports = {}) {
       gas = gas || 0n;
       exports.setGasLeft(gas);
     },
-    getMemory() {
-      // assembly/api-debugger/getMemory() => ~lib/map/Map<u32,assembly/memory-page/Page>
-      return __liftInternref(exports.getMemory() >>> 0);
+    getRegister(reg) {
+      // assembly/api-debugger/getRegister(u8) => u64
+      return BigInt.asUintN(64, exports.getRegister(reg));
+    },
+    setRegister(reg, value) {
+      // assembly/api-debugger/setRegister(u8, u64) => void
+      value = value || 0n;
+      exports.setRegister(reg, value);
     },
     getRegisters() {
       // assembly/api-debugger/getRegisters() => ~lib/typedarray/Uint8Array
@@ -112,6 +117,10 @@ async function instantiate(module, imports = {}) {
     getPageDump(index) {
       // assembly/api-debugger/getPageDump(u32) => ~lib/typedarray/Uint8Array
       return __liftTypedArray(Uint8Array, exports.getPageDump(index) >>> 0);
+    },
+    getMemory(address, length) {
+      // assembly/api-debugger/getMemory(u32, u32) => ~lib/typedarray/Uint8Array
+      return __liftTypedArray(Uint8Array, exports.getMemory(address, length) >>> 0);
     },
     setMemory(address, data) {
       // assembly/api-debugger/setMemory(u32, ~lib/typedarray/Uint8Array) => void
@@ -389,10 +398,12 @@ export const {
   getExitArg,
   getGasLeft,
   setGasLeft,
-  getMemory,
+  getRegister,
+  setRegister,
   getRegisters,
   setRegisters,
   getPageDump,
+  getMemory,
   setMemory,
   InputKind,
   HasMetadata,

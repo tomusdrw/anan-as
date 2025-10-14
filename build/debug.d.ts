@@ -81,10 +81,17 @@ export declare function getGasLeft(): bigint;
  */
 export declare function setGasLeft(gas: bigint): void;
 /**
- * assembly/api-debugger/getMemory
- * @returns `~lib/map/Map<u32,assembly/memory-page/Page>`
+ * assembly/api-debugger/getRegister
+ * @param reg `u8`
+ * @returns `u64`
  */
-export declare function getMemory(): __Internref18;
+export declare function getRegister(reg: number): bigint;
+/**
+ * assembly/api-debugger/setRegister
+ * @param reg `u8`
+ * @param value `u64`
+ */
+export declare function setRegister(reg: number, value: bigint): void;
 /**
  * assembly/api-debugger/getRegisters
  * @returns `~lib/typedarray/Uint8Array`
@@ -101,6 +108,13 @@ export declare function setRegisters(flatRegisters: Array<number>): void;
  * @returns `~lib/typedarray/Uint8Array`
  */
 export declare function getPageDump(index: number): Uint8Array;
+/**
+ * assembly/api-debugger/getMemory
+ * @param address `u32`
+ * @param length `u32`
+ * @returns `~lib/typedarray/Uint8Array`
+ */
+export declare function getMemory(address: number, length: number): Uint8Array;
 /**
  * assembly/api-debugger/setMemory
  * @param address `u32`
@@ -162,11 +176,6 @@ export declare function runProgram(program: __Internref44, initialGas?: bigint, 
 /** assembly/program/Program */
 declare class __Internref30 extends Number {
   private __nominal30: symbol;
-  private __nominal0: symbol;
-}
-/** ~lib/map/Map<u32,assembly/memory-page/Page> */
-declare class __Internref18 extends Number {
-  private __nominal18: symbol;
   private __nominal0: symbol;
 }
 /** assembly/gas-costs/BlockGasCost */

@@ -3,7 +3,7 @@ import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
 import { MemoryBuilder } from "./memory";
-import { Access, Page, PAGE_SIZE } from "./memory-page";
+import { Access, PAGE_SIZE } from "./memory-page";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
 import { decodeSpi } from "./spi";
@@ -134,12 +134,20 @@ export function setGasLeft(gas: i64): void {
   }
 }
 
-export function getMemory(): Map<u32, Page> {
+export function getRegister(reg: u8): u64 {
   if (interpreter === null) {
-    return new Map<u32, Page>();
+    return 0;
   }
   const int = <Interpreter>interpreter;
-  return int.memory.pages;
+  return int.registers[reg];
+}
+
+export function setRegister(reg: u8, value: u64): void {
+  if (interpreter === null) {
+    return;
+  }
+  const int = <Interpreter>interpreter;
+  int.registers[reg] = value;
 }
 
 export function getRegisters(): Uint8Array {
@@ -180,6 +188,19 @@ export function getPageDump(index: u32): Uint8Array {
   }
 
   return page;
+}
+
+export function getMemory(address: u32, length: u32): Uint8Array {
+  if (interpreter === null) {
+    return new Uint8Array(0);
+  }
+  const int = <Interpreter>interpreter;
+  const result = new Uint8Array(length);
+  const fault = int.memory.bytesRead(address, result);
+  if (fault.isFault) {
+    return new Uint8Array(0);
+  }
+  return result;
 }
 
 export function setMemory(address: u32, data: Uint8Array): void {
