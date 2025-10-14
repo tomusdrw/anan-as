@@ -50,6 +50,7 @@ export class Interpreter {
       // executing right away.
       this.pc = this.nextPc;
       this.nextPc = -1;
+      this.exitCode = 0;
     }
 
     if (this.status !== Status.OK) {
@@ -62,9 +63,6 @@ export class Interpreter {
       this.nextPc = -1;
       return true;
     }
-
-    // reset some stuff at start
-    this.exitCode = 0;
 
     const pc = this.pc;
     // check if we are at the right location
