@@ -96,7 +96,7 @@ $ npm ci
 To build the WASM modules (in `./build/{release,debug}.wasm`):
 
 ```
-$ npm build
+$ npm run build
 ```
 
 To run the example in the browser at [http://localhost:3000](http://localhost:3000).
