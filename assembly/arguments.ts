@@ -122,7 +122,7 @@ export const DECODERS: ArgsDecoder[] = [
   (args, data, o, lim) => {
     const hig = higNibble(data[o]);
     const low = lowNibble(data[o]);
-    const result = twoImm(args, data, o + 1, lim - 1);
+    const result = twoImm(args, data, o + 1, lim);
     return args.fill(hig, low, result.a, result.b);
   },
   // DECODERS[Arguments.ThreeReg] =
