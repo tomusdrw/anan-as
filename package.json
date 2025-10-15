@@ -36,6 +36,13 @@
 		"@biomejs/biome": "^2.2.6",
 		"assemblyscript": "^0.28.8"
 	},
+	"files": [
+		"build/**/*.wasm",
+		"build/**/*.js",
+		"build/**/*.d.ts",
+		"README.md",
+		"LICENSE"
+	],
 	"exports": {
 		".": {
 			"import": "./build/release.js",

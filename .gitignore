@@ -1,4 +1,5 @@
 node_modules
-tests/*
-crash-*
+/build
+/tests/*
+/crash-*
 /gas-cost-tests
