@@ -3,6 +3,9 @@
 	"description": "AssemblyScript PVM interpreter.",
 	"version": "1.0.0",
 	"main": "./bin/index.js",
+	"repository": {
+		"url": "https://github.com/tomusdrw/anan-as"
+	},
 	"scripts": {
 		"asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run asbuild:raw && npm run asbuild:release-mini",
 		"asbuild:debug": "asc assembly/index.ts --target debug",
