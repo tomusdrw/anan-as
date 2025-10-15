@@ -21,13 +21,12 @@ export const REQUIRED_BYTES = [<i32>0, 0, 1, 0, 1, 9, 1, 1, 1, 1, 1, 2, 2];
 
 // @unmanaged
 export class Args {
-  static from(a: u32, b: u32 = 0, c: u32 = 0, d: u32 = 0): Args {
-    const x = new Args();
-    x.a = a;
-    x.b = b;
-    x.c = c;
-    x.d = d;
-    return x;
+  fill(a: u32, b: u32 = 0, c: u32 = 0, d: u32 = 0): Args {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+    this.d = d;
+    return this;
   }
 
   /**
@@ -49,134 +48,122 @@ export class Args {
   d: u32 = 0;
 }
 
-type ArgsDecoder = (data: Uint8Array, immLimit: u32) => Args;
+type ArgsDecoder = (args: Args, code: u8[], offset: u32, end: u32) => Args;
 
-function twoImm(data: Uint8Array, lim: u32): Args {
-  const n = nibbles(data[0]);
-  const split = <i32>Math.min(4, n.low) + 1;
-  const first = decodeI32(data, 1, split);
-  const second = decodeI32(data, split, lim);
-  return Args.from(first, second, 0, 0);
+function twoImm(args: Args, code: u8[], offset: u32, end: u32): Args {
+  const low = lowNibble(unchecked(code[offset]));
+  const split = <i32>Math.min(4, low) + 1;
+  const first = decodeI32(code, offset + 1, offset + split);
+  const second = decodeI32(code, offset + split, end);
+  return args.fill(first, second, 0, 0);
 }
 
 export const DECODERS: ArgsDecoder[] = [
   // DECODERS[Arguments.Zero] =
-  (_d, _l) => {
-    return Args.from(0, 0, 0, 0);
+  (args, _d, _o, _l) => {
+    return args.fill(0, 0, 0, 0);
   },
   // DECODERS[Arguments.OneImm] =
-  (data, lim) => {
-    return Args.from(decodeI32(data, 0, lim), 0, 0, 0);
+  (args, data, o, lim) => {
+    return args.fill(decodeI32(data, o, lim), 0, 0, 0);
   },
   // DECODERS[Arguments.TwoImm] =
-  (data, lim) => twoImm(data, lim),
+  (args, data, o, lim) => twoImm(args, data, o, lim),
   // DECODERS[Arguments.OneOff] =
-  (data, lim) => {
-    return Args.from(decodeI32(data, 0, lim), 0, 0, 0);
+  (args, data, o, lim) => {
+    return args.fill(decodeI32(data, o, lim), 0, 0, 0);
   },
   // DECODERS[Arguments.OneRegOneImm] =
-  (data, lim) => {
-    return Args.from(nibbles(data[0]).low, decodeI32(data, 1, lim), 0, 0);
+  (args, data, o, lim) => {
+    return args.fill(lowNibble(data[o]), decodeI32(data, o + 1, lim), 0, 0);
   },
   // DECODERS[Arguments.OneRegOneExtImm] =
-  (data, _lim) => {
-    const a = nibbles(data[0]).low;
-    const b = decodeU32(data.subarray(1));
-    const c = decodeU32(data.subarray(5));
-    return Args.from(a, b, c, 0);
+  (args, data, o, _lim) => {
+    const a = lowNibble(data[o]);
+    const b = decodeU32(data, o + 1);
+    const c = decodeU32(data, o + 5);
+    return args.fill(a, b, c, 0);
   },
   //DECODERS[Arguments.OneRegTwoImm] =
-  (data, lim) => {
-    const n = nibbles(data[0]);
-    const split = <i32>Math.min(4, n.hig) + 1;
-    const immA = decodeI32(data, 1, split);
-    const immB = decodeI32(data, split, lim);
-    return Args.from(n.low, immA, immB, 0);
+  (args, data, o, lim) => {
+    const h = higNibble(data[o]);
+    const l = lowNibble(data[o]);
+    const split = <i32>Math.min(4, h) + 1;
+    const immA = decodeI32(data, o + 1, o + split);
+    const immB = decodeI32(data, o + split, lim);
+    return args.fill(l, immA, immB, 0);
   },
   // DECODERS[Arguments.OneRegOneImmOneOff] =
-  (data, lim) => {
-    const n = nibbles(data[0]);
-    const split = <i32>Math.min(4, n.hig) + 1;
-    const immA = decodeI32(data, 1, split);
-    const offs = decodeI32(data, split, lim);
-    return Args.from(n.low, immA, offs, 0);
+  (args, data, o, lim) => {
+    const h = higNibble(data[o]);
+    const l = lowNibble(data[o]);
+    const split = <i32>Math.min(4, h) + 1;
+    const immA = decodeI32(data, o + 1, o + split);
+    const offs = decodeI32(data, o + split, lim);
+    return args.fill(l, immA, offs, 0);
   },
   // DECODERS[Arguments.TwoReg] =
-  (data, _lim) => {
-    const n = nibbles(data[0]);
-    return Args.from(n.hig, n.low, 0, 0);
+  (args, data, o, _lim) => {
+    return args.fill(higNibble(data[o]), lowNibble(data[o]), 0, 0);
   },
   // DECODERS[Arguments.TwoRegOneImm] =
-  (data, lim) => {
-    const n = nibbles(data[0]);
-    return Args.from(n.hig, n.low, decodeI32(data, 1, lim), 0);
+  (args, data, o, lim) => {
+    const hig = higNibble(data[o]);
+    const low = lowNibble(data[o]);
+    return args.fill(hig, low, decodeI32(data, o + 1, lim), 0);
   },
   // DECODERS[Arguments.TwoRegOneOff] =
-  (data, lim) => {
-    const n = nibbles(data[0]);
-    return Args.from(n.hig, n.low, decodeI32(data, 1, lim), 0);
+  (args, data, o, lim) => {
+    const hig = higNibble(data[o]);
+    const low = lowNibble(data[o]);
+    return args.fill(hig, low, decodeI32(data, o + 1, lim), 0);
   },
   // DECODERS[Arguments.TwoRegTwoImm] =
-  (data, lim) => {
-    const n = nibbles(data[0]);
-    const result = twoImm(data.subarray(1), lim > 1 ? lim - 1 : 0);
-    return Args.from(n.hig, n.low, result.a, result.b);
+  (args, data, o, lim) => {
+    const hig = higNibble(data[o]);
+    const low = lowNibble(data[o]);
+    const result = twoImm(args, data, o + 1, lim);
+    return args.fill(hig, low, result.a, result.b);
   },
   // DECODERS[Arguments.ThreeReg] =
-  (data, _lim) => {
-    const a = nibbles(data[0]);
-    const b = nibbles(data[1]);
-    return Args.from(a.hig, a.low, b.low, 0);
+  (args, data, o, _lim) => {
+    const hig = higNibble(data[o]);
+    const low = lowNibble(data[o]);
+    const b = lowNibble(data[o + 1]);
+    return args.fill(hig, low, b, 0);
   },
 ];
 
-// @unmanaged
-class Nibbles {
-  low: u8 = 0;
-  hig: u8 = 0;
-}
-
 // @inline
-export function nibbles(byte: u8): Nibbles {
-  const low = byte & 0xf;
-  const hig = byte >> 4;
-  const n = new Nibbles();
-  n.low = low;
-  n.hig = hig;
-  return n;
+export function lowNibble(byte: u8): u8 {
+  return byte & 0xf;
+}
+export function higNibble(byte: u8): u8 {
+  return byte >> 4;
 }
 
 //@inline
-function decodeI32(input: Uint8Array, start: u32, end: u32): u32 {
-  const data = input.subarray(start, end > start ? end : start);
-  const len = <u32>Math.min(4, data.length);
-  let num = 0;
-  for (let i: u32 = 0; i < len; i++) {
-    num |= u32(data[i]) << (i * 8);
+function decodeI32(input: u8[], start: u32, end: u32): u32 {
+  if (end <= start) {
+    return 0;
   }
-
-  const msb = len > 0 ? data[len - 1] & 0x80 : 0;
-  const prefix = msb > 0 ? 0xff : 0x00;
-  for (let i: u32 = len; i < 4; i++) {
-    num |= prefix << (i * 8);
+  const l = end - start;
+  const len = l < 4 ? l : 4;
+  let num = 0x0;
+  for (let i: u32 = 0; i < len; i++) {
+    num |= u32(input[start + i]) << (i * 8);
+  }
+  const msb = unchecked(input[start + len - 1]) & 0x80;
+  if (len < 4 && msb > 0) {
+    num |= 0xffff_ffff << (len * 8);
   }
   return num;
 }
 
-export function encodeI32(input: i32): u8[] {
-  const data: u8[] = [];
-  let num = u32(input);
-  while (num > 0) {
-    data.push(u8(num));
-    num >>= 8;
-  }
-  return data;
-}
-
-function decodeU32(data: Uint8Array): u32 {
-  let num = u32(data[0]);
-  num |= u32(data[1]) << 8;
-  num |= u32(data[2]) << 16;
-  num |= u32(data[3]) << 24;
+function decodeU32(data: u8[], offset: u32): u32 {
+  let num = u32(data[offset + 0]);
+  num |= u32(data[offset + 1]) << 8;
+  num |= u32(data[offset + 2]) << 16;
+  num |= u32(data[offset + 3]) << 24;
   return num;
 }

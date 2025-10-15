@@ -2,7 +2,7 @@ import { Args } from "../arguments";
 import { MaybePageFault, Memory } from "../memory";
 import { Registers } from "../registers";
 
-export type InstructionRun = (args: Args, registers: Registers, memory: Memory) => OutcomeData;
+export type InstructionRun = (o: OutcomeData, args: Args, registers: Registers, memory: Memory) => OutcomeData;
 
 export enum Result {
   PANIC = 0,
@@ -27,45 +27,42 @@ export class OutcomeData {
   exitCode: u32 = 0;
 }
 
-export function status(result: Result): OutcomeData {
-  const r = new OutcomeData();
+export function status(r: OutcomeData, result: Result): OutcomeData {
   r.outcome = Outcome.Result;
   r.result = result;
   return r;
 }
 
-export function staticJump(offset: i32): OutcomeData {
-  const r = new OutcomeData();
+export function staticJump(r: OutcomeData, offset: i32): OutcomeData {
   r.outcome = Outcome.StaticJump;
   r.staticJump = offset;
   return r;
 }
 
-export function dJump(address: u32): OutcomeData {
-  const r = new OutcomeData();
+export function dJump(r: OutcomeData, address: u32): OutcomeData {
   r.outcome = Outcome.DynamicJump;
   r.dJump = address;
   return r;
 }
 
-export function ok(): OutcomeData {
-  return new OutcomeData();
+export function ok(r: OutcomeData): OutcomeData {
+  r.outcome = Outcome.Ok;
+  r.dJump = 0;
+  return r;
 }
 
-export function panic(): OutcomeData {
-  return status(Result.PANIC);
+export function panic(r: OutcomeData): OutcomeData {
+  return status(r, Result.PANIC);
 }
 
-export function hostCall(id: u32): OutcomeData {
-  const r = new OutcomeData();
+export function hostCall(r: OutcomeData, id: u32): OutcomeData {
   r.outcome = Outcome.Result;
   r.result = Result.HOST;
   r.exitCode = id;
   return r;
 }
 
-export function okOrFault(pageFault: MaybePageFault): OutcomeData {
-  const r = new OutcomeData();
+export function okOrFault(r: OutcomeData, pageFault: MaybePageFault): OutcomeData {
   if (pageFault.isFault) {
     r.outcome = Outcome.Result;
     // not accessible memory does not result in `FAULT`, but rather goes straight to TRAP

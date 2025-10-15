@@ -18,41 +18,22 @@ export class MaybePageFault {
   fault: u32 = 0;
 }
 
-// @unmanaged
-export class Result {
-  ok: u64 = 0;
-  fault: MaybePageFault = new MaybePageFault();
-}
-
-const NO_PAGE_FAULT = new MaybePageFault();
+const EMPTY_UINT8ARRAY = new Uint8Array(0);
+const EMPTY_PAGE = new Page(Access.None, new RawPage(-1, null));
 
 class Chunks {
-  constructor(
-    public readonly fault: MaybePageFault,
-    public readonly first: Uint8Array = EMPTY_UINT8ARRAY,
-    public readonly second: Uint8Array = EMPTY_UINT8ARRAY,
-  ) {}
+  firstPageData: Uint8Array = EMPTY_UINT8ARRAY;
+  firstPageOffset: u32 = 0;
+  secondPageData: Uint8Array = EMPTY_UINT8ARRAY;
+  secondPageEnd: u32 = 0;
 }
 
-class ChunkBytes {
-  constructor(
-    public readonly fault: MaybePageFault,
-    public readonly bytes: StaticArray<u8> = new StaticArray(0),
-  ) {}
-}
-
-class PageData {
-  constructor(
-    public readonly fault: MaybePageFault,
-    public readonly page: Page,
-    public readonly relativeAddress: u32,
-  ) {}
+class PageResult {
+  page: Page = EMPTY_PAGE;
+  relativeAddress: u32 = 0;
 }
 
 const MEMORY_SIZE = 0x1_0000_0000;
-
-const EMPTY_UINT8ARRAY = new Uint8Array(0);
-const EMPTY_PAGE = new Page(Access.None, new RawPage(-1, null));
 
 export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
@@ -108,6 +89,8 @@ export class MemoryBuilder {
 
 export class Memory {
   private lastAllocatedPage: i32;
+  private pageResult: PageResult = new PageResult();
+  private chunksResult: Chunks = new Chunks();
 
   constructor(
     private readonly arena: Arena,
@@ -136,16 +119,16 @@ export class Memory {
     this.pages.clear();
   }
 
-  sbrk(amount: u32): Result {
-    const freeMemoryStart = new Result();
-    freeMemoryStart.ok = this.sbrkAddress;
+  sbrk(faultRes: MaybePageFault, amount: u32): u64 {
+    const freeMemoryStart = this.sbrkAddress;
     if (amount === 0) {
+      faultRes.isFault = false;
       return freeMemoryStart;
     }
 
     const newSbrk = i64(this.sbrkAddress) + amount;
     if (newSbrk >= MEMORY_SIZE) {
-      freeMemoryStart.fault.isFault = true;
+      faultRes.isFault = true;
       return freeMemoryStart;
     }
     this.sbrkAddress = u32(newSbrk);
@@ -164,237 +147,149 @@ export class Memory {
     return freeMemoryStart;
   }
 
-  getU8(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 1);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      r.ok = res.bytes[0];
-    }
-    return r;
+  getU8(faultRes: MaybePageFault, address: u32): u64 {
+    return u8(this.getBytesReversed(faultRes, Access.Read, address, 1));
   }
 
-  getU16(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 2);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      r.ok = res.bytes[0];
-      r.ok |= (<u32>res.bytes[1]) << 8;
-    }
-    return r;
+  getU16(faultRes: MaybePageFault, address: u32): u64 {
+    return bswap<u16>(u16(this.getBytesReversed(faultRes, Access.Read, address, 2)));
   }
 
-  getU32(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 4);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      r.ok = res.bytes[0];
-      r.ok |= (<u32>res.bytes[1]) << 8;
-      r.ok |= (<u32>res.bytes[2]) << 16;
-      r.ok |= (<u32>res.bytes[3]) << 24;
-    }
-    return r;
+  getU32(faultRes: MaybePageFault, address: u32): u64 {
+    return bswap<u32>(u32(this.getBytesReversed(faultRes, Access.Read, address, 4)));
   }
 
-  getU64(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 8);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      r.ok = res.bytes[0];
-      r.ok |= (<u64>res.bytes[1]) << 8;
-      r.ok |= (<u64>res.bytes[2]) << 16;
-      r.ok |= (<u64>res.bytes[3]) << 24;
-      r.ok |= u64(res.bytes[4]) << 32;
-      r.ok |= u64(res.bytes[5]) << 40;
-      r.ok |= u64(res.bytes[6]) << 48;
-      r.ok |= u64(res.bytes[7]) << 56;
-    }
-    return r;
+  getU64(faultRes: MaybePageFault, address: u32): u64 {
+    return bswap<u64>(this.getBytesReversed(faultRes, Access.Read, address, 8));
   }
 
-  getI8(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 1);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      r.ok = u8SignExtend(res.bytes[0]);
-    }
-    return r;
+  getI8(faultRes: MaybePageFault, address: u32): u64 {
+    return u8SignExtend(u8(this.getU8(faultRes, address)));
   }
 
-  getI16(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 2);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      let l = u16(res.bytes[0]);
-      l |= u16(res.bytes[1]) << 8;
-      r.ok = u16SignExtend(l);
-    }
-    return r;
+  getI16(faultRes: MaybePageFault, address: u32): u64 {
+    return u16SignExtend(u16(this.getU16(faultRes, address)));
   }
 
-  getI32(address: u32): Result {
-    const res = this.getBytes(Access.Read, address, 4);
-    const r = new Result();
-    r.fault = res.fault;
-    if (!res.fault.isFault) {
-      let l = u32(res.bytes[0]);
-      l |= u32(res.bytes[1]) << 8;
-      l |= u32(res.bytes[2]) << 16;
-      l |= u32(res.bytes[3]) << 24;
-      r.ok = u32SignExtend(l);
-    }
-    return r;
+  getI32(faultRes: MaybePageFault, address: u32): u64 {
+    return u32SignExtend(u32(this.getU32(faultRes, address)));
   }
 
-  setU8(address: u32, value: u8): MaybePageFault {
-    const res = this.getChunks(Access.Write, address, 1);
-    if (res.fault.isFault) {
-      return res.fault;
-    }
-    res.first[0] = value;
-    return res.fault;
+  setU8(faultRes: MaybePageFault, address: u32, value: u8): void {
+    this.setBytes(faultRes, address, value, 1);
   }
 
-  setU16(address: u32, value: u16): MaybePageFault {
-    const res = this.getChunks(Access.Write, address, 2);
-    if (res.fault.isFault) {
-      return res.fault;
-    }
-    res.first[0] = value & 0xff;
-    if (res.first.length > 1) {
-      res.first[1] = value >> 8;
-    } else {
-      res.second[0] = value >> 8;
-    }
-    return res.fault;
+  setU16(faultRes: MaybePageFault, address: u32, value: u16): void {
+    this.setBytes(faultRes, address, value, 2);
   }
 
-  setU32(address: u32, value: u32): MaybePageFault {
-    const res = this.getChunks(Access.Write, address, 4);
-    if (res.fault.isFault) {
-      return res.fault;
-    }
-
-    let v = value;
-    const len = res.first.length;
-
-    for (let i = 0; i < len; i++) {
-      res.first[i] = v & 0xff;
-      v = v >> 8;
-    }
-
-    for (let i = 0; i < res.second.length; i++) {
-      res.second[i] = v & 0xff;
-      v = v >> 8;
-    }
-
-    return res.fault;
+  setU32(faultRes: MaybePageFault, address: u32, value: u32): void {
+    this.setBytes(faultRes, address, value, 4);
   }
 
-  setU64(address: u32, value: u64): MaybePageFault {
-    const res = this.getChunks(Access.Write, address, 8);
-    if (res.fault.isFault) {
-      return res.fault;
-    }
-
-    let v = value;
-    const len = res.first.length;
-
-    for (let i = 0; i < len; i++) {
-      res.first[i] = u8(v);
-      v = v >> 8;
-    }
-
-    for (let i = 0; i < res.second.length; i++) {
-      res.second[i] = u8(v);
-      v = v >> 8;
-    }
-
-    return res.fault;
+  setU64(faultRes: MaybePageFault, address: u32, value: u64): void {
+    this.setBytes(faultRes, address, value, 8);
   }
 
-  bytesRead(address: u32, destination: Uint8Array): MaybePageFault {
+  bytesRead(faultRes: MaybePageFault, address: u32, destination: Uint8Array, destinationOffset: u32): void {
     let nextAddress = address;
-    let destinationIndex = 0;
+    let destinationIndex = i32(destinationOffset);
 
     while (destinationIndex < destination.length) {
       const bytesLeft = destination.length - destinationIndex;
-      const pageData = this.getPage(Access.Read, nextAddress);
-      if (pageData.fault.isFault) {
-        return pageData.fault;
+      const pageData = this.pageResult;
+      this.getPage(faultRes, pageData, Access.Read, nextAddress);
+      if (faultRes.isFault) {
+        return;
       }
       const relAddress = pageData.relativeAddress;
       const bytesToRead = relAddress + bytesLeft < PAGE_SIZE ? bytesLeft : PAGE_SIZE - pageData.relativeAddress;
       // actually copy the bytes
-      const source = pageData.page.raw.data.subarray(relAddress, relAddress + bytesToRead);
-      destination.set(source, destinationIndex);
+      const pageEnd = relAddress + bytesToRead;
+      const data = pageData.page.raw.data;
+      for (let i = relAddress; i < pageEnd; i++) {
+        destination[destinationIndex] = data[i];
+        destinationIndex++;
+      }
       // move the pointers
-      destinationIndex += bytesToRead;
       nextAddress += bytesToRead;
     }
 
-    return NO_PAGE_FAULT;
+    return;
   }
 
-  bytesWrite(address: u32, source: Uint8Array): MaybePageFault {
+  bytesWrite(faultRes: MaybePageFault, address: u32, source: Uint8Array, sourceOffset: u32): void {
     let nextAddress = address;
-    let sourceIndex = 0;
+    let sourceIndex = i32(sourceOffset);
 
     while (sourceIndex < source.length) {
       const bytesLeft = source.length - sourceIndex;
-      const pageData = this.getPage(Access.Write, nextAddress);
-      if (pageData.fault.isFault) {
-        return pageData.fault;
+      const pageData = this.pageResult;
+      this.getPage(faultRes, pageData, Access.Write, nextAddress);
+      if (faultRes.isFault) {
+        return;
       }
       const relAddress = pageData.relativeAddress;
       const bytesToWrite = relAddress + bytesLeft < PAGE_SIZE ? bytesLeft : PAGE_SIZE - pageData.relativeAddress;
       // actually copy the bytes
-      const sourceData = source.subarray(sourceIndex, sourceIndex + bytesToWrite);
-      pageData.page.raw.data.set(sourceData, relAddress);
+      const pageEnd = relAddress + bytesToWrite;
+      const data = pageData.page.raw.data;
+      for (let i = relAddress; i < pageEnd; i++) {
+        data[i] = source[sourceIndex];
+        sourceIndex++;
+      }
       // move the pointers
-      sourceIndex += bytesToWrite;
       nextAddress += bytesToWrite;
     }
 
-    return NO_PAGE_FAULT;
+    return;
   }
 
-  private getPage(access: Access, address: u32): PageData {
+  private getPage(faultRes: MaybePageFault, pageData: PageResult, access: Access, address: u32): void {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
     const relAddress = address % PAGE_SIZE;
     const pageStart = pageIdx << PAGE_SIZE_SHIFT;
 
     if (!this.pages.has(pageIdx)) {
-      return new PageData(fault(pageStart), EMPTY_PAGE, relAddress);
+      fault(faultRes, pageStart);
+      pageData.page = EMPTY_PAGE;
+      pageData.relativeAddress = relAddress;
+      return;
     }
 
     const page = this.pages.get(pageIdx);
     if (!page.can(access)) {
-      const f = fault(pageStart);
-      f.isAccess = true;
-      return new PageData(f, EMPTY_PAGE, relAddress);
+      fault(faultRes, pageStart);
+      faultRes.isAccess = true;
+      pageData.page = EMPTY_PAGE;
+      pageData.relativeAddress = relAddress;
+      return;
     }
 
-    return new PageData(NO_PAGE_FAULT, page, relAddress);
+    faultRes.isFault = false;
+    pageData.page = page;
+    pageData.relativeAddress = relAddress;
+    return;
   }
 
-  private getChunks(access: Access, address: u32, bytes: u8): Chunks {
+  private getChunks(faultRes: MaybePageFault, chunks: Chunks, access: Access, address: u32, bytes: u8): void {
     /**
      * Accessing empty set of bytes is always valid.
      * https://graypaper.fluffylabs.dev/#/68eaa1f/24a80024a800?v=0.6.4
      */
     if (bytes === 0) {
-      return new Chunks(NO_PAGE_FAULT);
+      faultRes.isFault = false;
+      chunks.firstPageData = EMPTY_UINT8ARRAY;
+      chunks.firstPageOffset = 0;
+      chunks.secondPageData = EMPTY_UINT8ARRAY;
+      chunks.secondPageEnd = 0;
+      return;
     }
 
-    const pageData = this.getPage(access, address);
-    if (pageData.fault.isFault) {
-      return new Chunks(pageData.fault);
+    const pageData = this.pageResult;
+    this.getPage(faultRes, pageData, access, address);
+    if (faultRes.isFault) {
+      return;
     }
 
     const page = pageData.page;
@@ -405,53 +300,79 @@ export class Memory {
 
     // everything is on one page - easy case
     if (!needSecondPage) {
-      const first = page.raw.data.subarray(relativeAddress, endAddress);
-      return new Chunks(NO_PAGE_FAULT, first);
+      chunks.firstPageData = page.raw.data;
+      chunks.firstPageOffset = relativeAddress;
+      return;
     }
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
     const secondPageStart = secondPageIdx << PAGE_SIZE_SHIFT;
     if (!this.pages.has(secondPageIdx)) {
-      return new Chunks(fault(secondPageStart));
+      fault(faultRes, secondPageStart);
+      return;
     }
     // fetch the second page and check access
     const secondPage = this.pages.get(secondPageIdx);
     if (!secondPage.can(access)) {
-      const f = fault(secondPageStart);
-      f.isAccess = true;
-      return new Chunks(f);
+      fault(faultRes, secondPageStart);
+      faultRes.isAccess = true;
+      return;
     }
 
-    const firstChunk = page.raw.data.subarray(relativeAddress);
-    const secondChunk = secondPage.raw.data.subarray(0, relativeAddress + u32(bytes) - PAGE_SIZE);
-    return new Chunks(NO_PAGE_FAULT, firstChunk, secondChunk);
+    chunks.firstPageData = page.raw.data;
+    chunks.firstPageOffset = relativeAddress;
+    chunks.secondPageData = secondPage.raw.data;
+    chunks.secondPageEnd = relativeAddress + u32(bytes) - PAGE_SIZE;
+    return;
   }
 
-  private getBytes(access: Access, address: u32, bytes: u8): ChunkBytes {
-    const res = this.getChunks(access, address, bytes);
-    if (res.fault.isFault) {
-      return new ChunkBytes(res.fault);
+  private setBytes(faultRes: MaybePageFault, address: u32, value: u64, bytes: u8): void {
+    const r = this.chunksResult;
+    this.getChunks(faultRes, r, Access.Write, address, bytes);
+    if (faultRes.isFault) {
+      return;
     }
-    const data = getBytes(bytes, res.first, res.second);
-    return new ChunkBytes(res.fault, data);
+
+    let bytesLeft = value;
+    // write to first page
+    const firstPageEnd = Math.min(PAGE_SIZE, r.firstPageOffset + bytes);
+    for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {
+      r.firstPageData[i] = u8(bytesLeft);
+      bytesLeft >>= 8;
+    }
+    // write rest to the second page
+    for (let i: u32 = 0; i < r.secondPageEnd; i++) {
+      r.secondPageData[i] = u8(bytesLeft);
+      bytesLeft >>= 8;
+    }
+  }
+
+  private getBytesReversed(faultRes: MaybePageFault, access: Access, address: u32, bytes: u8): u64 {
+    this.getChunks(faultRes, this.chunksResult, access, address, bytes);
+    if (faultRes.isFault) {
+      return 0;
+    }
+
+    // result (bytes in reverse order)
+    let r: u64 = 0;
+    const firstPageEnd = Math.min(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
+
+    // read from first page
+    for (let i: u32 = this.chunksResult.firstPageOffset; i < firstPageEnd; i++) {
+      r = (r << 8) | this.chunksResult.firstPageData[i];
+    }
+
+    // read from the second page
+    for (let i: u32 = 0; i < this.chunksResult.secondPageEnd; i++) {
+      r = (r << 8) | this.chunksResult.secondPageData[i];
+    }
+
+    return r;
   }
 }
 
-function getBytes(bytes: u8, first: Uint8Array, second: Uint8Array): StaticArray<u8> {
-  const res = new StaticArray<u8>(bytes);
-  const len = first.length;
-  for (let i = 0; i < len; i++) {
-    res[i] = first[i];
-  }
-  for (let i = 0; i < second.length; i++) {
-    res[len + i] = second[i];
-  }
-  return res;
-}
-
-function fault(address: u32): MaybePageFault {
-  const r = new MaybePageFault();
+function fault(r: MaybePageFault, address: u32): void {
   r.isFault = true;
+  r.isAccess = false;
   r.fault = address;
-  return r;
 }

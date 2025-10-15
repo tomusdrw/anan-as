@@ -1,4 +1,4 @@
-import { Arguments, nibbles, REQUIRED_BYTES } from "./arguments";
+import { Arguments, higNibble, lowNibble, REQUIRED_BYTES } from "./arguments";
 import { encodeVarU32 } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 
@@ -36,8 +36,8 @@ function skipBytes(kind: Arguments, data: Uint8Array): i32 {
     case Arguments.OneImm:
       return immBytes(data.length, 0);
     case Arguments.TwoImm: {
-      const n = nibbles(data[0]);
-      const split = n.low + 1;
+      const low = lowNibble(data[0]);
+      const split = low + 1;
       return 1 + split + immBytes(data.length, split + 1);
     }
     case Arguments.OneOff:
@@ -47,13 +47,13 @@ function skipBytes(kind: Arguments, data: Uint8Array): i32 {
     case Arguments.OneRegOneExtImm:
       return 9;
     case Arguments.OneRegTwoImm: {
-      const n = nibbles(data[0]);
-      const split = n.hig + 1;
+      const hig = higNibble(data[0]);
+      const split = hig + 1;
       return 1 + split + immBytes(data.length, 1 + split);
     }
     case Arguments.OneRegOneImmOneOff: {
-      const n = nibbles(data[0]);
-      const split = n.hig + 1;
+      const hig = higNibble(data[0]);
+      const split = hig + 1;
       return 1 + split + immBytes(data.length, 1 + split);
     }
     case Arguments.TwoReg:
@@ -63,8 +63,8 @@ function skipBytes(kind: Arguments, data: Uint8Array): i32 {
     case Arguments.TwoRegOneOff:
       return 1 + i32(Math.min(4, data.length));
     case Arguments.TwoRegTwoImm: {
-      const n = nibbles(data[1]);
-      const split = n.low + 1;
+      const low = lowNibble(data[1]);
+      const split = low + 1;
       return 2 + split + immBytes(data.length, 2 + split);
     }
     case Arguments.ThreeReg:

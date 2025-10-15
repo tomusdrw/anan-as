@@ -2,7 +2,7 @@ import { buildMemory, InitialChunk, InitialPage } from "./api-internal";
 import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
-import { MemoryBuilder } from "./memory";
+import { MaybePageFault, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
@@ -67,7 +67,7 @@ export function resetGenericWithMemory(
 export function nextStep(): boolean {
   if (interpreter !== null) {
     const int = <Interpreter>interpreter;
-    return int.nextStep();
+    return int.nextSteps();
   }
   return false;
 }
@@ -75,14 +75,7 @@ export function nextStep(): boolean {
 export function nSteps(steps: u32): boolean {
   if (interpreter !== null) {
     const int = <Interpreter>interpreter;
-    let isOk = true;
-    for (let i: u32 = 0; i < steps; i++) {
-      isOk = int.nextStep();
-      if (!isOk) {
-        return false;
-      }
-    }
-    return isOk;
+    return int.nextSteps(steps);
   }
   return false;
 }
@@ -180,9 +173,12 @@ export function setMemory(address: u32, data: Uint8Array): void {
   }
   const int = <Interpreter>interpreter;
   const end = address + data.length;
+  const faultRes = new MaybePageFault();
   for (let i = address; i < end; i++) {
-    // TODO [ToDr] handle page fault?
-    int.memory.setU8(i, data[i - address]);
+    int.memory.setU8(faultRes, i, data[i - address]);
+    if (faultRes.isFault) {
+      throw new Error(`Page fault at ${faultRes.fault} when setting memory.`);
+    }
   }
 }
 

@@ -55,7 +55,9 @@ export function deblob(program: Uint8Array): Program {
   const jumpTableLengthInBytes = jumpTableLength * jumpTableItemLength;
   const rawJumpTable = decoder.bytes(jumpTableLengthInBytes);
 
-  const rawCode = decoder.bytes(codeLength);
+  // NOTE [ToDr] we copy the code here, because indexing a raw
+  // assembly script array is faster than going through `Uint8Array` API.
+  const rawCode = lowerBytes(decoder.bytes(codeLength));
   const rawMask = decoder.bytes((codeLength + 7) / 8);
 
   const mask = new Mask(rawMask, codeLength);
@@ -100,7 +102,7 @@ export class Mask {
       return false;
     }
 
-    return this.bytesToSkip[u32(index)] === 0;
+    return unchecked(this.bytesToSkip[u32(index)]) === 0;
   }
 
   /**
@@ -113,7 +115,7 @@ export class Mask {
    */
   skipBytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
-      return this.bytesToSkip[i + 1];
+      return unchecked(this.bytesToSkip[i + 1]);
     }
 
     return 0;
@@ -140,7 +142,7 @@ export enum BasicBlock {
 export class BasicBlocks {
   readonly isStartOrEnd: StaticArray<BasicBlock>;
 
-  constructor(code: Uint8Array, mask: Mask) {
+  constructor(code: u8[], mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
     if (len > 0) {
@@ -173,7 +175,7 @@ export class BasicBlocks {
 
   isStart(newPc: u32): boolean {
     if (newPc < <u32>this.isStartOrEnd.length) {
-      return (this.isStartOrEnd[newPc] & BasicBlock.START) > 0;
+      return (unchecked(this.isStartOrEnd[newPc]) & BasicBlock.START) > 0;
     }
     return false;
   }
@@ -227,7 +229,7 @@ export class JumpTable {
 
 export class Program {
   constructor(
-    public readonly code: Uint8Array,
+    public readonly code: u8[],
     public readonly mask: Mask,
     public readonly jumpTable: JumpTable,
     public readonly basicBlocks: BasicBlocks,
@@ -238,16 +240,16 @@ export class Program {
   }
 }
 
-export function decodeArguments(kind: Arguments, data: Uint8Array, lim: u32): Args {
-  if (data.length < REQUIRED_BYTES[kind]) {
+export function decodeArguments(args: Args, kind: Arguments, code: u8[], offset: i32, lim: u32): Args {
+  if (code.length < offset + REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
-    const extended = new Uint8Array(REQUIRED_BYTES[kind]);
-    for (let i = 0; i < data.length; i++) {
-      extended[i] = data[i];
+    const extended = new Array<u8>(REQUIRED_BYTES[kind]);
+    for (let i = offset; i < code.length; i++) {
+      extended[i - offset] = code[i];
     }
-    return DECODERS[kind](extended, lim);
+    return DECODERS[kind](args, extended, 0, lim);
   }
-  return DECODERS[kind](data, lim);
+  return DECODERS[kind](args, code, offset, offset + lim);
 }
 
 class ResolvedArguments {
@@ -259,12 +261,14 @@ class ResolvedArguments {
 }
 
 export function resolveArguments(
+  argsRes: Args,
   kind: Arguments,
-  data: Uint8Array,
+  code: u8[],
+  offset: u32,
   lim: u32,
   registers: Registers,
 ): ResolvedArguments | null {
-  const args = decodeArguments(kind, data, lim);
+  const args = decodeArguments(argsRes, kind, code, offset, lim);
   if (args === null) {
     return null;
   }

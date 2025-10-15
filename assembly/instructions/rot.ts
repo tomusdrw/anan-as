@@ -2,51 +2,51 @@ import { InstructionRun, ok } from "./outcome";
 import { reg, u32SignExtend } from "./utils";
 
 // ROT_R_64_IMM
-export const rot_r_64_imm: InstructionRun = (args, regs) => {
+export const rot_r_64_imm: InstructionRun = (r, args, regs) => {
   regs[reg(args.b)] = math.rot_r(regs[reg(args.a)], u32SignExtend(args.c));
-  return ok();
+  return ok(r);
 };
 
 // ROT_R_64_IMM_ALT
-export const rot_r_64_imm_alt: InstructionRun = (args, regs) => {
+export const rot_r_64_imm_alt: InstructionRun = (r, args, regs) => {
   regs[reg(args.b)] = math.rot_r(u32SignExtend(args.c), regs[reg(args.a)]);
-  return ok();
+  return ok(r);
 };
 
 // ROT_R_32_IMM
-export const rot_r_32_imm: InstructionRun = (args, regs) => {
+export const rot_r_32_imm: InstructionRun = (r, args, regs) => {
   regs[reg(args.b)] = u32SignExtend(math.rot_r_32(u32(regs[reg(args.a)]), u32(args.c)));
-  return ok();
+  return ok(r);
 };
 
 // ROT_R_32_IMM_ALT
-export const rot_r_32_imm_alt: InstructionRun = (args, regs) => {
+export const rot_r_32_imm_alt: InstructionRun = (r, args, regs) => {
   regs[reg(args.b)] = u32SignExtend(math.rot_r_32(u32(args.c), u32(regs[reg(args.a)])));
-  return ok();
+  return ok(r);
 };
 
 // ROT_L_64
-export const rot_l_64: InstructionRun = (args, regs) => {
+export const rot_l_64: InstructionRun = (r, args, regs) => {
   regs[reg(args.c)] = math.rot_l(regs[reg(args.b)], regs[reg(args.a)]);
-  return ok();
+  return ok(r);
 };
 
 // ROT_L_32
-export const rot_l_32: InstructionRun = (args, regs) => {
+export const rot_l_32: InstructionRun = (r, args, regs) => {
   regs[reg(args.c)] = u32SignExtend(math.rot_l_32(u32(regs[reg(args.b)]), u32(regs[reg(args.a)])));
-  return ok();
+  return ok(r);
 };
 
 // ROT_R_64
-export const rot_r_64: InstructionRun = (args, regs) => {
+export const rot_r_64: InstructionRun = (r, args, regs) => {
   regs[reg(args.c)] = math.rot_r(regs[reg(args.b)], regs[reg(args.a)]);
-  return ok();
+  return ok(r);
 };
 
 // ROT_R_32
-export const rot_r_32: InstructionRun = (args, regs) => {
+export const rot_r_32: InstructionRun = (r, args, regs) => {
   regs[reg(args.c)] = u32SignExtend(math.rot_r_32(u32(regs[reg(args.b)]), u32(regs[reg(args.a)])));
-  return ok();
+  return ok(r);
 };
 
 export namespace math {
