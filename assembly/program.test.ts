@@ -45,7 +45,7 @@ export const TESTS: Test[] = [
   }),
 
   test("should decode arguments correctly", () => {
-    const r = new Args;
+    const r = new Args();
     const data = u8arr([0xff, 0xff, 0xff, 0xff]);
     const args = decodeArguments(r, Arguments.OneImm, data, 0, 4);
 
@@ -58,7 +58,7 @@ export const TESTS: Test[] = [
   }),
 
   test("should decode positive bounded by skip", () => {
-    const r = new Args;
+    const r = new Args();
     const data = u8arr([0x05, 0x05]);
     const args = decodeArguments(r, Arguments.OneImm, data, 0, 1);
 

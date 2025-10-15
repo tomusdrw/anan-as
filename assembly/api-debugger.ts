@@ -2,7 +2,7 @@ import { buildMemory, InitialChunk, InitialPage } from "./api-internal";
 import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
-import { MemoryBuilder } from "./memory";
+import { MaybePageFault, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
@@ -180,9 +180,12 @@ export function setMemory(address: u32, data: Uint8Array): void {
   }
   const int = <Interpreter>interpreter;
   const end = address + data.length;
+  const faultRes = new MaybePageFault();
   for (let i = address; i < end; i++) {
-    // TODO [ToDr] handle page fault?
-    int.memory.setU8(i, data[i - address]);
+    int.memory.setU8(faultRes, i, data[i - address]);
+    if (faultRes.isFault) {
+      throw new Error(`Page fault at ${faultRes.fault} when setting memory.`);
+    }
   }
 }
 

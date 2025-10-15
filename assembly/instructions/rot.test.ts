@@ -9,7 +9,7 @@ import { reg } from "./utils";
 export const TESTS: Test[] = [
   test("rot_r_64_imm", () => {
     // when
-    const r = new OutcomeData;
+    const r = new OutcomeData();
     const args = new Args();
     args.a = 0x0;
     args.b = 0x1;
@@ -30,7 +30,7 @@ export const TESTS: Test[] = [
   }),
   test("rot_r_64_imm_alt", () => {
     // when
-    const r = new OutcomeData;
+    const r = new OutcomeData();
     const args = new Args();
     args.a = 0x0;
     args.b = 0x1;
@@ -51,7 +51,7 @@ export const TESTS: Test[] = [
   }),
   test("rot_l_64", () => {
     // when
-    const r = new OutcomeData;
+    const r = new OutcomeData();
     const args = new Args();
     args.a = 0x0;
     args.b = 0x1;
@@ -73,7 +73,7 @@ export const TESTS: Test[] = [
   }),
   test("rot_l_32", () => {
     // when
-    const r = new OutcomeData;
+    const r = new OutcomeData();
     const args = new Args();
     args.a = 0x0;
     args.b = 0x1;

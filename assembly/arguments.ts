@@ -80,8 +80,8 @@ export const DECODERS: ArgsDecoder[] = [
   // DECODERS[Arguments.OneRegOneExtImm] =
   (args, data, o, _lim) => {
     const a = lowNibble(data[o]);
-    const b = decodeU32(data, 1);
-    const c = decodeU32(data, 5);
+    const b = decodeU32(data, o + 1);
+    const c = decodeU32(data, o + 5);
     return args.fill(a, b, c, 0);
   },
   //DECODERS[Arguments.OneRegTwoImm] =
@@ -89,7 +89,7 @@ export const DECODERS: ArgsDecoder[] = [
     const h = higNibble(data[o]);
     const l = lowNibble(data[o]);
     const split = <i32>Math.min(4, h) + 1;
-    const immA = decodeI32(data, o + 1, split);
+    const immA = decodeI32(data, o + 1, o + split);
     const immB = decodeI32(data, o + split, lim);
     return args.fill(l, immA, immB, 0);
   },
@@ -98,7 +98,7 @@ export const DECODERS: ArgsDecoder[] = [
     const h = higNibble(data[o]);
     const l = lowNibble(data[o]);
     const split = <i32>Math.min(4, h) + 1;
-    const immA = decodeI32(data, o + 1, split);
+    const immA = decodeI32(data, o + 1, o + split);
     const offs = decodeI32(data, o + split, lim);
     return args.fill(l, immA, offs, 0);
   },

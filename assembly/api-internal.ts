@@ -161,14 +161,7 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
       const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
       const name = changetype<string>(iData.namePtr);
       console.log(`INSTRUCTION = ${name} (${instruction})`);
-      const args = resolveArguments(
-        argsRes,
-        iData.kind,
-        int.program.code,
-        int.pc + 1,
-        skipBytes,
-        int.registers,
-      );
+      const args = resolveArguments(argsRes, iData.kind, int.program.code, int.pc + 1, skipBytes, int.registers);
       if (args !== null) {
         console.log(`ARGUMENTS:
   ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
