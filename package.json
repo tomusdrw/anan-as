@@ -1,11 +1,14 @@
 {
-	"name": "anan-as",
+	"name": "@fluffylabs/anan-as",
+	"description": "AssemblyScript PVM interpreter.",
 	"version": "1.0.0",
 	"main": "./bin/index.js",
 	"scripts": {
-		"asbuild": "npm run asbuild:debug && npm run asbuild:release",
+		"asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run asbuild:raw && npm run asbuild:release-mini",
 		"asbuild:debug": "asc assembly/index.ts --target debug",
 		"asbuild:release": "asc assembly/index.ts --uncheckedBehavior=always --target release",
+		"asbuild:release-mini": "asc assembly/index.ts --uncheckedBehavior=always --target release-mini",
+		"asbuild:raw": "asc assembly/index.ts --target raw",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
 		"build": "npm run asbuild && npm run cp-build",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
@@ -29,16 +32,41 @@
 	"keywords": [],
 	"author": "Fluffy Labs",
 	"license": "MPL-2.0",
-	"description": "",
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.6",
 		"assemblyscript": "^0.28.8"
 	},
+	"files": [
+		"build/**/*.wasm",
+		"build/**/*.js",
+		"build/**/*.d.ts",
+		"README.md",
+		"LICENSE"
+	],
 	"exports": {
 		".": {
 			"import": "./build/release.js",
 			"types": "./build/release.d.ts"
-		}
+		},
+		"./debug": {
+			"import": "./build/debug.js",
+			"types": "./build/debug.d.ts"
+		},
+		"./release": {
+			"import": "./build/release.js",
+			"types": "./build/release.d.ts"
+		},
+		"./release-mini": {
+			"import": "./build/release-mini.js",
+			"types": "./build/release-mini.d.ts"
+		},
+		"./raw": {
+			"import": "./build/debug-raw.js",
+			"types": "./build/debug-raw.d.ts"
+		},
+		"./debug.wasm": "./build/debug.wasm",
+		"./release.wasm": "./build/release.wasm",
+		"./release-mini.wasm": "./build/release-mini.wasm"
 	},
 	"dependencies": {
 		"@typeberry/lib": "^0.2.0",
