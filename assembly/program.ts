@@ -55,7 +55,9 @@ export function deblob(program: Uint8Array): Program {
   const jumpTableLengthInBytes = jumpTableLength * jumpTableItemLength;
   const rawJumpTable = decoder.bytes(jumpTableLengthInBytes);
 
-  const rawCode = decoder.bytes(codeLength);
+  // NOTE [ToDr] we copy the code here, because indexing a raw
+  // assembly script array is faster than going through `Uint8Array` API.
+  const rawCode = lowerBytes(decoder.bytes(codeLength));
   const rawMask = decoder.bytes((codeLength + 7) / 8);
 
   const mask = new Mask(rawMask, codeLength);
@@ -140,7 +142,7 @@ export enum BasicBlock {
 export class BasicBlocks {
   readonly isStartOrEnd: StaticArray<BasicBlock>;
 
-  constructor(code: Uint8Array, mask: Mask) {
+  constructor(code: u8[], mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
     if (len > 0) {
@@ -227,7 +229,7 @@ export class JumpTable {
 
 export class Program {
   constructor(
-    public readonly code: Uint8Array,
+    public readonly code: u8[],
     public readonly mask: Mask,
     public readonly jumpTable: JumpTable,
     public readonly basicBlocks: BasicBlocks,
@@ -238,10 +240,10 @@ export class Program {
   }
 }
 
-export function decodeArguments(args: Args, kind: Arguments, code: Uint8Array, offset: i32, lim: u32): Args {
+export function decodeArguments(args: Args, kind: Arguments, code: u8[], offset: i32, lim: u32): Args {
   if (code.length < offset + REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
-    const extended = new Uint8Array(REQUIRED_BYTES[kind]);
+    const extended = new Array<u8>(REQUIRED_BYTES[kind]);
     for (let i = offset; i < code.length; i++) {
       extended[i - offset] = code[i];
     }
@@ -261,7 +263,7 @@ class ResolvedArguments {
 export function resolveArguments(
   argsRes: Args,
   kind: Arguments,
-  code: Uint8Array,
+  code: u8[],
   offset: u32,
   lim: u32,
   registers: Registers,

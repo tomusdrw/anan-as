@@ -67,7 +67,7 @@ export function resetGenericWithMemory(
 export function nextStep(): boolean {
   if (interpreter !== null) {
     const int = <Interpreter>interpreter;
-    return int.nextStep();
+    return int.nextSteps();
   }
   return false;
 }
@@ -75,14 +75,7 @@ export function nextStep(): boolean {
 export function nSteps(steps: u32): boolean {
   if (interpreter !== null) {
     const int = <Interpreter>interpreter;
-    let isOk = true;
-    for (let i: u32 = 0; i < steps; i++) {
-      isOk = int.nextStep();
-      if (!isOk) {
-        return false;
-      }
-    }
-    return isOk;
+    return int.nextSteps(steps);
   }
   return false;
 }

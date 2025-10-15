@@ -46,7 +46,7 @@ export const TESTS: Test[] = [
 
   test("should decode arguments correctly", () => {
     const r = new Args();
-    const data = u8arr([0xff, 0xff, 0xff, 0xff]);
+    const data: u8[] = [0xff, 0xff, 0xff, 0xff];
     const args = decodeArguments(r, Arguments.OneImm, data, 0, 4);
 
     const assert = new Assert();
@@ -59,7 +59,7 @@ export const TESTS: Test[] = [
 
   test("should decode positive bounded by skip", () => {
     const r = new Args();
-    const data = u8arr([0x05, 0x05]);
+    const data: u8[] = [0x05, 0x05];
     const args = decodeArguments(r, Arguments.OneImm, data, 0, 1);
 
     const assert = new Assert();
@@ -90,7 +90,7 @@ export const TESTS: Test[] = [
   }),
 
   test("should construct basic blocks correctly based on skip", () => {
-    const code = u8arr([
+    const code: u8[] = [
       opcode(trap),
       0,
       0,
@@ -123,7 +123,7 @@ export const TESTS: Test[] = [
       0,
       0,
       opcode(jump_ind),
-    ]);
+    ];
     const mask = new Mask(u8arr([0b0000_0001, 0b0000_0000, 0b0000_0000, 0b1000_0000]), 32);
     const basicBlocks = new BasicBlocks(code, mask);
     const assert = new Assert();
@@ -148,10 +148,10 @@ export const TESTS: Test[] = [
   }),
 ];
 
-function opcode(search: InstructionRun): number {
+function opcode(search: InstructionRun): u8 {
   const idx = RUN.indexOf(search);
   if (idx < 0) {
     throw new Error("Opcode not found in RUN table for instruction");
   }
-  return idx;
+  return u8(idx);
 }

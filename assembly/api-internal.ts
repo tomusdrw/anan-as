@@ -171,7 +171,7 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
       }
     }
 
-    isOk = int.nextStep();
+    isOk = int.nextSteps();
   }
 
   const output = new VmOutput();

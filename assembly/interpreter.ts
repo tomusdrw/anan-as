@@ -47,7 +47,7 @@ export class Interpreter {
     this.useSbrkGas = false;
   }
 
-  nextStep(): boolean {
+  nextSteps(nSteps: u32 = 1): boolean {
     // resuming after host call
     if (this.status === Status.HOST) {
       // let's assume all is good and move on :)
@@ -69,125 +69,133 @@ export class Interpreter {
       return true;
     }
 
-    // reset some stuff at start
-    this.exitCode = 0;
-    this.outcomeRes.result = Result.PANIC;
-    this.outcomeRes.outcome = Outcome.Ok;
+    const program = this.program;
+    const code = program.code;
+    const mask = program.mask;
+    const argsRes = this.argsRes;
+    const outcomeRes = this.outcomeRes;
 
-    const pc = this.pc;
-    // check if we are at the right location
-    if (!this.program.mask.isInstruction(pc)) {
-      // TODO [ToDr] Potential edge case here?
-      if (this.gas.sub(MISSING_INSTRUCTION.gas)) {
-        this.status = Status.OOG;
-      } else {
-        this.status = Status.PANIC;
+    for (let i: u32 = 0; i < nSteps; i++) {
+      // reset some stuff at start
+      this.exitCode = 0;
+      outcomeRes.result = Result.PANIC;
+      outcomeRes.outcome = Outcome.Ok;
+
+      const pc = this.pc;
+      // check if we are at the right location
+      if (!mask.isInstruction(pc)) {
+        // TODO [ToDr] Potential edge case here?
+        if (this.gas.sub(MISSING_INSTRUCTION.gas)) {
+          this.status = Status.OOG;
+        } else {
+          this.status = Status.PANIC;
+        }
+        return false;
       }
-      return false;
-    }
 
-    const instruction = this.program.code[pc];
-    const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
+      const instruction = code[pc];
+      const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
 
-    // check gas (might be done for each block instead).
-    if (this.gas.sub(iData.gas)) {
-      this.status = Status.OOG;
-      return false;
-    }
-
-    if (iData === MISSING_INSTRUCTION) {
-      this.status = Status.PANIC;
-      return false;
-    }
-
-    // get args and invoke instruction
-    const skipBytes = this.program.mask.skipBytesToNextInstruction(pc);
-    const args = decodeArguments(this.argsRes, iData.kind, this.program.code, pc + 1, skipBytes);
-
-    // additional gas cost of sbrk
-    if (iData === SBRK && this.useSbrkGas) {
-      const alloc = u64(u32(this.registers[reg(args.a)]));
-      const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
-      if (this.gas.sub(gas)) {
+      // check gas (might be done for each block instead).
+      if (this.gas.sub(iData.gas)) {
         this.status = Status.OOG;
         return false;
       }
-    }
 
-    const exe = RUN[instruction];
-    const outcome = exe(this.outcomeRes, args, this.registers, this.memory);
-
-    // TODO [ToDr] Spaghetti
-    switch (outcome.outcome) {
-      case Outcome.DynamicJump: {
-        const res = dJump(this.djumpRes, this.program.jumpTable, outcome.dJump);
-        if (res.status === DjumpStatus.HALT) {
-          this.status = Status.HALT;
-          return true;
-        }
-        if (res.status === DjumpStatus.PANIC) {
-          this.status = Status.PANIC;
-          return false;
-        }
-        const branchResult = branch(this.branchRes, this.program.basicBlocks, res.newPc, 0);
-        if (!branchResult.isOkay) {
-          this.status = Status.PANIC;
-          return false;
-        }
-        this.pc = branchResult.newPc;
-        return true;
+      if (iData === MISSING_INSTRUCTION) {
+        this.status = Status.PANIC;
+        return false;
       }
-      case Outcome.StaticJump: {
-        const branchResult = branch(this.branchRes, this.program.basicBlocks, pc, outcome.staticJump);
-        if (!branchResult.isOkay) {
-          this.status = Status.PANIC;
-          return false;
-        }
 
-        this.pc = branchResult.newPc;
-        return true;
-      }
-      case Outcome.Result: {
-        if (outcome.result === Result.HOST) {
-          this.status = Status.HOST;
-          this.exitCode = outcome.exitCode;
-          // set the next PC after the host call is called.
-          this.nextPc = this.pc + 1 + skipBytes;
+      // get args and invoke instruction
+      const skipBytes = mask.skipBytesToNextInstruction(pc);
+      const args = decodeArguments(argsRes, iData.kind, code, pc + 1, skipBytes);
+
+      // additional gas cost of sbrk
+      if (iData === SBRK && this.useSbrkGas) {
+        const alloc = u64(u32(this.registers[reg(args.a)]));
+        const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
+        if (this.gas.sub(gas)) {
+          this.status = Status.OOG;
           return false;
         }
-        if (outcome.result === Result.FAULT) {
-          this.gas.sub(1);
-          // access to reserved memory should end with a panic.
-          if (outcome.exitCode < RESERVED_MEMORY) {
-            this.status = Status.PANIC;
-          } else {
-            this.status = Status.FAULT;
-            this.exitCode = outcome.exitCode;
+      }
+
+      const exe = RUN[instruction];
+      const outcome = exe(outcomeRes, args, this.registers, this.memory);
+
+      // TODO [ToDr] Spaghetti
+      switch (outcome.outcome) {
+        case Outcome.DynamicJump: {
+          const res = dJump(this.djumpRes, program.jumpTable, outcome.dJump);
+          if (res.status === DjumpStatus.HALT) {
+            this.status = Status.HALT;
+            return false;
           }
-          return false;
+          if (res.status === DjumpStatus.PANIC) {
+            this.status = Status.PANIC;
+            return false;
+          }
+          const branchResult = branch(this.branchRes, program.basicBlocks, res.newPc, 0);
+          if (!branchResult.isOkay) {
+            this.status = Status.PANIC;
+            return false;
+          }
+          this.pc = branchResult.newPc;
+          continue;
         }
-        if (outcome.result === Result.FAULT_ACCESS) {
-          this.gas.sub(1);
-          this.status = Status.PANIC;
-          // this.exitCode = outcome.exitCode;
-          return false;
-        }
-        if (outcome.result === Result.PANIC) {
-          this.status = Status.PANIC;
-          this.exitCode = outcome.exitCode;
-          return false;
-        }
+        case Outcome.StaticJump: {
+          const branchResult = branch(this.branchRes, program.basicBlocks, pc, outcome.staticJump);
+          if (!branchResult.isOkay) {
+            this.status = Status.PANIC;
+            return false;
+          }
 
-        throw new Error("Unknown result");
-      }
-      case Outcome.Ok: {
-        // by default move to next instruction.
-        this.pc += 1 + skipBytes;
-        return true;
+          this.pc = branchResult.newPc;
+          continue;
+        }
+        case Outcome.Result: {
+          if (outcome.result === Result.HOST) {
+            this.status = Status.HOST;
+            this.exitCode = outcome.exitCode;
+            // set the next PC after the host call is called.
+            this.nextPc = this.pc + 1 + skipBytes;
+            return false;
+          }
+          if (outcome.result === Result.FAULT) {
+            this.gas.sub(1);
+            // access to reserved memory should end with a panic.
+            if (outcome.exitCode < RESERVED_MEMORY) {
+              this.status = Status.PANIC;
+            } else {
+              this.status = Status.FAULT;
+              this.exitCode = outcome.exitCode;
+            }
+            return false;
+          }
+          if (outcome.result === Result.FAULT_ACCESS) {
+            this.gas.sub(1);
+            this.status = Status.PANIC;
+            // this.exitCode = outcome.exitCode;
+            return false;
+          }
+          if (outcome.result === Result.PANIC) {
+            this.status = Status.PANIC;
+            this.exitCode = outcome.exitCode;
+            return false;
+          }
+
+          throw new Error("Unknown result");
+        }
+        case Outcome.Ok: {
+          // by default move to next instruction.
+          this.pc += 1 + skipBytes;
+          continue;
+        }
       }
     }
 
-    return false;
+    return true;
   }
 }
 
