@@ -50,8 +50,8 @@
 			"types": "./build/release.d.ts"
 		},
 		"./release-mini": {
-			"import": "./build/release.js",
-			"types": "./build/release.d.ts"
+			"import": "./build/release-mini.js",
+			"types": "./build/release-mini.d.ts"
 		},
 		"./raw": {
 			"import": "./build/debug-raw.js",
