@@ -51,6 +51,15 @@ jobs:
             echo "is_release=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Sync version from tag
+        if: steps.publish-info.outputs.is_release == 'true'
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          if [ "$CURRENT_VERSION" != "$TAG_VERSION" ]; then
+            echo "Aligning package.json version ($CURRENT_VERSION) -> $TAG_VERSION"
+            npm version "$TAG_VERSION" --no-git-tag-version
+          fi
       - name: Bump version for next tag
         if: steps.publish-info.outputs.is_release == 'false'
         run: |
