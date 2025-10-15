@@ -48,17 +48,6 @@ export class Interpreter {
   }
 
   nextStep(): boolean {
-    // this.djumpRes.newPc = 0;
-    // this.djumpRes.status = DjumpStatus.OK;
-    // this.argsRes.fill(0);
-    // this.outcomeRes.dJump = 0;
-    // this.outcomeRes.exitCode = 0;
-    this.outcomeRes.result = Result.PANIC;
-    this.outcomeRes.outcome = Outcome.Ok;
-    // this.outcomeRes.staticJump = 0;
-    // this.branchRes.isOkay = false;
-    // this.branchRes.newPc = 0;
-
     // resuming after host call
     if (this.status === Status.HOST) {
       // let's assume all is good and move on :)
@@ -82,6 +71,8 @@ export class Interpreter {
 
     // reset some stuff at start
     this.exitCode = 0;
+    this.outcomeRes.result = Result.PANIC;
+    this.outcomeRes.outcome = Outcome.Ok;
 
     const pc = this.pc;
     // check if we are at the right location
@@ -246,7 +237,7 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
     return r;
   }
 
-  const newPc: u64 = jumpTable.jumps[index];
+  const newPc: u64 = unchecked(jumpTable.jumps[index]);
   if (newPc >= MAX_U32) {
     r.status = DjumpStatus.PANIC;
     return r;
