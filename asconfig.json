@@ -1,10 +1,18 @@
 {
 	"targets": {
+		"raw": {
+			"outFile": "build/debug-raw.wasm",
+			"textFile": "build/debug-raw.wat",
+			"sourceMap": true,
+			"debug": true,
+			"bindings": "raw"
+		},
 		"debug": {
 			"outFile": "build/debug.wasm",
 			"textFile": "build/debug.wat",
 			"sourceMap": true,
-			"debug": true
+			"debug": true,
+			"bindings": "esm"
 		},
 		"release": {
 			"outFile": "build/release.wasm",
@@ -13,16 +21,16 @@
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
 			"converge": false,
-			"noAssert": false
+			"noAssert": false,
+			"bindings": "esm"
 		},
 		"test": {
 			"outFile": "build/test.wasm",
 			"textFile": "build/test.wat",
 			"sourceMap": true,
-			"debug": true
+			"debug": true,
+			"bindings": "esm"
 		}
 	},
-	"options": {
-		"bindings": "esm"
-	}
+	"options": {}
 }
