@@ -1,4 +1,4 @@
-import { Arguments } from "./arguments";
+import { Args, Arguments } from "./arguments";
 import { jump_ind } from "./instructions/jump";
 import { trap } from "./instructions/misc";
 import { InstructionRun } from "./instructions/outcome";
@@ -45,8 +45,9 @@ export const TESTS: Test[] = [
   }),
 
   test("should decode arguments correctly", () => {
+    const r = new Args;
     const data = u8arr([0xff, 0xff, 0xff, 0xff]);
-    const args = decodeArguments(Arguments.OneImm, data, 4);
+    const args = decodeArguments(r, Arguments.OneImm, data, 0, 4);
 
     const assert = new Assert();
     assert.isEqual(args.a, -1, "a");
@@ -57,8 +58,9 @@ export const TESTS: Test[] = [
   }),
 
   test("should decode positive bounded by skip", () => {
+    const r = new Args;
     const data = u8arr([0x05, 0x05]);
-    const args = decodeArguments(Arguments.OneImm, data, 1);
+    const args = decodeArguments(r, Arguments.OneImm, data, 0, 1);
 
     const assert = new Assert();
     assert.isEqual(args.a, 5, "a");

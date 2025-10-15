@@ -48,9 +48,16 @@ export class Interpreter {
   }
 
   nextStep(): boolean {
-    // TODO [ToDr] Something is not setting this stuff correctly.
+    // this.djumpRes.newPc = 0;
+    // this.djumpRes.status = DjumpStatus.OK;
+    // this.argsRes.fill(0);
+    // this.outcomeRes.dJump = 0;
+    // this.outcomeRes.exitCode = 0;
     this.outcomeRes.result = Result.PANIC;
     this.outcomeRes.outcome = Outcome.Ok;
+    // this.outcomeRes.staticJump = 0;
+    // this.branchRes.isOkay = false;
+    // this.branchRes.newPc = 0;
 
     // resuming after host call
     if (this.status === Status.HOST) {
@@ -104,7 +111,7 @@ export class Interpreter {
 
     // get args and invoke instruction
     const skipBytes = this.program.mask.skipBytesToNextInstruction(pc);
-    const args = decodeArguments(this.argsRes, iData.kind, this.program.code.subarray(pc + 1), skipBytes);
+    const args = decodeArguments(this.argsRes, iData.kind, this.program.code, pc + 1, skipBytes);
 
     // additional gas cost of sbrk
     if (iData === SBRK && this.useSbrkGas) {

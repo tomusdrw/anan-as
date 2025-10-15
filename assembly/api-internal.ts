@@ -59,7 +59,7 @@ export function getAssembly(p: Program): string {
     v += `(${instruction})`;
 
     const skipBytes = p.mask.skipBytesToNextInstruction(i);
-    const args = decodeArguments(argsRes, iData.kind, p.code.subarray(i + 1), skipBytes);
+    const args = decodeArguments(argsRes, iData.kind, p.code, i + 1, skipBytes);
     const argsArray = [args.a, args.b, args.c, args.d];
     const relevantArgs = RELEVANT_ARGS[iData.kind];
     for (let i = 0; i < relevantArgs; i++) {
@@ -164,7 +164,8 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
       const args = resolveArguments(
         argsRes,
         iData.kind,
-        int.program.code.subarray(int.pc + 1),
+        int.program.code,
+        int.pc + 1,
         skipBytes,
         int.registers,
       );

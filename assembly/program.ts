@@ -238,16 +238,16 @@ export class Program {
   }
 }
 
-export function decodeArguments(args: Args, kind: Arguments, data: Uint8Array, lim: u32): Args {
-  if (data.length < REQUIRED_BYTES[kind]) {
+export function decodeArguments(args: Args, kind: Arguments, code: Uint8Array, offset: i32, lim: u32): Args {
+  if (code.length < offset + REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
     const extended = new Uint8Array(REQUIRED_BYTES[kind]);
-    for (let i = 0; i < data.length; i++) {
-      extended[i] = data[i];
+    for (let i = offset; i < code.length; i++) {
+      extended[i - offset] = code[i];
     }
-    return DECODERS[kind](args, extended, lim);
+    return DECODERS[kind](args, extended, 0, lim);
   }
-  return DECODERS[kind](args, data, lim);
+  return DECODERS[kind](args, code, offset, offset + lim);
 }
 
 class ResolvedArguments {
@@ -261,11 +261,12 @@ class ResolvedArguments {
 export function resolveArguments(
   argsRes: Args,
   kind: Arguments,
-  data: Uint8Array,
+  code: Uint8Array,
+  offset: u32,
   lim: u32,
   registers: Registers,
 ): ResolvedArguments | null {
-  const args = decodeArguments(argsRes, kind, data, lim);
+  const args = decodeArguments(argsRes, kind, code, offset, lim);
   if (args === null) {
     return null;
   }
