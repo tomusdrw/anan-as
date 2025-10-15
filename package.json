@@ -4,9 +4,10 @@
 	"version": "1.0.0",
 	"main": "./bin/index.js",
 	"scripts": {
-		"asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run asbuild:raw",
+		"asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run asbuild:raw && npm run asbuild:release-mini",
 		"asbuild:debug": "asc assembly/index.ts --target debug",
 		"asbuild:release": "asc assembly/index.ts --uncheckedBehavior=always --target release",
+		"asbuild:release-mini": "asc assembly/index.ts --uncheckedBehavior=always --target release-mini",
 		"asbuild:raw": "asc assembly/index.ts --target raw",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
 		"build": "npm run asbuild && npm run cp-build",
@@ -48,12 +49,17 @@
 			"import": "./build/release.js",
 			"types": "./build/release.d.ts"
 		},
+		"./release-mini": {
+			"import": "./build/release.js",
+			"types": "./build/release.d.ts"
+		},
 		"./raw": {
 			"import": "./build/debug-raw.js",
 			"types": "./build/debug-raw.d.ts"
 		},
 		"./debug.wasm": "./build/debug.wasm",
-		"./release.wasm": "./build/release.wasm"
+		"./release.wasm": "./build/release.wasm",
+		"./release-mini.wasm": "./build/release-mini.wasm"
 	},
 	"dependencies": {
 		"@typeberry/lib": "^0.2.0",

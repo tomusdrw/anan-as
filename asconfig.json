@@ -20,8 +20,20 @@
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
-			"converge": false,
-			"noAssert": false,
+			"converge": true,
+			"noAssert": true,
+			"bindings": "esm"
+		},
+		"release-mini": {
+			"outFile": "build/release-mini.wasm",
+			"textFile": "build/release-mini.wat",
+			"sourceMap": true,
+			"optimizeLevel": 3,
+			"shrinkLevel": 0,
+			"converge": true,
+			"noAssert": true,
+			"runtime": "minimal",
+			"exportRuntime": true,
 			"bindings": "esm"
 		},
 		"test": {
