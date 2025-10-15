@@ -210,6 +210,9 @@ function branch(r: BranchResult, basicBlocks: BasicBlocks, pc: u32, offset: i32)
   if (basicBlocks.isStart(newPc)) {
     r.isOkay = true;
     r.newPc = newPc;
+  } else {
+    r.isOkay = false;
+    r.newPc = 0;
   }
   return r;
 }
@@ -251,6 +254,7 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
     return r;
   }
 
+  r.status = DjumpStatus.OK;
   r.newPc = u32(newPc);
   return r;
 }
