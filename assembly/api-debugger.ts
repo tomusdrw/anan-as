@@ -167,6 +167,19 @@ export function getPageDump(index: u32): Uint8Array {
   return page;
 }
 
+export function getMemory(address: u32, length: u32): Uint8Array {
+  if (interpreter === null) {
+    return new Uint8Array(0);
+  }
+  const int = <Interpreter>interpreter;
+  const result = new Uint8Array(length);
+  const fault = int.memory.bytesRead(address, result);
+  if (fault.isFault) {
+    return new Uint8Array(0);
+  }
+  return result;
+}
+
 export function setMemory(address: u32, data: Uint8Array): void {
   if (interpreter === null) {
     return;

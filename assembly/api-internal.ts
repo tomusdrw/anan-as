@@ -147,6 +147,7 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
       if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
       if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
       if (logs) console.log(`Finished with status: ${int.status}`);
+      if (logs) console.log(`Exit code: ${int.exitCode}`);
       break;
     }
 
@@ -181,9 +182,6 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
   output.gas = int.gas.get();
   output.memory = getOutputChunks(int.memory);
   output.exitCode = int.exitCode;
-
-  // release used pages back
-  int.memory.free();
 
   return output;
 }
