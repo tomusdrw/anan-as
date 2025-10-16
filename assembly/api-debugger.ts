@@ -173,8 +173,9 @@ export function getMemory(address: u32, length: u32): Uint8Array {
   }
   const int = <Interpreter>interpreter;
   const result = new Uint8Array(length);
-  const fault = int.memory.bytesRead(address, result);
-  if (fault.isFault) {
+  const faultRes = new MaybePageFault();
+  int.memory.bytesRead(faultRes, address, result, 0);
+  if (faultRes.isFault) {
     return new Uint8Array(0);
   }
   return result;
