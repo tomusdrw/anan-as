@@ -13,7 +13,7 @@ AssemblyScript implementation of the JAM PVM (64-bit).
 
 ## Why?
 
-- [Pineaples](https://en.wikipedia.org/wiki/Ananas) are cool.
+- [Pineapples](https://en.wikipedia.org/wiki/Ananas) are cool.
 - [JAM](https://graypaper.com/) is promising.
 - [PVM](https://github.com/paritytech/polkavm) is neat.
 
