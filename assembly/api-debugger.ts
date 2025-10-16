@@ -111,12 +111,12 @@ export function getStatus(): u8 {
   return <u8>int.status;
 }
 
-export function getExitArg(): i32 {
+export function getExitArg(): u32 {
   if (interpreter === null) {
-    return -1;
+    return 0;
   }
   const int = <Interpreter>interpreter;
-  return int.exitCode || -1;
+  return int.exitCode || 0;
 }
 
 export function getGasLeft(): i64 {
@@ -132,22 +132,6 @@ export function setGasLeft(gas: i64): void {
     const int = <Interpreter>interpreter;
     int.gas.set(gas);
   }
-}
-
-export function getRegister(reg: u8): u64 {
-  if (interpreter === null) {
-    return 0;
-  }
-  const int = <Interpreter>interpreter;
-  return int.registers[reg];
-}
-
-export function setRegister(reg: u8, value: u64): void {
-  if (interpreter === null) {
-    return;
-  }
-  const int = <Interpreter>interpreter;
-  int.registers[reg] = value;
 }
 
 export function getRegisters(): Uint8Array {
