@@ -4,21 +4,20 @@ Assembly Script implementation of the JAM PVM (64bit).
 
 [Demo](https://todr.me/anan-as)
 
-#### Todo
+## Todo
 
 - [x] Memory
 - [x] [JAM tests](https://github.com/w3f/jamtestvectors/pull/3) compatibility
 - [x] 64-bit & new instructions ([GrayPaper v0.5.0](https://graypaper.fluffylabs.dev))
 - [x] GP 0.5.4 compatibility (ZBB extensions)
 
-### Why?
+## Why?
 
 - [Pineaples](https://en.wikipedia.org/wiki/Ananas) are cool.
 - [JAM](https://graypaper.com/) is promising.
 - [PVM](https://github.com/paritytech/polkavm) is neat.
 
-
-### Useful where?
+## Useful where?
 
 - Potentially as an alternative implementation for [`typeberry`](https://github.com/fluffylabs).
 - To test out the [PVM debugger](https://pvm.fluffylabs.dev).
@@ -54,9 +53,11 @@ ananAs.__collect();
 
 ```
 
-### Raw Bindings
+## Raw Bindings
 
-Raw bindings give you direct access to WebAssembly exports without the JavaScript wrapper layer. This is useful for instantiating multiple instances or when you need more control:
+Raw bindings give you direct access to WebAssembly exports
+without the JavaScript wrapper layer.
+This is useful for instantiating multiple instances or when you need more control:
 
 ```javascript
 // Raw bindings
@@ -74,9 +75,10 @@ const ananAs = await instantiate(module);
 
 ```
 
-### Version Tags
+## Version Tags
 
-When installing the package, you can choose between stable releases and bleeding-edge builds:
+When installing the package, you can choose between stable releases
+and bleeding-edge builds:
 
 ```bash
 # Latest stable release
@@ -89,24 +91,25 @@ npm install @fluffylabs/anan-as@next
 ## Building
 
 To download the dependencies:
-```
-$ npm ci
+
+```cmd
+npm ci
 ```
 
 To build the WASM modules (in `./build/{release,debug}.wasm`):
 
-```
-$ npm run build
+```cmd
+npm run build
 ```
 
 To run the example in the browser at [http://localhost:3000](http://localhost:3000).
 
-```
-$ npm run web
+```cmd
+npm run web
 ```
 
 To run JSON test vectors.
 
-```
-$ npm start ./path/to/tests/*.json
+```cmd
+npm start ./path/to/tests/*.json
 ```
