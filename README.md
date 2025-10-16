@@ -1,6 +1,6 @@
 # 🍍 anan-as
 
-Assembly Script implementation of the JAM PVM (32bit).
+Assembly Script implementation of the JAM PVM (64bit).
 
 [Demo](https://todr.me/anan-as)
 
