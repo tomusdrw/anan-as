@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import { InputKind, disassemble } from "../build/release.js";
+import { InputKind, disassemble, HasMetadata } from "../build/release.js";
 
 main();
 
@@ -25,6 +25,6 @@ function main() {
     const f = fs.readFileSync(arg);
     const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
     console.log(`🤖 Assembly of ${arg} (as ${name})`);
-    console.log(disassemble(Array.from(f), kind));
+    console.log(disassemble(Array.from(f), kind, HasMetadata.No));
   });
 }

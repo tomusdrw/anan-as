@@ -7,7 +7,7 @@ import { wrapAsProgram, runProgram, disassemble, InputKind, prepareProgram, HasM
 
 let runNumber = 0;
 
-export function fuzz(data) {
+export function fuzz(data: Uint8Array | number[]) {
   const gas = 200n;
   const pc = 0;
   const vm = new pvm.Pvm();
@@ -29,7 +29,7 @@ export function fuzz(data) {
     const exe = prepareProgram(
       InputKind.Generic,
       HasMetadata.No,
-      program,
+      Array.from(program),
       registers,
       [],
       [],
@@ -37,11 +37,11 @@ export function fuzz(data) {
     );
     const output = runProgram(exe, gas, pc, printDebugInfo);
     
-    collectErrors((assert) => {
-      assert(normalizeStatus(vm.getStatus()), normalizeStatus(output.status), 'status');
-      assert(vm.getGasLeft(), output.gas, 'gas');
-      assert(Array.from(vm.getRegisters()), output.registers, 'registers');
-      assert(vm.getProgramCounter(), output.pc, 'pc');
+    collectErrors((assertFn) => {
+      assertFn(normalizeStatus(vm.getStatus()), normalizeStatus(output.status), 'status');
+      assertFn(vm.getGasLeft(), output.gas, 'gas');
+      assertFn(Array.from(vm.getRegisters()), output.registers, 'registers');
+      assertFn(vm.getProgramCounter(), output.pc, 'pc');
     });
 
     try {
@@ -57,7 +57,7 @@ export function fuzz(data) {
             status: normalizeStatus(vm.getStatus()),
             gasLeft: vm.getGasLeft(),
             pc: vm.getProgramCounter(),
-            registers: vm.getRegisters()
+            registers: Array.from(vm.getRegisters())
           },
         );
       }
@@ -73,29 +73,29 @@ export function fuzz(data) {
   }
 }
 
-function programHex(program) {
-  return Array.from(program).map(x => x.toString(16).padStart(2, '0')).join('');
+function programHex(program: Uint8Array) {
+  return Array.from(program).map((x: number) => x.toString(16).padStart(2, '0')).join('');
 }
   
-function linkTo(programHex) {
+function linkTo(programHex: string) {
   return `https://pvm.fluffylabs.dev/?program=0x${programHex}#/`;
 }
 
-function normalizeStatus(status) {
+function normalizeStatus(status: number) {
   if (status === 2) {
     return 1;
   }
   return status;
 }
 
-function assert(tb, an, comment = '') {
+function assert<T>(tb: T, an: T, comment = '') {
   let condition =  tb !== an;
   if (Array.isArray(tb) && Array.isArray(an)) {
     condition = tb.toString() !== an.toString();
   }
 
   if (condition) {
-    const alsoAsHex = (f) => {
+    const alsoAsHex = (f: unknown): string => {
       if (Array.isArray(f)) {
         return `${f.map(alsoAsHex).join(', ')}`;
       }
@@ -106,7 +106,7 @@ function assert(tb, an, comment = '') {
         }
         return `${f}`;
       }
-      return f;
+      return f as string;
     };
 
     throw new Error(`Diverging value: ${comment}
@@ -115,13 +115,13 @@ function assert(tb, an, comment = '') {
   }
 }
 
-function collectErrors(cb) {
-  const errors = [];
-  cb((...args) => {
+function collectErrors(cb: (assertFn: <T>(tb: T, an: T, comment?: string) => void) => void) {
+  const errors: string[] = [];
+  cb((tb, an, comment = '') => {
     try {
-      assert(...args);
+      assert(tb, an, comment);
     } catch (e) {
-      errors.push(e);
+      errors.push(`${e}`);
     }
   });
 
@@ -129,8 +129,18 @@ function collectErrors(cb) {
     throw new Error(errors.join('\n'));
   }
 }
-
-function writeTestCase(program, initial, expected) {
+type InitialValues = {
+  registers: bigint[],
+  pc: number,
+  gas: bigint,
+};
+type ExpectedValues = {
+  status: number,
+  registers: bigint[],
+  pc: number,
+  gasLeft: bigint,
+};
+function writeTestCase(program: Uint8Array, initial: InitialValues, expected: ExpectedValues) {
   const hex = programHex(program);
   fs.mkdirSync(`../tests/length_${hex.length}`, { recursive: true });
   fs.writeFileSync(`../tests/length_${hex.length}/${hex}.json`, JSON.stringify({
@@ -149,7 +159,7 @@ function writeTestCase(program, initial, expected) {
   }));
 }
 
-function statusToStr(status) {
+function statusToStr(status: number) {
   if (status === 0) {
     return 'halt';
   }

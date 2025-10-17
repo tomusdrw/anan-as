@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noEmit": true,
+    "outDir": "./build/scripts",
+    "rootDir": "."
+  },
+  "include": [
+    "bin/**/*",
+    "web/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "assembly",
+    "build",
+    "web/build"
+  ]
+}

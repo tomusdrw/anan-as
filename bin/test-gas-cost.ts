@@ -2,28 +2,30 @@
 
 import "json-bigint-patch";
 import * as assert from 'node:assert';
-import { OK, ERR, run, read } from './test-json.js';
+import { OK, ERR, run, read, ProcessableData, TestOptions } from './test-json.js';
 
 import { InputKind, disassemble, HasMetadata, getGasCosts } from "../build/release.js";
 
 // Run the CLI application
 main();
 
+type GasCostTest = {
+  program: number[];
+  block_gas_costs: Record<number, number>;
+} & ProcessableData;
+
 // Main function
 function main() {
-  const options = {
-    // print some additional debug info.
+  const options: TestOptions = {
     isDebug: false,
-    // don't print anything (jsonin-jsonout mode)
     isSilent: false,
-    // enable sbrk gas
     useSbrkGas: false,
   };
 
   run(processGasCost, options);
 }
 
-function processGasCost(data, options, filePath) {
+function processGasCost(data: GasCostTest, options: TestOptions, filePath: string) {
   if (options.isDebug) {
     console.info(`🤖 reading ${filePath}`);
   }
@@ -58,10 +60,12 @@ function processGasCost(data, options, filePath) {
     console.log(`${ERR} ${filePath}`);
     throw e;
   }
+
+  return data;
 }
 
-function asMap(costs) {
-  const obj = {};
+function asMap(costs: { pc: number, gas: bigint }[]) {
+  const obj: Record<number, number> = {};
   for (const { pc, gas } of costs) {
     obj[pc] = Number(gas);
   }
