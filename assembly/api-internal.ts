@@ -75,8 +75,10 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
   int.useSbrkGas = useSbrkGas;
   int.nextPc = input.pc;
   int.gas.set(input.gas);
-
-  return executeProgram(int, logs);
+  const result = executeProgram(int, logs);
+  // release used pages back
+  int.memory.free();
+  return result;
 }
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
