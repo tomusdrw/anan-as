@@ -2,7 +2,7 @@
 	"name": "@fluffylabs/anan-as",
 	"description": "AssemblyScript PVM interpreter.",
 	"version": "1.0.0",
-	"main": "./bin/index.js",
+	"main": "./bin/index.ts",
 	"repository": {
 		"url": "https://github.com/tomusdrw/anan-as"
 	},
@@ -13,10 +13,10 @@
 		"asbuild:release-mini": "asc assembly/index.ts --uncheckedBehavior=always --target release-mini",
 		"asbuild:raw": "asc assembly/index.ts --target raw",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
-		"build": "npm run asbuild && npm run cp-build",
+		"build": "npm run asbuild && npm run tsbuild && npm run cp-build",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
 		"format": "biome format --write",
-		"fuzz": "npx @jazzer.js/core --sync ./bin/fuzz",
+		"fuzz": "tsx ./bin/fuzz.ts",
 		"lint": "biome lint --write; biome check --write",
 		"prestart": "npm run build",
 		"pretest:w3f": "npm run build",
@@ -24,11 +24,12 @@
 		"preweb": "npm run build",
 		"qa": "biome ci",
 		"qa-fix": "npm run format; npm run lint",
-		"start": "node ./bin/index.js",
-		"test": "npm run asbuild:test && node ./bin/test.js",
-		"test:w3f": "node ./bin/test-w3f.js",
-		"test:gas-cost": "node ./bin/test-gas-cost.js",
-		"update-version": "node ./web/bump-version.js $GITHUB_SHA",
+		"start": "tsx ./bin/index.ts",
+		"test": "npm run asbuild:test && tsx ./bin/test.ts",
+		"tsbuild": "tsc",
+		"test:w3f": "tsx ./bin/test-w3f.ts",
+		"test:gas-cost": "tsx ./bin/test-gas-cost.ts",
+		"update-version": "tsx ./web/bump-version.ts $GITHUB_SHA",
 		"web": "npx live-server ./web"
 	},
 	"type": "module",
@@ -37,7 +38,10 @@
 	"license": "MPL-2.0",
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.6",
-		"assemblyscript": "^0.28.8"
+		"@types/node": "^24.8.1",
+		"assemblyscript": "^0.28.8",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3"
 	},
 	"files": [
 		"build/**/*.wasm",
