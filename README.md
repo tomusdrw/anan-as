@@ -1,6 +1,6 @@
 # 🍍 anan-as
 
-Assembly Script implementation of the JAM PVM (64bit).
+AssemblyScript implementation of the JAM PVM (64-bit).
 
 [Demo](https://todr.me/anan-as)
 
@@ -13,7 +13,7 @@ Assembly Script implementation of the JAM PVM (64bit).
 
 ## Why?
 
-- [Pineaples](https://en.wikipedia.org/wiki/Ananas) are cool.
+- [Pineapples](https://en.wikipedia.org/wiki/Ananas) are cool.
 - [JAM](https://graypaper.com/) is promising.
 - [PVM](https://github.com/paritytech/polkavm) is neat.
 
