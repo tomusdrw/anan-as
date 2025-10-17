@@ -120,20 +120,20 @@ export class Memory {
   }
 
   sbrk(faultRes: MaybePageFault, amount: u32): u64 {
-    const freeMemoryStart = this.sbrkAddress;
+    const freeMemoryStart = u64(this.sbrkAddress);
     if (amount === 0) {
       faultRes.isFault = false;
       return freeMemoryStart;
     }
 
-    const newSbrk = i64(this.sbrkAddress) + amount;
+    const newSbrk = i64(this.sbrkAddress) + i64(amount);
     if (newSbrk >= MEMORY_SIZE) {
       faultRes.isFault = true;
       return freeMemoryStart;
     }
     this.sbrkAddress = u32(newSbrk);
 
-    const pageIdx = i32((newSbrk - 1) >> PAGE_SIZE_SHIFT);
+    const pageIdx = i32((this.sbrkAddress - 1) >> PAGE_SIZE_SHIFT);
     if (pageIdx === this.lastAllocatedPage) {
       return freeMemoryStart;
     }
@@ -147,15 +147,15 @@ export class Memory {
     return freeMemoryStart;
   }
 
-  getU8(faultRes: MaybePageFault, address: u32): u64 {
+  getU8(faultRes: MaybePageFault, address: u32): u8 {
     return u8(this.getBytesReversed(faultRes, Access.Read, address, 1));
   }
 
-  getU16(faultRes: MaybePageFault, address: u32): u64 {
+  getU16(faultRes: MaybePageFault, address: u32): u16 {
     return bswap<u16>(u16(this.getBytesReversed(faultRes, Access.Read, address, 2)));
   }
 
-  getU32(faultRes: MaybePageFault, address: u32): u64 {
+  getU32(faultRes: MaybePageFault, address: u32): u32 {
     return bswap<u32>(u32(this.getBytesReversed(faultRes, Access.Read, address, 4)));
   }
 
@@ -176,15 +176,15 @@ export class Memory {
   }
 
   setU8(faultRes: MaybePageFault, address: u32, value: u8): void {
-    this.setBytes(faultRes, address, value, 1);
+    this.setBytes(faultRes, address, u64(value), 1);
   }
 
   setU16(faultRes: MaybePageFault, address: u32, value: u16): void {
-    this.setBytes(faultRes, address, value, 2);
+    this.setBytes(faultRes, address, u64(value), 2);
   }
 
   setU32(faultRes: MaybePageFault, address: u32, value: u32): void {
-    this.setBytes(faultRes, address, value, 4);
+    this.setBytes(faultRes, address, u64(value), 4);
   }
 
   setU64(faultRes: MaybePageFault, address: u32, value: u64): void {
@@ -350,21 +350,21 @@ export class Memory {
   private getBytesReversed(faultRes: MaybePageFault, access: Access, address: u32, bytes: u8): u64 {
     this.getChunks(faultRes, this.chunksResult, access, address, bytes);
     if (faultRes.isFault) {
-      return 0;
+      return u64(0);
     }
 
     // result (bytes in reverse order)
-    let r: u64 = 0;
+    let r: u64 = u64(0);
     const firstPageEnd = Math.min(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
 
     // read from first page
     for (let i: u32 = this.chunksResult.firstPageOffset; i < firstPageEnd; i++) {
-      r = (r << 8) | this.chunksResult.firstPageData[i];
+      r = (r << 8) | u64(this.chunksResult.firstPageData[i]);
     }
 
     // read from the second page
     for (let i: u32 = 0; i < this.chunksResult.secondPageEnd; i++) {
-      r = (r << 8) | this.chunksResult.secondPageData[i];
+      r = (r << 8) | u64(this.chunksResult.secondPageData[i]);
     }
 
     return r;

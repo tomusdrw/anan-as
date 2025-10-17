@@ -119,7 +119,7 @@ export function decodeVarU32(data: Uint8Array): ValOffset<u32> {
 }
 
 export function encodeVarU32(v: u64): Uint8Array {
-  if (v === 0) {
+  if (v === u64(0)) {
     return new Uint8Array(1);
   }
 

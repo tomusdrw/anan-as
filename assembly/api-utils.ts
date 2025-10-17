@@ -18,6 +18,7 @@ export enum HasMetadata {
 export function getGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
   const program = prepareProgram(kind, withMetadata, input, [], [], [], []);
 
+  // @ts-expect-error - MapIterator vs Array incompatibility in portable build
   return computeGasCosts(program.program).values();
 }
 
@@ -52,6 +53,7 @@ export function prepareProgram(
   if (hasMetadata === HasMetadata.Yes) {
     const data = extractCodeAndMetadata(code);
     code = data.code;
+    // @ts-expect-error - ArrayBufferLike vs ArrayBuffer incompatibility in portable build
     metadata = data.metadata;
   }
 
@@ -83,7 +85,7 @@ export function prepareProgram(
 
 export function runProgram(
   program: StandardProgram,
-  initialGas: i64 = 0,
+  initialGas: i64 = i64(0),
   programCounter: u32 = 0,
   logs: boolean = false,
   useSbrkGas: boolean = false,

@@ -18,7 +18,7 @@ export class InitialChunk {
 
 export class VmInput {
   pc: u32 = 0;
-  gas: i64 = 0;
+  gas: i64 = i64(0);
 
   constructor(
     public readonly program: Program,
@@ -32,7 +32,7 @@ export class VmOutput {
   registers: u64[] = [];
   pc: u32 = 0;
   memory: InitialChunk[] = [];
-  gas: i64 = 0;
+  gas: i64 = i64(0);
   exitCode: u32 = 0;
 }
 

@@ -78,9 +78,9 @@ export const div_u_32: InstructionRun = (r, args, registers) => {
 export const div_s_32: InstructionRun = (r, args, registers) => {
   const b = u32SignExtend(u32(registers[reg(args.b)]));
   const a = u32SignExtend(u32(registers[reg(args.a)]));
-  if (a === 0) {
+  if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
-  } else if (a === -1 && b === i32.MIN_VALUE) {
+  } else if (a === i64(-1) && b === i64(i32.MIN_VALUE)) {
     registers[reg(args.c)] = b;
   } else {
     registers[reg(args.c)] = b / a;
@@ -107,7 +107,7 @@ export const rem_s_32: InstructionRun = (r, args, registers) => {
   if (a === 0) {
     registers[reg(args.c)] = i64(b);
   } else if (a === -1 && b === i32.MIN_VALUE) {
-    registers[reg(args.c)] = 0;
+    registers[reg(args.c)] = u64(0);
   } else {
     registers[reg(args.c)] = i64(b) % i64(a);
   }
@@ -134,7 +134,7 @@ export const mul: InstructionRun = (r, args, registers) => {
 
 // DIV_U
 export const div_u: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === 0) {
+  if (registers[reg(args.a)] === u64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
   } else {
     registers[reg(args.c)] = registers[reg(args.b)] / registers[reg(args.a)];
@@ -146,9 +146,9 @@ export const div_u: InstructionRun = (r, args, registers) => {
 export const div_s: InstructionRun = (r, args, registers) => {
   const b = i64(registers[reg(args.b)]);
   const a = i64(registers[reg(args.a)]);
-  if (a === 0) {
+  if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
-  } else if (a === -1 && b === i64.MIN_VALUE) {
+  } else if (a === i64(-1) && b === i64.MIN_VALUE) {
     registers[reg(args.c)] = b;
   } else {
     registers[reg(args.c)] = b / a;
@@ -158,7 +158,7 @@ export const div_s: InstructionRun = (r, args, registers) => {
 
 // REM_U
 export const rem_u: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === 0) {
+  if (registers[reg(args.a)] === u64(0)) {
     registers[reg(args.c)] = registers[reg(args.b)];
   } else {
     registers[reg(args.c)] = registers[reg(args.b)] % registers[reg(args.a)];
@@ -170,10 +170,10 @@ export const rem_u: InstructionRun = (r, args, registers) => {
 export const rem_s: InstructionRun = (r, args, registers) => {
   const b = i64(registers[reg(args.b)]);
   const a = i64(registers[reg(args.a)]);
-  if (a === 0) {
+  if (a === u64(0)) {
     registers[reg(args.c)] = b;
-  } else if (a === -1 && b === i64.MIN_VALUE) {
-    registers[reg(args.c)] = 0;
+  } else if (a === i64(-1) && b === i64.MIN_VALUE) {
+    registers[reg(args.c)] = u64(0);
   } else {
     registers[reg(args.c)] = b % a;
   }

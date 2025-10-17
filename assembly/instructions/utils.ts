@@ -47,7 +47,7 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
   if (isResultNegative) {
     const upper = mulUpperUnsigned(aAbs, bAbs);
     const lower = aAbs * bAbs;
-    return ~upper + (lower === 0 ? 1 : 0);
+    return ~upper + u64(lower === u64(0) ? 1 : 0);
   }
 
   return mulUpperUnsigned(aAbs, bAbs);
@@ -55,10 +55,10 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
 
 export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
   if (a < 0) {
-    const aAbs: u64 = ~a + 1;
+    const aAbs: u64 = ~a + u64(1);
     const upper = mulUpperUnsigned(aAbs, b);
     const lower = aAbs * b;
-    return ~upper + (lower === 0 ? 1 : 0);
+    return ~upper + u64(lower === u64(0) ? 1 : 0);
   }
   return mulUpperUnsigned(a, b);
 }
@@ -79,6 +79,6 @@ export function u32SignExtend(v: u32): i64 {
 }
 
 // @inline
-export function reg(v: u64): u32 {
+export function reg(v: u32): u32 {
   return v >= u64(NO_OF_REGISTERS) ? NO_OF_REGISTERS - 1 : u32(v);
 }

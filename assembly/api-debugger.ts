@@ -114,7 +114,7 @@ export function getExitArg(): u32 {
 
 export function getGasLeft(): i64 {
   if (interpreter === null) {
-    return 0;
+    return i64(0);
   }
   const int = <Interpreter>interpreter;
   return int.gas.get();
@@ -203,10 +203,10 @@ function fillRegisters(registers: Registers, flat: u8[]): void {
   }
 
   for (let i = 0; i < registers.length; i++) {
-    let num: u64 = 0;
+    let num: u64 = u64(0);
     for (let j: u8 = 0; j < <u8>REG_SIZE_BYTES; j++) {
       const index = i * REG_SIZE_BYTES + j;
-      num |= (<u64>flat[index]) << (j * 8);
+      num |= (u64(flat[index])) << (j * 8);
     }
     registers[i] = num;
   }

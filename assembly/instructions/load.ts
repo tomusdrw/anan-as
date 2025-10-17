@@ -20,7 +20,7 @@ export const load_imm: InstructionRun = (r, args, registers) => {
 export const load_u8: InstructionRun = (r, args, registers, memory) => {
   const result = memory.getU8(faultRes, args.b);
   if (!faultRes.isFault) {
-    registers[reg(args.a)] = result;
+    registers[reg(args.a)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -29,7 +29,7 @@ export const load_u8: InstructionRun = (r, args, registers, memory) => {
 export const load_i8: InstructionRun = (r, args, registers, memory) => {
   const result = memory.getI8(faultRes, args.b);
   if (!faultRes.isFault) {
-    registers[reg(args.a)] = result;
+    registers[reg(args.a)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -38,7 +38,7 @@ export const load_i8: InstructionRun = (r, args, registers, memory) => {
 export const load_u16: InstructionRun = (r, args, registers, memory) => {
   const result = memory.getU16(faultRes, args.b);
   if (!faultRes.isFault) {
-    registers[reg(args.a)] = result;
+    registers[reg(args.a)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -47,7 +47,7 @@ export const load_u16: InstructionRun = (r, args, registers, memory) => {
 export const load_i16: InstructionRun = (r, args, registers, memory) => {
   const result = memory.getI16(faultRes, args.b);
   if (!faultRes.isFault) {
-    registers[reg(args.a)] = result;
+    registers[reg(args.a)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -56,7 +56,7 @@ export const load_i16: InstructionRun = (r, args, registers, memory) => {
 export const load_u32: InstructionRun = (r, args, registers, memory) => {
   const result = memory.getU32(faultRes, args.b);
   if (!faultRes.isFault) {
-    registers[reg(args.a)] = result;
+    registers[reg(args.a)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -65,7 +65,7 @@ export const load_u32: InstructionRun = (r, args, registers, memory) => {
 export const load_i32: InstructionRun = (r, args, registers, memory) => {
   const result = memory.getI32(faultRes, args.b);
   if (!faultRes.isFault) {
-    registers[reg(args.a)] = result;
+    registers[reg(args.a)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -84,7 +84,7 @@ export const load_ind_u8: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getU8(faultRes, address);
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -94,7 +94,7 @@ export const load_ind_i8: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getI8(faultRes, address);
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -104,7 +104,7 @@ export const load_ind_u16: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getU16(faultRes, address);
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -114,7 +114,7 @@ export const load_ind_i16: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getI16(faultRes, address);
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -124,7 +124,7 @@ export const load_ind_u32: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getU32(faultRes, u32(address));
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -134,7 +134,7 @@ export const load_ind_i32: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getI32(faultRes, u32(address));
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };
@@ -144,7 +144,7 @@ export const load_ind_u64: InstructionRun = (r, args, registers, memory) => {
   const address = u32(registers[reg(args.a)] + u32SignExtend(args.c));
   const result = memory.getU64(faultRes, u32(address));
   if (!faultRes.isFault) {
-    registers[reg(args.b)] = result;
+    registers[reg(args.b)] = u64(result);
   }
   return okOrFault(r, faultRes);
 };

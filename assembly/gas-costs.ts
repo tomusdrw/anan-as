@@ -3,7 +3,7 @@ import { Program } from "./program";
 
 export class BlockGasCost {
   pc: u32 = 0;
-  gas: u64 = 0;
+  gas: u64 = u64(0);
 }
 
 export function computeGasCosts(p: Program): Map<u32, BlockGasCost> {

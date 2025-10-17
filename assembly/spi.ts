@@ -69,10 +69,10 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array): StandardProgram {
 
   // build registers
   const registers: Registers = new StaticArray(NO_OF_REGISTERS);
-  registers[0] = <u64>0xffff_0000;
-  registers[1] = <u64>STACK_SEGMENT_END;
-  registers[7] = <u64>ARGS_SEGMENT_START;
-  registers[8] = <u64>argsLength;
+  registers[0] = u64(0xffff_0000);
+  registers[1] = u64(STACK_SEGMENT_END);
+  registers[7] = u64(ARGS_SEGMENT_START);
+  registers[8] = u64(argsLength);
 
   return new StandardProgram(program, memory, registers);
 }
@@ -93,7 +93,7 @@ function alignToSegmentSize(size: u32): u32 {
 export class StandardProgram {
   metadata: Uint8Array = new Uint8Array(0);
   pc: u32 = 0;
-  gas: i64 = 0;
+  gas: i64 = i64(0);
 
   constructor(
     public readonly program: Program,

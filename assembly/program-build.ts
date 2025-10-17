@@ -8,7 +8,7 @@ export function wrapAsProgram(bytecode: Uint8Array): Uint8Array {
   const jumpTableItemLength: u8 = 0;
   const codeLength = bytecode.length;
   const mask = buildMask(bytecode);
-  const codeLengthBytes = encodeVarU32(codeLength);
+  const codeLengthBytes = encodeVarU32(u64(codeLength));
 
   const data = new Uint8Array(1 + 1 + codeLengthBytes.length + codeLength + mask.length);
   data[0] = jumpTableLength;

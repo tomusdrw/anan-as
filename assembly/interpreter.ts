@@ -39,7 +39,7 @@ export class Interpreter {
     this.program = program;
     this.registers = registers;
     this.memory = memory;
-    this.gas = gasCounter(0);
+    this.gas = gasCounter(i64(0));
     this.pc = 0;
     this.status = Status.OK;
     this.exitCode = 0;
@@ -114,8 +114,8 @@ export class Interpreter {
       // additional gas cost of sbrk
       if (iData === SBRK && this.useSbrkGas) {
         const alloc = u64(u32(this.registers[reg(args.a)]));
-        const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
-        if (this.gas.sub(gas)) {
+        const gas = ((alloc + u64(PAGE_SIZE) - u64(1)) >> PAGE_SIZE_SHIFT) * u64(16);
+        if (this.gas.sub(i64(gas))) {
           this.status = Status.OOG;
           return false;
         }
@@ -163,7 +163,7 @@ export class Interpreter {
             return false;
           }
           if (outcome.result === Result.FAULT) {
-            this.gas.sub(1);
+            this.gas.sub(i64(1));
             // access to reserved memory should end with a panic.
             if (outcome.exitCode < RESERVED_MEMORY) {
               this.status = Status.PANIC;
@@ -174,7 +174,7 @@ export class Interpreter {
             return false;
           }
           if (outcome.result === Result.FAULT_ACCESS) {
-            this.gas.sub(1);
+            this.gas.sub(i64(1));
             this.status = Status.PANIC;
             // this.exitCode = outcome.exitCode;
             return false;
@@ -243,7 +243,7 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
   }
 
   const index = address / JUMP_ALIGMENT_FACTOR - 1;
-  if (index >= <u32>jumpTable.jumps.length) {
+  if (index >= u32(jumpTable.jumps.length)) {
     r.status = DjumpStatus.PANIC;
     return r;
   }
@@ -259,4 +259,4 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
   return r;
 }
 
-const MAX_U32: u64 = 2 ** 32;
+const MAX_U32: u64 = u64(2 ** 32);

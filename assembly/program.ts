@@ -98,7 +98,7 @@ export class Mask {
   }
 
   isInstruction(index: ProgramCounter): boolean {
-    if (index >= <u64>this.bytesToSkip.length) {
+    if (index >= u64(this.bytesToSkip.length)) {
       return false;
     }
 
@@ -203,7 +203,7 @@ export class JumpTable {
     const jumps = new StaticArray<u64>(itemBytes > 0 ? data.length / itemBytes : 0);
 
     for (let i = 0; i < data.length; i += itemBytes) {
-      let num: u64 = 0;
+      let num: u64 = u64(0);
       for (let j: i32 = itemBytes - 1; j >= 0; j--) {
         let nextNum: u64 = num << 8;
         let isOverflow = nextNum < num;
@@ -253,10 +253,10 @@ export function decodeArguments(args: Args, kind: Arguments, code: u8[], offset:
 }
 
 class ResolvedArguments {
-  a: i64 = 0;
-  b: i64 = 0;
-  c: i64 = 0;
-  d: i64 = 0;
+  a: i64 = i64(0);
+  b: i64 = i64(0);
+  c: i64 = i64(0);
+  d: i64 = i64(0);
   decoded: Args = new Args();
 }
 

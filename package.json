@@ -28,7 +28,9 @@
 		"qa-fix": "npm run format; npm run lint",
 		"start": "tsx ./bin/index.ts",
 		"test": "npm run asbuild:test && tsx ./bin/test.ts",
-		"tsbuild": "tsc",
+		"tsbuild": "npm run tsbuild:bin && npm run tsbuild:js",
+		"tsbuild:bin": "tsc",
+		"tsbuild:js": "tsc --project assembly/tsconfig.js.json",
 		"test:w3f": "tsx ./bin/test-w3f.ts",
 		"test:gas-cost": "tsx ./bin/test-gas-cost.ts",
 		"update-version": "tsx ./web/bump-version.ts $GITHUB_SHA",
@@ -76,6 +78,10 @@
 		"./raw": {
 			"import": "./build/debug-raw.js",
 			"types": "./build/debug-raw.d.ts"
+		},
+		"./js": {
+			"import": "./js/index-js.js",
+			"types": "./js/index-js.d.ts"
 		},
 		"./debug.wasm": "./build/debug.wasm",
 		"./release.wasm": "./build/release.wasm",

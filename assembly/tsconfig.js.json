@@ -1,0 +1,20 @@
+{
+  "extends": "assemblyscript/std/portable.json",
+  "include": ["./index-js.ts", "./index-js-polyfills.ts"],
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "module": "ESNext",
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "../build/js",
+    "declaration": true,
+    "lib": ["ES2020"],
+    "skipLibCheck": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  }
+}

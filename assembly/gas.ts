@@ -25,7 +25,7 @@ class GasCounterU64 implements GasCounter {
   constructor(private gas: Gas) {}
 
   set(g: Gas): void {
-    this.gas = <i64>g;
+    this.gas = i64(g);
   }
 
   get(): Gas {
@@ -35,7 +35,7 @@ class GasCounterU64 implements GasCounter {
   sub(g: Gas): boolean {
     this.gas = this.gas - g;
     if (this.gas < 0) {
-      this.gas = 0;
+      this.gas = i64(0);
       return true;
     }
     return false;
