@@ -13,7 +13,7 @@
 		"asbuild:release-mini": "asc assembly/index.ts --uncheckedBehavior=always --target release-mini",
 		"asbuild:raw": "asc assembly/index.ts --target raw",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
-		"build": "npm run asbuild && npm run tsbuild && npm run cp-build",
+		"build": "npm run asbuild && npm run asbuild:test && npm run tsbuild && npm run cp-build",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
 		"format": "biome format --write",
 		"fuzz": "tsx ./bin/fuzz.ts",
