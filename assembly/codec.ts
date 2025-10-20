@@ -134,27 +134,27 @@ export function encodeVarU32(v: u64): Uint8Array {
   }
 
   // let's look for the correct range
-  let minEncoded = maxEncoded >> 7;
+  let minEncoded = maxEncoded >> u64(7);
   for (let l = 7; l >= 0; l -= 1) {
     if (v >= minEncoded) {
       const dest = new Uint8Array(l + 1);
 
       // encode the first byte
-      const maxVal = 2 ** (8 * l);
-      const byte = 2 ** 8 - 2 ** (8 - l) + v / maxVal;
+      const maxVal = u64(2 ** (8 * l));
+      const byte = u32(2 ** 8 - 2 ** (8 - l)) + u32(v / maxVal);
       dest[0] = u8(byte);
 
       // now encode the rest of bytes of len `l`
       let rest = v % maxVal;
       for (let i = 1; i < 1 + l; i += 1) {
         dest[i] = u8(rest);
-        rest >>= 8;
+        rest >>= u64(8);
       }
       return dest;
     }
     // move one power down
     maxEncoded = minEncoded;
-    minEncoded >>= 7;
+    minEncoded >>= u64(7);
   }
 
   throw new Error(`Unhandled number encoding: ${v}`);

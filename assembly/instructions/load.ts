@@ -6,7 +6,7 @@ const faultRes: MaybePageFault = new MaybePageFault();
 
 // LOAD_IMM_64
 export const load_imm_64: InstructionRun = (r, args, registers) => {
-  registers[reg(args.a)] = u64(args.b) + (u64(args.c) << 32);
+  registers[reg(args.a)] = u64(args.b) + (u64(args.c) << u64(32));
   return ok(r);
 };
 

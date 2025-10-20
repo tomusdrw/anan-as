@@ -138,8 +138,8 @@ export function getRegisters(): Uint8Array {
     let val = int.registers[i];
     for (let j = 0; j < REG_SIZE_BYTES; j++) {
       const index = i * REG_SIZE_BYTES + j;
-      flat[index] = <u8>(val & 0xff);
-      val = val >> 8;
+      flat[index] = u8(val & u64(0xff));
+      val = val >> u64(8);
     }
   }
 
@@ -206,7 +206,7 @@ function fillRegisters(registers: Registers, flat: u8[]): void {
     let num: u64 = u64(0);
     for (let j: u8 = 0; j < <u8>REG_SIZE_BYTES; j++) {
       const index = i * REG_SIZE_BYTES + j;
-      num |= (u64(flat[index])) << (j * 8);
+      num |= u64(flat[index]) << u64(j * 8);
     }
     registers[i] = num;
   }

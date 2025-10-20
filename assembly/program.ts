@@ -205,7 +205,7 @@ export class JumpTable {
     for (let i = 0; i < data.length; i += itemBytes) {
       let num: u64 = u64(0);
       for (let j: i32 = itemBytes - 1; j >= 0; j--) {
-        let nextNum: u64 = num << 8;
+        let nextNum: u64 = num << u64(8);
         let isOverflow = nextNum < num;
         nextNum = nextNum + u64(data[i + j]);
         isOverflow = isOverflow || nextNum < num;
@@ -295,7 +295,7 @@ export function resolveArguments(
       return resolved;
     case Arguments.OneRegOneExtImm:
       resolved.a = registers[reg(args.a)];
-      resolved.b = (u64(args.a) << 32) + u64(args.b);
+      resolved.b = (u64(args.a) << u64(32)) + u64(args.b);
       return resolved;
     case Arguments.OneRegTwoImm:
       resolved.a = registers[reg(args.a)];

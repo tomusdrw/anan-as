@@ -14,18 +14,18 @@ import { NO_OF_REGISTERS } from "../registers";
  * So `0xfffffffe` is returned.
  */
 export function mulUpperUnsigned(a: u64, b: u64): u64 {
-  const aHigh: u64 = a >> 32;
-  const aLow: u64 = a & 0xffff_ffff;
-  const bHigh: u64 = b >> 32;
-  const bLow: u64 = b & 0xffff_ffff;
+  const aHigh: u64 = a >> u64(32);
+  const aLow: u64 = a & u64(0xffff_ffff);
+  const bHigh: u64 = b >> u64(32);
+  const bLow: u64 = b & u64(0xffff_ffff);
 
   const lowLow = aLow * bLow;
   const lowHigh = aLow * bHigh;
   const highLow = aHigh * bLow;
   const highHigh = aHigh * bHigh;
-  const carry = (lowLow >> 32) + (lowHigh & 0xffff_ffff) + (highLow & 0xffff_ffff);
+  const carry = (lowLow >> u64(32)) + (lowHigh & u64(0xffff_ffff)) + (highLow & u64(0xffff_ffff));
 
-  return highHigh + (lowHigh >> 32) + (highLow >> 32) + (carry >> 32);
+  return highHigh + (lowHigh >> u64(32)) + (highLow >> u64(32)) + (carry >> u64(32));
 }
 
 /**
@@ -37,11 +37,11 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
   let bAbs = b;
   if (a < 0) {
     isResultNegative = !isResultNegative;
-    aAbs = ~a + 1;
+    aAbs = ~a + u64(1);
   }
   if (b < 0) {
     isResultNegative = !isResultNegative;
-    bAbs = ~b + 1;
+    bAbs = ~b + u64(1);
   }
 
   if (isResultNegative) {

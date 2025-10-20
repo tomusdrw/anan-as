@@ -114,7 +114,7 @@ export class Interpreter {
       // additional gas cost of sbrk
       if (iData === SBRK && this.useSbrkGas) {
         const alloc = u64(u32(this.registers[reg(args.a)]));
-        const gas = ((alloc + u64(PAGE_SIZE) - u64(1)) >> PAGE_SIZE_SHIFT) * u64(16);
+        const gas = ((alloc + u64(PAGE_SIZE) - u64(1)) >> u64(PAGE_SIZE_SHIFT)) * u64(16);
         if (this.gas.sub(i64(gas))) {
           this.status = Status.OOG;
           return false;

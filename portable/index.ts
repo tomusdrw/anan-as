@@ -1,6 +1,6 @@
 // Portable JS entry point for anan-as
 // Imports the AssemblyScript portable runtime and polyfills
 import "assemblyscript/std/portable";
-import "./index-js-polyfills";
+import "./polyfills";
 
-export * from './index';
+export * from "../assembly/index";

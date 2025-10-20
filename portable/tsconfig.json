@@ -1,6 +1,6 @@
 {
   "extends": "assemblyscript/std/portable.json",
-  "include": ["./index-js.ts", "./index-js-polyfills.ts"],
+  "include": ["./index.ts"],
   "compilerOptions": {
     "experimentalDecorators": true,
     "module": "ESNext",

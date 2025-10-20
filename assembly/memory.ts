@@ -338,12 +338,12 @@ export class Memory {
     const firstPageEnd = Math.min(PAGE_SIZE, r.firstPageOffset + bytes);
     for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {
       r.firstPageData[i] = u8(bytesLeft);
-      bytesLeft >>= 8;
+      bytesLeft >>= u64(8);
     }
     // write rest to the second page
     for (let i: u32 = 0; i < r.secondPageEnd; i++) {
       r.secondPageData[i] = u8(bytesLeft);
-      bytesLeft >>= 8;
+      bytesLeft >>= u64(8);
     }
   }
 
@@ -359,12 +359,12 @@ export class Memory {
 
     // read from first page
     for (let i: u32 = this.chunksResult.firstPageOffset; i < firstPageEnd; i++) {
-      r = (r << 8) | u64(this.chunksResult.firstPageData[i]);
+      r = (r << u64(8)) | u64(this.chunksResult.firstPageData[i]);
     }
 
     // read from the second page
     for (let i: u32 = 0; i < this.chunksResult.secondPageEnd; i++) {
-      r = (r << 8) | u64(this.chunksResult.secondPageData[i]);
+      r = (r << u64(8)) | u64(this.chunksResult.secondPageData[i]);
     }
 
     return r;

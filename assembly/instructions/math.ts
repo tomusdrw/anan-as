@@ -11,13 +11,13 @@ export const add_imm_32: InstructionRun = (r, args, registers) => {
 
 // MUL_IMM_32
 export const mul_imm_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)] * args.c));
+  registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)] * u64(args.c)));
   return ok(r);
 };
 
 // NEG_ADD_IMM_32
 export const neg_add_imm_32: InstructionRun = (r, args, registers) => {
-  const sum = (u64(args.c) | 0x1_0000_0000) - registers[reg(args.a)];
+  const sum = (u64(args.c) | u64(0x1_0000_0000)) - registers[reg(args.a)];
   registers[reg(args.b)] = u32SignExtend(u32(sum));
   return ok(r);
 };
@@ -52,7 +52,9 @@ export const add_32: InstructionRun = (r, args, registers) => {
 
 // SUB_32
 export const sub_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.b)] + 2 ** 32 - u32(registers[reg(args.a)])));
+  const a = registers[reg(args.b)];
+  const b = u64(2 ** 32 - u32(registers[reg(args.a)]));
+  registers[reg(args.c)] = u32SignExtend(u32(a + b));
   return ok(r);
 };
 
