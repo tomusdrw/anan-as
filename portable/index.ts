@@ -3,4 +3,4 @@
 import "assemblyscript/std/portable";
 import "./polyfills";
 
-export * from "../assembly/index";
+export * from "../assembly/index-shared";

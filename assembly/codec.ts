@@ -22,6 +22,8 @@ export class Decoder {
 
   private ensureBytes(need: u32): void {
     if (this.offset + need > this.source.length) {
+      // @ts-ignore
+      console.trace();
       throw new Error(`Not enough bytes left. Need: ${need}, left: ${this.source.length - this.offset}`);
     }
   }
@@ -141,7 +143,7 @@ export function encodeVarU32(v: u64): Uint8Array {
 
       // encode the first byte
       const maxVal = u64(2 ** (8 * l));
-      const byte = u32(2 ** 8 - 2 ** (8 - l)) + u32(v / maxVal);
+      const byte = u32(2 ** 8 - 2 ** (8 - l)) + u32(v / maxVal) & 0xffff_ffff;
       dest[0] = u8(byte);
 
       // now encode the rest of bytes of len `l`

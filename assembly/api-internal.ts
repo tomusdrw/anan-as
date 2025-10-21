@@ -1,8 +1,9 @@
 import { Args, RELEVANT_ARGS } from "./arguments";
-import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
+import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions/index";
 import { Interpreter, Status } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
+import {portable} from "./portable";
 import { decodeArguments, Program, resolveArguments } from "./program";
 import { Registers } from "./registers";
 
@@ -75,7 +76,9 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
   int.useSbrkGas = useSbrkGas;
   int.nextPc = input.pc;
   int.gas.set(input.gas);
+  console.log('executing');
   const result = executeProgram(int, logs);
+  console.log('mem free');
   // release used pages back
   int.memory.free();
   return result;
@@ -83,7 +86,7 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
   const chunks: InitialChunk[] = [];
-  const pages = memory.pages.keys();
+  const pages = portable.asArray<number>(memory.pages.keys());
   let currentChunk: InitialChunk | null = null;
   for (let i = 0; i < pages.length; i++) {
     const pageIdx = pages[i];

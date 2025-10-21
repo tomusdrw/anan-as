@@ -8,17 +8,44 @@ const globalThisAny = globalThis as any;
 globalThisAny.StaticArray = Array;
 
 // Helper functions for i64/u64 with MAX_VALUE and MIN_VALUE
-const i64Fn = (value: number): bigint => BigInt(value);
+const i64Fn = (value: number | bigint): bigint => {
+  return BigInt.asIntN(64, BigInt(value));
+};
+
 i64Fn.MAX_VALUE = 9223372036854775807n;
 i64Fn.MIN_VALUE = -9223372036854775808n;
 globalThisAny.i64 = i64Fn;
 
-const u64Fn = (value: number): bigint => BigInt(value);
+const u64Fn = (value: number | bigint): bigint => {
+  return BigInt.asUintN(64, BigInt(value));
+};
+
 u64Fn.MAX_VALUE = 18446744073709551615n;
 u64Fn.MIN_VALUE = 0n;
 globalThisAny.u64 = u64Fn;
 
-globalThisAny.shlo_r_polyfill = (a: u64, b: u64) => {
+globalThisAny.u8 = (v: number | bigint) => {
+  if (typeof v === 'number') {
+    return (v & 0xff) >>> 0;
+  }
+  return Number(v & 0xffn) >>> 0;
+};
+
+globalThisAny.u16 = (v: number | bigint) => {
+  if (typeof v === 'number') {
+    return (v & 0xffff) >>> 0;
+  }
+  return Number(v & 0xffffn) >>> 0;
+};
+
+globalThisAny.u32 = (v: number | bigint) => {
+  if (typeof v === 'number') {
+    return (v & 0xffff_ffff) >>> 0;
+  }
+  return Number(v & 0xffff_ffffn) >>> 0;
+};
+
+i64Fn.shlo_r = (a: u64, b: u64) => {
   // TODO [ToDr] this should be shlo_r!
   return a + b;
 };
@@ -33,13 +60,13 @@ declare global {
   type u64 = bigint;
 
   interface I64Function {
-    (value: number): i64;
+    (value: number | bigint): i64;
     MAX_VALUE: i64;
     MIN_VALUE: i64;
   }
 
   interface U64Function {
-    (value: number): u64;
+    (value: number | bigint): u64;
     MAX_VALUE: u64;
     MIN_VALUE: u64;
   }
@@ -52,6 +79,8 @@ declare global {
     setUint64(byteOffset: number, value: u64, littleEndian?: boolean): void;
     getUint64(byteOffset: number, littleEndian?: boolean): u64;
   }
+
+  function shlo_r_polyfill(a: u64, b: u64): u64;
 
   namespace console {
     function log(msg: string): void;

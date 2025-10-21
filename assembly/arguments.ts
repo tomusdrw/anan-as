@@ -165,5 +165,5 @@ function decodeU32(data: u8[], offset: u32): u32 {
   num |= u32(data[offset + 1]) << 8;
   num |= u32(data[offset + 2]) << 16;
   num |= u32(data[offset + 3]) << 24;
-  return num;
+  return u32(num);
 }

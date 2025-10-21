@@ -4,6 +4,7 @@ import { MemoryBuilder } from "./memory";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
+import { portable } from './portable';
 
 export enum InputKind {
   Generic = 0,
@@ -18,8 +19,7 @@ export enum HasMetadata {
 export function getGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
   const program = prepareProgram(kind, withMetadata, input, [], [], [], []);
 
-  // @ts-expect-error - MapIterator vs Array incompatibility in portable build
-  return computeGasCosts(program.program).values();
+  return portable.asArray(computeGasCosts(program.program).values());
 }
 
 export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata): string {
@@ -53,24 +53,29 @@ export function prepareProgram(
   if (hasMetadata === HasMetadata.Yes) {
     const data = extractCodeAndMetadata(code);
     code = data.code;
-    // @ts-expect-error - ArrayBufferLike vs ArrayBuffer incompatibility in portable build
+    // @ts-ignore - ArrayBufferLike vs ArrayBuffer incompatibility in portable build
     metadata = data.metadata;
   }
 
   if (kind === InputKind.Generic) {
+    console.log('deblobbing');
     const program = deblob(code);
 
+    console.log('building memory');
     const builder = new MemoryBuilder();
     const memory = buildMemory(builder, initialPageMap, initialMemory);
 
+    console.log('registers');
     const registers: Registers = new StaticArray(NO_OF_REGISTERS);
     for (let r = 0; r < initialRegisters.length; r++) {
       registers[r] = initialRegisters[r];
     }
 
+    console.log('std program');
     const exe: StandardProgram = new StandardProgram(program, memory, registers);
     exe.metadata = metadata;
 
+    console.log('done');
     return exe;
   }
 
@@ -90,9 +95,11 @@ export function runProgram(
   logs: boolean = false,
   useSbrkGas: boolean = false,
 ): VmOutput {
+  console.log('prep vm input');
   const vmInput = new VmInput(program.program, program.memory, program.registers);
   vmInput.gas = initialGas;
   vmInput.pc = programCounter;
 
+  console.log('run vm');
   return runVm(vmInput, logs, useSbrkGas);
 }

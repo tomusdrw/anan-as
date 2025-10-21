@@ -1,3 +1,4 @@
+import {portable} from "../portable";
 import { NO_OF_REGISTERS } from "../registers";
 
 /**
@@ -19,13 +20,18 @@ export function mulUpperUnsigned(a: u64, b: u64): u64 {
   const bHigh: u64 = b >> u64(32);
   const bLow: u64 = b & u64(0xffff_ffff);
 
-  const lowLow = aLow * bLow;
-  const lowHigh = aLow * bHigh;
-  const highLow = aHigh * bLow;
-  const highHigh = aHigh * bHigh;
-  const carry = (lowLow >> u64(32)) + (lowHigh & u64(0xffff_ffff)) + (highLow & u64(0xffff_ffff));
+  const lowLow = portable.u64_mul(aLow, bLow);
+  const lowHigh = portable.u64_mul(aLow, bHigh);
+  const highLow = portable.u64_mul(aHigh, bLow);
+  const highHigh = portable.u64_mul(aHigh, bHigh);
+  const carry = portable.u64_add(
+    (lowLow >> u64(32)),
+    portable.u64_add((lowHigh & u64(0xffff_ffff)), (highLow & u64(0xffff_ffff)))
+  );
 
-  return highHigh + (lowHigh >> u64(32)) + (highLow >> u64(32)) + (carry >> u64(32));
+  const r1 = portable.u64_add(highHigh, (lowHigh >> u64(32)));
+  const r2 = portable.u64_add((highLow >> u64(32)), (carry >> u64(32)));
+  return portable.u64_add(r1, r2);
 }
 
 /**
@@ -37,17 +43,17 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
   let bAbs = b;
   if (a < 0) {
     isResultNegative = !isResultNegative;
-    aAbs = ~a + u64(1);
+    aAbs = portable.u64_add(~a, u64(1));
   }
   if (b < 0) {
     isResultNegative = !isResultNegative;
-    bAbs = ~b + u64(1);
+    bAbs = portable.u64_add(~b, u64(1));
   }
 
   if (isResultNegative) {
     const upper = mulUpperUnsigned(aAbs, bAbs);
-    const lower = aAbs * bAbs;
-    return ~upper + u64(lower === u64(0) ? 1 : 0);
+    const lower = portable.u64_mul(aAbs, bAbs);
+    return portable.u64_add(~upper, u64(lower === u64(0) ? 1 : 0));
   }
 
   return mulUpperUnsigned(aAbs, bAbs);
@@ -55,27 +61,27 @@ export function mulUpperSigned(a: i64, b: i64): u64 {
 
 export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
   if (a < 0) {
-    const aAbs: u64 = ~a + u64(1);
+    const aAbs: u64 = portable.u64_add(~a, u64(1));
     const upper = mulUpperUnsigned(aAbs, b);
-    const lower = aAbs * b;
-    return ~upper + u64(lower === u64(0) ? 1 : 0);
+    const lower = portable.u64_mul(aAbs, b);
+    return portable.u64_add(~upper, u64(lower === u64(0) ? 1 : 0));
   }
   return mulUpperUnsigned(a, b);
 }
 
 // @inline
-export function u8SignExtend(v: u8): i64 {
-  return i64(i32(i16(i8(v))));
+export function u8SignExtend(v: u8): u64 {
+  return u64(i64(i32(i16(i8(v)))));
 }
 
 // @inline
-export function u16SignExtend(v: u16): i64 {
-  return i64(i32(i16(v)));
+export function u16SignExtend(v: u16): u64 {
+  return u64(i64(i32(i16(v))));
 }
 
 // @inline
-export function u32SignExtend(v: u32): i64 {
-  return i64(i32(v));
+export function u32SignExtend(v: u32): u64 {
+  return u64(i64(i32(v)));
 }
 
 // @inline

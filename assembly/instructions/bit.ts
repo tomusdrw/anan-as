@@ -1,3 +1,4 @@
+import {portable} from "../portable";
 import { InstructionRun, ok } from "./outcome";
 import { reg, u8SignExtend, u16SignExtend } from "./utils";
 
@@ -57,6 +58,6 @@ export const zero_extend_16: InstructionRun = (r, args, regs) => {
 
 // REVERSE_BYTES
 export const reverse_bytes: InstructionRun = (r, args, regs) => {
-  regs[reg(args.b)] = bswap<u64>(regs[reg(args.a)]);
+  regs[reg(args.b)] = portable.bswap_u64(regs[reg(args.a)]);
   return ok(r);
 };

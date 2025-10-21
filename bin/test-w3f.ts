@@ -2,7 +2,8 @@
 
 import "json-bigint-patch";
 import * as assert from "node:assert";
-import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
+import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/js/portable/index";
+// import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release";
 import { ERR, OK, read, run, TestOptions } from "./test-json.js";
 
 type PvmTest = {
@@ -65,6 +66,7 @@ function processW3f(data: PvmTest, options: TestOptions) {
     input.memory,
     [],
   );
+  console.log('running');
   const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
   const statusStr = statusAsString(result.status);
   // biome-ignore lint/suspicious/noExplicitAny: explicit type change
@@ -91,8 +93,10 @@ function processW3f(data: PvmTest, options: TestOptions) {
     exitCode: read(data, "expected-page-fault-address", 0) as number,
   };
 
+  console.log('expected', expected);
+
   try {
-    assert.deepStrictEqual(result, expected);
+    assert.deepEqual(result, expected);
     console.log(`${OK} ${data.name}`);
   } catch (e) {
     console.log(`${ERR} ${data.name}`);

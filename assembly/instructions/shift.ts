@@ -140,11 +140,11 @@ export const shar_r: InstructionRun = (r, args, registers) => {
 };
 
 function shlo_r_internal(a: u64, b: u64): u64 {
-  if (ASC_TARGET === 0) {
+  if (ASC_TARGET !== 0) {
     // @ts-expect-error we ignore error when compiling to JS.
     return a >>> b;
   } else {
     // @ts-expect-error
-    return shlo_r_polyfill(1);
+    return i64.shlo_r(1);
   }
 }

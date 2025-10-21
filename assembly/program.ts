@@ -58,7 +58,7 @@ export function deblob(program: Uint8Array): Program {
   // NOTE [ToDr] we copy the code here, because indexing a raw
   // assembly script array is faster than going through `Uint8Array` API.
   const rawCode = lowerBytes(decoder.bytes(codeLength));
-  const rawMask = decoder.bytes((codeLength + 7) / 8);
+  const rawMask = decoder.bytes(u32((codeLength + 7) / 8));
 
   const mask = new Mask(rawMask, codeLength);
   const jumpTable = new JumpTable(jumpTableItemLength, rawJumpTable);

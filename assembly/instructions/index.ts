@@ -1,5 +1,5 @@
-import { Arguments } from "./arguments";
-import { Gas } from "./gas";
+import { Arguments } from "../arguments";
+import { Gas } from "../gas";
 
 @unmanaged
 export class Instruction {

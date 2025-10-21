@@ -2,6 +2,6 @@
   "extends": "assemblyscript/std/assembly.json",
   "include": ["./**/*.ts"],
   "compilerOptions": {
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
   }
 }

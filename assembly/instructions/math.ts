@@ -1,3 +1,4 @@
+import {portable} from "../portable";
 import { InstructionRun, ok } from "./outcome";
 import { mulUpperSigned, mulUpperSignedUnsigned, mulUpperUnsigned, reg, u32SignExtend } from "./utils";
 
@@ -5,40 +6,43 @@ import { mulUpperSigned, mulUpperSignedUnsigned, mulUpperUnsigned, reg, u32SignE
 export const add_imm_32: InstructionRun = (r, args, registers) => {
   const a = registers[reg(args.a)];
   const c = u32SignExtend(args.c);
-  registers[reg(args.b)] = u32SignExtend(u32(a + c));
+  console.log(`u32: ${u32(portable.u64_add(a, c))}`);
+  registers[reg(args.b)] = u32SignExtend(u32(portable.u64_add(a, c)));
   return ok(r);
 };
 
 // MUL_IMM_32
 export const mul_imm_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)] * u64(args.c)));
+  registers[reg(args.b)] = u32SignExtend(u32(
+    portable.u64_mul(registers[reg(args.a)], u64(args.c))
+  ));
   return ok(r);
 };
 
 // NEG_ADD_IMM_32
 export const neg_add_imm_32: InstructionRun = (r, args, registers) => {
-  const sum = (u64(args.c) | u64(0x1_0000_0000)) - registers[reg(args.a)];
+  const sum = portable.u64_sub((u64(args.c) | u64(0x1_0000_0000)), registers[reg(args.a)]);
   registers[reg(args.b)] = u32SignExtend(u32(sum));
   return ok(r);
 };
 
 // ADD_IMM
 export const add_imm: InstructionRun = (r, args, registers) => {
-  const sum: u64 = registers[reg(args.a)] + u32SignExtend(args.c);
+  const sum: u64 = portable.u64_add(registers[reg(args.a)], u32SignExtend(args.c));
   registers[reg(args.b)] = sum;
   return ok(r);
 };
 
 // MUL_IMM
 export const mul_imm: InstructionRun = (r, args, registers) => {
-  registers[reg(args.b)] = registers[reg(args.a)] * u32SignExtend(args.c);
+  registers[reg(args.b)] = portable.u64_mul(registers[reg(args.a)], u32SignExtend(args.c));
   return ok(r);
 };
 
 // NEG_ADD_IMM
 export const neg_add_imm: InstructionRun = (r, args, registers) => {
-  const sum = u32SignExtend(args.c) - registers[reg(args.a)];
-  registers[reg(args.b)] = sum;
+  const sum = portable.u64_sub(u32SignExtend(args.c), registers[reg(args.a)]);
+  registers[reg(args.b)] = u64(sum);
   return ok(r);
 };
 
@@ -46,7 +50,7 @@ export const neg_add_imm: InstructionRun = (r, args, registers) => {
 export const add_32: InstructionRun = (r, args, registers) => {
   const a = u32(registers[reg(args.a)]);
   const b = u32(registers[reg(args.b)]);
-  registers[reg(args.c)] = u32SignExtend(a + b);
+  registers[reg(args.c)] = u64(u32SignExtend(a + b));
   return ok(r);
 };
 
@@ -54,13 +58,15 @@ export const add_32: InstructionRun = (r, args, registers) => {
 export const sub_32: InstructionRun = (r, args, registers) => {
   const a = registers[reg(args.b)];
   const b = u64(2 ** 32 - u32(registers[reg(args.a)]));
-  registers[reg(args.c)] = u32SignExtend(u32(a + b));
+  registers[reg(args.c)] = u32SignExtend(u32(portable.u64_add(a, b)));
   return ok(r);
 };
 
 // MUL_32
 export const mul_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.a)] * registers[reg(args.b)]));
+  registers[reg(args.c)] = u32SignExtend(u32(
+    portable.u64_mul(registers[reg(args.a)], registers[reg(args.b)])
+  ));
   return ok(r);
 };
 
@@ -78,8 +84,8 @@ export const div_u_32: InstructionRun = (r, args, registers) => {
 
 // DIV_S_32
 export const div_s_32: InstructionRun = (r, args, registers) => {
-  const b = u32SignExtend(u32(registers[reg(args.b)]));
-  const a = u32SignExtend(u32(registers[reg(args.a)]));
+  const b = i64(u32SignExtend(u32(registers[reg(args.b)])));
+  const a = i64(u32SignExtend(u32(registers[reg(args.a)])));
   if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
   } else if (a === i64(-1) && b === i64(i32.MIN_VALUE)) {
@@ -118,19 +124,19 @@ export const rem_s_32: InstructionRun = (r, args, registers) => {
 
 // ADD_64
 export const add_64: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] + registers[reg(args.b)];
+  registers[reg(args.c)] = portable.u64_add(registers[reg(args.a)], registers[reg(args.b)]);
   return ok(r);
 };
 
 // SUB
 export const sub: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.b)] - registers[reg(args.a)];
+  registers[reg(args.c)] = portable.u64_sub(registers[reg(args.b)], registers[reg(args.a)]);
   return ok(r);
 };
 
 // MUL
 export const mul: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] * registers[reg(args.b)];
+  registers[reg(args.c)] = portable.u64_mul(registers[reg(args.a)], registers[reg(args.b)]);
   return ok(r);
 };
 

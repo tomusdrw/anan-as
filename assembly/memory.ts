@@ -10,6 +10,7 @@ import {
   RESERVED_MEMORY,
   RESERVED_PAGES,
 } from "./memory-page";
+import {portable} from "./portable";
 
 // @unmanaged
 export class MaybePageFault {
@@ -152,27 +153,32 @@ export class Memory {
   }
 
   getU16(faultRes: MaybePageFault, address: u32): u16 {
-    return bswap<u16>(u16(this.getBytesReversed(faultRes, Access.Read, address, 2)));
+    const x= u16(this.getBytesReversed(faultRes, Access.Read, address, 2));
+    console.log(`x: ${x}`);
+    const y = portable.bswap_u16(x);
+    console.log(`swap: ${y}`);
+    return y;
   }
 
   getU32(faultRes: MaybePageFault, address: u32): u32 {
-    return bswap<u32>(u32(this.getBytesReversed(faultRes, Access.Read, address, 4)));
+    return portable.bswap_u32(u32(this.getBytesReversed(faultRes, Access.Read, address, 4)));
   }
 
   getU64(faultRes: MaybePageFault, address: u32): u64 {
-    return bswap<u64>(this.getBytesReversed(faultRes, Access.Read, address, 8));
+    return portable.bswap_u64(this.getBytesReversed(faultRes, Access.Read, address, 8));
   }
 
   getI8(faultRes: MaybePageFault, address: u32): u64 {
-    return u8SignExtend(u8(this.getU8(faultRes, address)));
+    return u8SignExtend(this.getU8(faultRes, address));
   }
 
   getI16(faultRes: MaybePageFault, address: u32): u64 {
-    return u16SignExtend(u16(this.getU16(faultRes, address)));
+    const x = this.getU16(faultRes, address);
+    return u16SignExtend(x);
   }
 
   getI32(faultRes: MaybePageFault, address: u32): u64 {
-    return u32SignExtend(u32(this.getU32(faultRes, address)));
+    return u32SignExtend(this.getU32(faultRes, address));
   }
 
   setU8(faultRes: MaybePageFault, address: u32, value: u8): void {
@@ -328,23 +334,29 @@ export class Memory {
 
   private setBytes(faultRes: MaybePageFault, address: u32, value: u64, bytes: u8): void {
     const r = this.chunksResult;
+    console.log('getChunks');
     this.getChunks(faultRes, r, Access.Write, address, bytes);
     if (faultRes.isFault) {
       return;
     }
 
     let bytesLeft = value;
+
+    console.log('setBytes first');
     // write to first page
     const firstPageEnd = Math.min(PAGE_SIZE, r.firstPageOffset + bytes);
     for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {
       r.firstPageData[i] = u8(bytesLeft);
       bytesLeft >>= u64(8);
     }
+    console.log('setBytes second');
     // write rest to the second page
     for (let i: u32 = 0; i < r.secondPageEnd; i++) {
       r.secondPageData[i] = u8(bytesLeft);
       bytesLeft >>= u64(8);
     }
+
+    console.log('setBytes done');
   }
 
   private getBytesReversed(faultRes: MaybePageFault, access: Access, address: u32, bytes: u8): u64 {
