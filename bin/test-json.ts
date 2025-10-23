@@ -7,10 +7,31 @@ import { resolve, join } from 'node:path';
 export const OK = '🟢';
 export const ERR = '🔴';
 
+export type ProcessableData = {
+  name?: string;
+}
+
+export interface TestOptions {
+  /** print some additional debug info. */
+  isDebug: boolean;
+  /** don't print anything (jsonin-jsonout mode) */
+  isSilent: boolean;
+  /** enable sbrk gas */
+  useSbrkGas: boolean;
+}
+
+type ProcessJsonFn<T extends ProcessableData> = (data: T, options: TestOptions, filePath: string) => T;
+
+interface TestStatus {
+  all: number;
+  ok: Array<{ filePath: string; name: string }>;
+  fail: Array<{ filePath: string; name: string }>;
+}
+
 // Main function
-export function run(
-  processJson,
-  options
+export function run<T extends ProcessableData>(
+  processJson: ProcessJsonFn<T>,
+  options: TestOptions
 ) {
 
   // Get the JSON file arguments from the command line
@@ -46,7 +67,7 @@ export function run(
     return;
   }
 
-  const status = {
+  const status: TestStatus = {
     all: 0,
     ok: [],
     fail: [],
@@ -86,7 +107,7 @@ export function run(
   }
 }
 
-function readFromStdin(processJson, options) {
+function readFromStdin<T extends ProcessableData>(processJson: ProcessJsonFn<T>, options: TestOptions) {
   process.stdin.setEncoding('utf8');
   process.stderr.write('awaiting input\n');
   options.isSilent = true;
@@ -107,8 +128,8 @@ function readFromStdin(processJson, options) {
   });
 }
 
-function processFile(processJson, options, status, filePath) {
-  let jsonData;
+function processFile<T extends ProcessableData>(processJson: ProcessJsonFn<T>, options: TestOptions, status: TestStatus, filePath: string) {
+  let jsonData: T;
   try {
     // Resolve the full file path
     const absolutePath = resolve(filePath);
@@ -121,24 +142,24 @@ function processFile(processJson, options, status, filePath) {
   } catch (error) {
     status.fail.push({ filePath, name: '<unknown>' });
     console.error(`Error reading file: ${filePath}`);
-    console.error(error.message);
+    console.error((error as Error).message);
     return;
   }
 
   try {
     // Process the parsed JSON
     const result = processJson(jsonData, options, filePath);
-    status.ok.push({ filePath, name: jsonData.name });
+    status.ok.push({ filePath, name: jsonData.name ?? filePath });
     return result;
   } catch (error) {
-    status.fail.push({ filePath, name: jsonData.name });
+    status.fail.push({ filePath, name: jsonData.name ?? filePath });
     console.error(`Error running test: ${filePath}`);
-    console.error(error.message);
+    console.error((error as Error).message);
     return {};
   }
 }
 
-export function read(data, field, defaultValue = undefined) {
+export function read<T extends object, K extends keyof T>(data: T, field: string & K, defaultValue: T[K] | undefined = undefined): T[K] {
   if (field in data) {
     return data[field];
   }

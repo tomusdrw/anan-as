@@ -2,34 +2,47 @@
 
 import "json-bigint-patch";
 import * as assert from 'node:assert';
-import { OK, ERR, run, read } from './test-json.js';
+import { OK, ERR, run, read, TestOptions } from './test-json.js';
 
 import { prepareProgram, runProgram, InputKind, disassemble, HasMetadata } from "../build/release.js";
+
+type PvmTest = {
+  "name": string;
+  "initial-regs": (bigint | number)[];
+  "initial-pc": number;
+  "initial-page-map": Page[];
+  "initial-memory": Chunk[];
+  "initial-gas": bigint | number;
+  "program": number[];
+  "expected-regs": (bigint | number)[];
+  "expected-pc": number;
+  "expected-gas": bigint | number;
+  "expected-status": number;
+  "expected-page-fault-address"?: number;
+  "expected-memory": Chunk[];
+};
 
 // Run the CLI application
 main();
 
 // Main function
 function main() {
-  const options = {
-    // print some additional debug info.
+  const options: TestOptions = {
     isDebug: false,
-    // don't print anything (jsonin-jsonout mode)
     isSilent: false,
-    // enable sbrk gas
     useSbrkGas: false,
   };
 
-  run(processW3f, options);
+  run<PvmTest>(processW3f, options);
 }
 
-function processW3f(data, options) {
+function processW3f(data: PvmTest, options: TestOptions) {
   if (options.isDebug) {
     console.debug(`🤖 Running ${data.name}`);
   }
   // input
   const input = {
-    registers: read(data, 'initial-regs').map(x => BigInt(x)),
+    registers: read(data, 'initial-regs').map((x: number | bigint) => BigInt(x)),
     pc: read(data, 'initial-pc'),
     pageMap: asPageMap(read(data, 'initial-page-map')),
     memory: asChunks(read(data, 'initial-memory')),
@@ -46,7 +59,8 @@ function processW3f(data, options) {
 
   const exe = prepareProgram(InputKind.Generic, HasMetadata.No, input.program, input.registers, input.pageMap, input.memory, []);
   const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
-  result.status = statusAsString(result.status);
+  const statusStr = statusAsString(result.status);
+  result.status = statusStr as any;
 
   // silent mode - just put our vals into expected (comparison done externally)
   if (options.isSilent) {
@@ -62,11 +76,11 @@ function processW3f(data, options) {
   // compare with expected values
   const expected = {
     status: read(data, 'expected-status'),
-    registers: read(data, 'expected-regs').map(x => BigInt(x)),
+    registers: read(data, 'expected-regs').map((x: any) => BigInt(x)),
     pc: read(data, 'expected-pc'),
     memory: asChunks(read(data, 'expected-memory')),
     gas: BigInt(read(data, 'expected-gas')),
-    exitCode: read(data, 'expected-page-fault-address', 0),
+    exitCode: read(data, 'expected-page-fault-address', 0) as number,
   };
 
   try {
@@ -76,25 +90,42 @@ function processW3f(data, options) {
     console.log(`${ERR} ${data.name}`);
     throw e;
   }
+  return data;
 }
 
-function asChunks(chunks) {
-  return chunks.map(chunk => {
-    chunk.data = read(chunk, 'contents');
+type Chunk = {
+  address: number,
+  contents?: number[],
+  data: number[],
+};
+
+function asChunks(chunks: Chunk[]) {
+  return chunks.map((chunk: Chunk) => {
+    chunk.data = read(chunk, 'contents') as number[];
     delete chunk.contents;
     return chunk;
   });
 }
 
-function asPageMap(pages) {
-  return pages.map(page => {
-    page.access = read(page, 'is-writable') ? 2 : 1;
+type Page = {
+  address: number,
+  length: number,
+  "is-writable": boolean,
+  access: Access,
+};
+enum Access {
+  Read = 1,
+  Write = 2,
+};
+function asPageMap(pages: Page[]) {
+  return pages.map((page: Page) => {
+    page.access = read(page, 'is-writable') ? Access.Write : Access.Read;
     return page;
   });
 }
 
-function statusAsString(status) {
-  const map = {
+function statusAsString(status: number) {
+  const map: Record<number, string> = {
     255: 'ok',
     0: 'halt',
     1: 'panic',
