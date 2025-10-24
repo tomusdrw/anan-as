@@ -4,7 +4,7 @@ import * as jump from "./instructions/jump";
 import * as load from "./instructions/load";
 import * as logic from "./instructions/logic";
 import * as math from "./instructions/math";
-import { ecalli, fallthrough, INVALID, sbrk, trap } from "./instructions/misc";
+import { ecalli, fallthrough, INVALID, sbrk, trap, unlikely } from "./instructions/misc";
 import * as mov from "./instructions/mov";
 import { InstructionRun } from "./instructions/outcome";
 import * as rot from "./instructions/rot";
@@ -16,7 +16,7 @@ export const RUN: InstructionRun[] = [
   /* 000 */ trap,
   /* 001 */ fallthrough,
   INVALID,
-  INVALID,
+  /* 003 */ unlikely,
   INVALID,
   INVALID,
   INVALID,

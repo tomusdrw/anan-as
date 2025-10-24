@@ -1,6 +1,6 @@
 import {Args} from "./arguments";
 import {OpsCost} from "./gas-pricing";
-import { INSTRUCTIONS, MEMORY_COST, MEMORY_COST_L2HIT, MISSING_INSTRUCTION } from "./instructions";
+import { BRANCH_COST, BRANCH_COST_REGULAR, INSTRUCTIONS, MEMORY_COST, MEMORY_COST_L2HIT, MISSING_INSTRUCTION } from "./instructions";
 import {RUN} from "./instructions-exe";
 import {RegisterIndex, REGISTERS, UNUSED_REGISTER, UsedRegisters} from "./instructions-regs";
 import {move_reg} from "./instructions/mov";
@@ -238,6 +238,10 @@ function c_revhat(p: Program, pc: PC): u32 {
   const opcode = p.code[pc];
   const iData = INSTRUCTIONS[opcode];
   // TODO [ToDr] handle memory model!
+  // TODO [ToDr] handle branch cost!
+  if (iData.constantCost === BRANCH_COST) {
+    return BRANCH_COST_REGULAR;
+  }
   return iData.constantCost === MEMORY_COST ? MEMORY_COST_L2HIT : iData.constantCost;
 }
 

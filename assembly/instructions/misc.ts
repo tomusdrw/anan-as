@@ -13,6 +13,9 @@ export const trap: InstructionRun = (r) => panic(r);
 // FALLTHROUGH
 export const fallthrough: InstructionRun = (r) => ok(r);
 
+// UNLIKELY
+export const unlikely: InstructionRun = (r) => ok(r);
+
 // ECALLI
 export const ecalli: InstructionRun = (r, args) => hostCall(r, args.a);
 

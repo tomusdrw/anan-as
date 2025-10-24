@@ -66,10 +66,10 @@ const ABC_REG: RegisterFill = (args, regs) => {
 };
 
 export const REGISTERS: RegisterFill[] = [
-  /* 000 */ NO_REGISTERS,
-  /* 001 */ NO_REGISTERS,
+  /* 000 */ NO_REGISTERS, // trap
+  /* 001 */ NO_REGISTERS, // fallthrough
   NO_REGISTERS,
-  NO_REGISTERS,
+  /* 003 */ NO_REGISTERS, // unlikely
   NO_REGISTERS,
   NO_REGISTERS,
   NO_REGISTERS,
