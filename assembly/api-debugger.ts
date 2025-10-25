@@ -186,6 +186,11 @@ export function getMemory(address: u32, length: u32): Uint8Array | null {
   return result;
 }
 
+/**
+ * Write given `data` under memory indices `[address, address + data.length)`.
+ * 
+ * Returns `true` if the write was successful and `false` if page fault has been triggered.
+ */ 
 export function setMemory(address: u32, data: Uint8Array): boolean {
   if (interpreter === null) {
     return false;
