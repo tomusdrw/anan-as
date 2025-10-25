@@ -167,11 +167,11 @@ export function getPageDump(index: u32): Uint8Array {
   return page;
 }
 
-/** 
-  * Read a chunk of memory at `[address, address + length)`.
-  *
-  * Returns the requested memory chunk or `null` if reading triggered a page fault.
-  */ 
+/**
+ * Read a chunk of memory at `[address, address + length)`.
+ *
+ * Returns the requested memory chunk or `null` if reading triggered a page fault.
+ */
 export function getMemory(address: u32, length: u32): Uint8Array | null {
   if (interpreter === null) {
     return null;
@@ -188,9 +188,9 @@ export function getMemory(address: u32, length: u32): Uint8Array | null {
 
 /**
  * Write given `data` under memory indices `[address, address + data.length)`.
- * 
+ *
  * Returns `true` if the write was successful and `false` if page fault has been triggered.
- */ 
+ */
 export function setMemory(address: u32, data: Uint8Array): boolean {
   if (interpreter === null) {
     return false;
