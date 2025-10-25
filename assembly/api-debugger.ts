@@ -167,6 +167,11 @@ export function getPageDump(index: u32): Uint8Array {
   return page;
 }
 
+/** 
+  * Read a chunk of memory at `[address, address + length)`.
+  *
+  * Returns the requested memory chunk or `null` if reading triggered a page fault.
+  */ 
 export function getMemory(address: u32, length: u32): Uint8Array | null {
   if (interpreter === null) {
     return null;
