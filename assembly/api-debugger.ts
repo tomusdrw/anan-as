@@ -167,23 +167,33 @@ export function getPageDump(index: u32): Uint8Array {
   return page;
 }
 
-export function getMemory(address: u32, length: u32): Uint8Array {
+/**
+ * Read a chunk of memory at `[address, address + length)`.
+ *
+ * Returns the requested memory chunk or `null` if reading triggered a page fault.
+ */
+export function getMemory(address: u32, length: u32): Uint8Array | null {
   if (interpreter === null) {
-    return new Uint8Array(0);
+    return null;
   }
   const int = <Interpreter>interpreter;
   const result = new Uint8Array(length);
   const faultRes = new MaybePageFault();
   int.memory.bytesRead(faultRes, address, result, 0);
   if (faultRes.isFault) {
-    return new Uint8Array(0);
+    return null;
   }
   return result;
 }
 
-export function setMemory(address: u32, data: Uint8Array): void {
+/**
+ * Write given `data` under memory indices `[address, address + data.length)`.
+ *
+ * Returns `true` if the write was successful and `false` if page fault has been triggered.
+ */
+export function setMemory(address: u32, data: Uint8Array): boolean {
   if (interpreter === null) {
-    return;
+    return false;
   }
   const int = <Interpreter>interpreter;
   const end = address + data.length;
@@ -191,9 +201,10 @@ export function setMemory(address: u32, data: Uint8Array): void {
   for (let i = address; i < end; i++) {
     int.memory.setU8(faultRes, i, data[i - address]);
     if (faultRes.isFault) {
-      throw new Error(`Page fault at ${faultRes.fault} when setting memory.`);
+      return false;
     }
   }
+  return true;
 }
 
 function fillRegisters(registers: Registers, flat: u8[]): void {
