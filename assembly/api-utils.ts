@@ -1,5 +1,5 @@
 import { buildMemory, getAssembly, InitialChunk, InitialPage, runVm, VmInput, VmOutput } from "./api-internal";
-import { BlockGasCost, computeGasCosts } from "./gas-costs";
+import { BlockGasCost, computeGasCosts, computeLegacyGasCosts } from "./gas-costs";
 import { MemoryBuilder } from "./memory";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
@@ -13,6 +13,12 @@ export enum InputKind {
 export enum HasMetadata {
   Yes = 0,
   No = 1,
+}
+
+export function getGasLegacyCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
+  const program = prepareProgram(kind, withMetadata, input, [], [], [], []);
+
+  return computeLegacyGasCosts(program.program).values();
 }
 
 export function getGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {

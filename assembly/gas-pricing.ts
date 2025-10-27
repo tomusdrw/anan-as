@@ -1,3 +1,4 @@
+/** Number of virtual CPU execution units required to start execution of the opcode. */
 export class OpsCost {
   /** Number of accumulator register access? */
   A: u32 = 4;
@@ -9,6 +10,10 @@ export class OpsCost {
   M: u32 = 1;
   /** Number of divisions. */
   D: u32 = 1;
+
+  toString(): string {
+    return `OpsCost{ A:${this.A}, L:${this.L}, S:${this.S}, M:${this.M}, D:${this.D} }`;
+  }
 
   static alsmd(a: u32, l: u32, s: u32, m: u32, d: u32): OpsCost {
     return new OpsCost(a, l, s, m, d);
@@ -37,7 +42,7 @@ export class OpsCost {
   }
 
   add(other: OpsCost): OpsCost {
-const res = OpsCost.zero();
+    const res = OpsCost.zero();
     res.A = this.A + other.A;
     res.L = this.L + other.L;
     res.S = this.S + other.S;
@@ -47,11 +52,6 @@ const res = OpsCost.zero();
   }
 
   isLessOrEqual(other: OpsCost): boolean {
-    return this.A <= other.A
-      && this.L <= other.L
-      && this.S <= other.S
-      && this.M <= other.M
-      && this.D <= other.D;
+    return this.A <= other.A && this.L <= other.L && this.S <= other.S && this.M <= other.M && this.D <= other.D;
   }
-};
-
+}

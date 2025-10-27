@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs';
-import { InputKind, disassemble, HasMetadata } from "../build/release.js";
+import fs from "node:fs";
+import { disassemble, HasMetadata, InputKind } from "../build/release.js";
 
 main();
 
@@ -9,7 +9,7 @@ function main() {
   const args = process.argv.slice(2);
 
   let kind = InputKind.Generic;
-  if (args.length > 0 && args[0] === '--spi') {
+  if (args.length > 0 && args[0] === "--spi") {
     args.shift();
     kind = InputKind.SPI;
   }
@@ -20,10 +20,9 @@ function main() {
     process.exit(1);
   }
 
-
-  args.forEach(arg => {
+  args.forEach((arg) => {
     const f = fs.readFileSync(arg);
-    const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
+    const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
     console.log(`🤖 Assembly of ${arg} (as ${name})`);
     console.log(disassemble(Array.from(f), kind, HasMetadata.No));
   });

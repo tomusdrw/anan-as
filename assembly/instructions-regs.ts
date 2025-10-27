@@ -1,5 +1,5 @@
 import { Args } from "./arguments";
-import {reg} from "./instructions/utils";
+import { reg } from "./instructions/utils";
 
 export type RegisterIndex = u8;
 export const UNUSED_REGISTER: RegisterIndex = 255;
@@ -10,13 +10,22 @@ export class UsedRegisters {
   destination: RegisterIndex = UNUSED_REGISTER;
 
   fill(source_1: u32, source_2: u32, destination: u32): void {
-    this.source_1 = u8(reg(source_1));
-    this.source_2 = u8(reg(source_2));
-    this.destination = u8(reg(destination));
+    if (source_1 !== UNUSED_REGISTER) {
+      this.source_1 = u8(reg(source_1));
+    }
+    if (source_2 !== UNUSED_REGISTER) {
+      this.source_2 = u8(reg(source_2));
+    }
+    if (destination !== UNUSED_REGISTER) {
+      this.destination = u8(reg(destination));
+    }
   }
 
   isSourceAndDestinationTheSame(): boolean {
     return this.source_1 === this.destination && this.source_2 === UNUSED_REGISTER;
+  }
+  isOverlapBetweenSourceAndDestination(): boolean {
+    return this.source_1 === this.destination || this.source_2 === this.destination;
   }
 
   sourceOverlapsWith(vals: RegisterIndex[]): boolean {
@@ -28,7 +37,7 @@ export class UsedRegisters {
   }
 
   computeOverlapWithSource(vals: RegisterIndex[]): RegisterIndex[] {
-    const ret = [];
+    const ret: RegisterIndex[] = [];
     if (vals.indexOf(this.source_1) !== -1) {
       ret.push(this.source_1);
     }
@@ -36,6 +45,21 @@ export class UsedRegisters {
       ret.push(this.source_2);
     }
     return ret;
+  }
+
+  toString(): string {
+    let s = `UsedRegisters [`;
+    if (this.source_1 !== UNUSED_REGISTER) {
+      s += `S${this.source_1}, `;
+    }
+    if (this.source_2 !== UNUSED_REGISTER) {
+      s += `S${this.source_2}, `;
+    }
+    if (this.destination !== UNUSED_REGISTER) {
+      s += `D${this.destination}`;
+    }
+    s += "]";
+    return s;
   }
 }
 
@@ -121,7 +145,7 @@ export const REGISTERS: RegisterFill[] = [
   NO_REGISTERS,
   NO_REGISTERS,
 
-  /* 050 */ A_DESTINATION_REG, // jump_ind
+  /* 050 */ A_SOURCE_REG, // jump_ind
   /* 051 */ A_DESTINATION_REG, // load_imm
   /* 052 */ A_DESTINATION_REG, // load
   /* 053 */ A_DESTINATION_REG,
@@ -228,7 +252,7 @@ export const REGISTERS: RegisterFill[] = [
   /* 145 */ A_SOURCE_B_DESTINATION_REG,
   /* 146 */ A_SOURCE_B_DESTINATION_REG,
   /* 147 */ A_SOURCE_B_DESTINATION_REG, // cmov
-  /* 148 */ A_SOURCE_B_DESTINATION_REG, 
+  /* 148 */ A_SOURCE_B_DESTINATION_REG,
   /* 149 */ A_SOURCE_B_DESTINATION_REG, // add_imm_64
 
   /* 150 */ A_SOURCE_B_DESTINATION_REG,
