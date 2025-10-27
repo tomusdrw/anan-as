@@ -43,6 +43,13 @@ function instruction(name: string, kind: Arguments): Builder {
 export const MISSING_INSTRUCTION = instruction("INVALID", Arguments.Zero).gas(1).cycles(1).slots(1).done();
 
 export const TRAP = instruction("TRAP", Arguments.Zero).gas(1).isTerminating(true).cycles(2).slots(1).ops(0).done();
+export const FALLTHROUGH = instruction("FALLTHROUGH", Arguments.Zero)
+  .gas(1)
+  .isTerminating(true)
+  .cycles(2)
+  .slots(1)
+  .ops(0)
+  .done();
 
 export const VIRTUAL_TRAP = instruction("VIRTUAL_TRAP", Arguments.Zero)
   .gas(1)
@@ -56,17 +63,12 @@ export const UNLIKELY = instruction("UNLIKELY", Arguments.Zero).gas(1).cycles(40
 
 export const SBRK = instruction("SBRK", Arguments.TwoReg).gas(1).cycles(1).cycles(100).slots(4).ops(1).done();
 
-export const MOVE_REG = instruction("MOVE_REG", Arguments.TwoReg).gas(1).done();
+// TODO [ToDr] Diverging - need to mark `MOVE_REG` with one slot usage
+export const MOVE_REG = instruction("MOVE_REG", Arguments.TwoReg).gas(1).slots(1).done();
 
 export const INSTRUCTIONS: Instruction[] = [
   /* 000 */ TRAP,
-  /* 001 */ instruction("FALLTHROUGH", Arguments.Zero)
-    .gas(1)
-    .isTerminating(true)
-    .cycles(2)
-    .slots(1)
-    .ops(0)
-    .done(),
+  /* 001 */ FALLTHROUGH,
   MISSING_INSTRUCTION,
   /* 003 */ UNLIKELY,
   MISSING_INSTRUCTION,

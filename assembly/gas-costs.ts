@@ -75,6 +75,9 @@ export class SimulationState {
   d_dot: u32 = 4;
   /** e_dot */
   e_dot: u32 = 5;
+  /** x_dot: Currently available resources */
+  x_dot: OpsCost = OpsCost.alsmd(4, 4, 4, 1, 1);
+
   /** s_rarr: simulation state for that instruction? */
   s_vec: InstructionStatus[] = [];
   /** c_rarr: reorder buffer instructions costs? */
@@ -86,12 +89,13 @@ export class SimulationState {
   r_vec: RegisterIndex[][] = [];
   /** x_rarr: a vector of instructions (and their costs) that await execution by virtual CPU. */
   x_vec: OpsCost[] = [];
+
   /** Additional data - instruction name pointer */
   name_vec: usize[] = [];
   /** Additional data - vcpu history for given instruction (0 - no vcpu) */
   hist_vec: i32[][] = [];
-
-  x_dot: OpsCost = OpsCost.alsmd(4, 4, 4, 1, 1);
+  /** Additional data - helper to detect whether virtual trap should be processed. */
+  was_last_instruction_terminating: boolean = false;
 
   constructor(
     /** no_dot_i */
@@ -165,9 +169,17 @@ function checkReorderBuffer(_stepN: u32, state: SimulationState): u32 {
 export function simulationStep(stepN: u32, state: SimulationState, p: Program): boolean {
   const registers = usedRegisters(p, state.pc);
   const cond2 =
-    !p.basicBlocks.isStart(state.pc) && d_revhat(p, state.pc, registers) <= state.d_dot && state.s_vec.length < 32;
-  // TODO [ToDr] Diverging!
-  const canDecodeMore = state.pc <= u32(p.code.length);
+    !p.basicBlocks.isStart(state.pc) &&
+    d_revhat(p, state.pc, registers) <= state.d_dot &&
+    countActive(state.s_vec) < 32;
+  // TODO [ToDr] Diverging! No limit in GP?
+  let canDecodeMore = state.pc < u32(p.code.length);
+  // we check if we need to process a virtual trap at the end of the program.
+  const isBeyondProgram = state.pc === u32(p.code.length);
+  // we are at virtual trap and previous instruction was not terminating, so decode it
+  if (isBeyondProgram && !state.was_last_instruction_terminating) {
+    canDecodeMore = true;
+  }
   if (canDecodeMore && (stepN === 0 || cond2)) {
     decodeMoreInstructions(stepN, state, p);
     console.log(`(step=${stepN}) decoding. Done: ${state}`);
@@ -180,24 +192,25 @@ export function simulationStep(stepN: u32, state: SimulationState, p: Program): 
     return true;
   }
 
-  if (stepN !== 0 && isZero(state.s_vec)) {
+  if (stepN !== 0 && countActive(state.s_vec) === 0) {
     console.log(`(step=${stepN}) done: ${state}`);
     return false;
   }
 
   executeVcpu(stepN, state);
-  console.log(`(step=${stepN}) vcpu. Done: ${state}`);
+  // console.log(`(step=${stepN}) vcpu. Done: ${state}`);
   return true;
 }
 
-/** Check that all instructions have been removed from processing. */
-function isZero(s_vec: InstructionStatus[]): boolean {
+/** Count all instructions that are still active. */
+function countActive(s_vec: InstructionStatus[]): i32 {
+  let count = 0;
   for (let j = 0; j < s_vec.length; j++) {
     if (s_vec[j] !== InstructionStatus.REMOVED) {
-      return false;
+      count += 1;
     }
   }
-  return true;
+  return count;
 }
 
 /**
@@ -210,6 +223,7 @@ function decodeMoreInstructions(_stepN: u32, state: SimulationState, p: Program)
   const iData = getInstructionData(p, state.pc);
   const registers = usedRegisters(p, state.pc);
   const len = state.getDecodedCount();
+  state.was_last_instruction_terminating = iData.isTerminating;
   console.log(`Decoding opcode: ${changetype<string>(iData.namePtr)}. ${registers}`);
   // mov
   if (iData === MOVE_REG) {
@@ -340,8 +354,7 @@ function executeVcpu(_stepN: u32, state: SimulationState): void {
   }
   let sum = state.x_dot;
   for (let j = 0; j < state.x_vec.length; j++) {
-    // TODO [ToDr] diverging. The executing case seems not needed?
-    if (/*state.s_vec[j] === InstructionStatus.EXECUTING && */ state.c_vec[j] === 1) {
+    if (previous_s[j] === InstructionStatus.EXECUTING && previous_c[j] === 1) {
       sum = sum.add(state.x_vec[j]);
     }
   }
