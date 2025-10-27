@@ -99,12 +99,16 @@ export class SimulationState {
   ) {}
 
   getDecodedCount(): i32 {
+    // TODO [ToDr] is this just `n_dot`?
     const all = [this.s_vec.length, this.x_vec.length, this.p_vec.length, this.c_vec.length];
     const min: i32 = all[0];
     for (let i = 0; i < all.length; i++) {
       if (all[i] !== min) {
         throw new Error(`All vectors are expected to have the same length! Got: ${all[i]}, want: ${min}`);
       }
+    }
+    if (min !== this.n_dot) {
+      throw new Error(`min not matching n_dot: ${min} vs ${this.n_dot}`);
     }
 
     return min;
@@ -186,9 +190,8 @@ export function simulationStep(stepN: u32, state: SimulationState, p: Program): 
   return true;
 }
 
+/** Check that all instructions have been removed from processing. */
 function isZero(s_vec: InstructionStatus[]): boolean {
-  // TODO [ToDr] not sure how to intepret this?
-  // I guess when we have |s_vec| === 0 zero we only have zeroed entries?
   for (let j = 0; j < s_vec.length; j++) {
     if (s_vec[j] !== InstructionStatus.REMOVED) {
       return false;
@@ -206,26 +209,24 @@ function isZero(s_vec: InstructionStatus[]): boolean {
 function decodeMoreInstructions(_stepN: u32, state: SimulationState, p: Program): void {
   const iData = getInstructionData(p, state.pc);
   const registers = usedRegisters(p, state.pc);
+  const len = state.getDecodedCount();
   console.log(`Decoding opcode: ${changetype<string>(iData.namePtr)}. ${registers}`);
   // mov
   if (iData === MOVE_REG) {
     state.pc = state.pc + 1 + p.mask.skipBytesToNextInstruction(state.pc);
     state.d_dot = state.d_dot - 1;
-    const len = state.getDecodedCount();
-    for (let j = 0; j < len; j++) {
-      const r_vec = state.r_vec[j];
-      if (registers.isSourceAndDestinationTheSame()) {
-        // no change
-        state.r_vec[j] = r_vec;
-      } else if (registers.sourceOverlapsWith(r_vec)) {
-        if (registers.destination !== UNUSED_REGISTER) {
+    // check if our destination register needs to overwrite any previous instructions
+    if (registers.destination !== UNUSED_REGISTER) {
+      for (let j = 0; j < len; j++) {
+        const r_vec = state.r_vec[j];
+        const isPresent = state.r_vec[j].includes(registers.destination);
+        if (!isPresent && registers.sourceOverlapsWith(r_vec)) {
           state.r_vec[j].push(registers.destination);
+        } else if (isPresent) {
+          // remove if present
+          const idx = state.r_vec[j].indexOf(registers.destination);
+          state.r_vec[j].splice(idx, 1);
         }
-      } else if (registers.destinationOverlapsWith(r_vec)) {
-        state.r_vec[j] = registers.computeOverlapWithSource(r_vec);
-      } else {
-        // no change
-        state.r_vec[j] = r_vec;
       }
     }
     // decode
@@ -233,15 +234,24 @@ function decodeMoreInstructions(_stepN: u32, state: SimulationState, p: Program)
     const pc = state.pc;
     state.pc = pc + 1 + p.mask.skipBytesToNextInstruction(pc);
     state.d_dot = state.d_dot - d_revhat(p, pc, registers);
-    const idx = state.n_dot;
-    state.s_vec[idx] = InstructionStatus.DECODED;
-    state.c_vec[idx] = c_revhat(p, pc);
-    state.x_vec[idx] = x_revhat(p, pc);
-    state.r_vec[idx] = registers.destination === UNUSED_REGISTER ? [] : [registers.destination];
-    state.p_vec[idx] = getInstructionsWithOverlappingRegisters(registers, state.r_vec);
+    const n_dot = state.n_dot;
     state.n_dot = state.n_dot + 1;
-    state.name_vec[idx] = iData.namePtr;
-    state.hist_vec[idx] = [];
+
+    state.s_vec[n_dot] = InstructionStatus.DECODED;
+    state.c_vec[n_dot] = c_revhat(p, pc);
+    state.x_vec[n_dot] = x_revhat(p, pc);
+    state.p_vec[n_dot] = getInstructionsWithOverlappingRegisters(registers, state.r_vec);
+    if (registers.destination !== UNUSED_REGISTER) {
+      for (let j = 0; j < len; j++) {
+        const idx = state.r_vec[j].indexOf(registers.destination);
+        state.r_vec[j].splice(idx, idx === -1 ? 0 : 1);
+      }
+      state.r_vec[n_dot] = [registers.destination];
+    } else {
+      state.r_vec[n_dot] = [];
+    }
+    state.name_vec[n_dot] = iData.namePtr;
+    state.hist_vec[n_dot] = [];
   }
 }
 
@@ -251,7 +261,7 @@ function getInstructionsWithOverlappingRegisters(registers: UsedRegisters, r_vec
   // we can safely start executing something further down the line in parallel (branch prediction?)
   if (useTestVersion) {
     const maxForEachDestination = new Map<u32, u32>();
-    for (let j = 0; j < r_vec.length - 1; j++) {
+    for (let j = 0; j < r_vec.length; j++) {
       const overlap = registers.computeOverlapWithSource(r_vec[j]);
       for (let k = 0; k < overlap.length; k++) {
         maxForEachDestination.set(overlap[k], j);
@@ -262,8 +272,7 @@ function getInstructionsWithOverlappingRegisters(registers: UsedRegisters, r_vec
 
   // below code is implementing the GP (but it fails some tests?)
   const res: u32[] = [];
-  // TODO [ToDr] we do -1 here, because we've already added the new `r_vec` (so we always have overlap with ourselves)
-  for (let j = 0; j < r_vec.length - 1; j++) {
+  for (let j = 0; j < r_vec.length; j++) {
     if (registers.sourceOverlapsWith(r_vec[j])) {
       res.push(j);
     }
@@ -331,7 +340,8 @@ function executeVcpu(_stepN: u32, state: SimulationState): void {
   }
   let sum = state.x_dot;
   for (let j = 0; j < state.x_vec.length; j++) {
-    if (state.c_vec[j] === 1) {
+    // TODO [ToDr] diverging. The executing case seems not needed?
+    if (/*state.s_vec[j] === InstructionStatus.EXECUTING && */ state.c_vec[j] === 1) {
       sum = sum.add(state.x_vec[j]);
     }
   }
