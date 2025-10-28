@@ -12,7 +12,6 @@ import {
   MOVE_REG,
   TRAP,
   UNLIKELY,
-  VIRTUAL_TRAP,
 } from "./instructions";
 import { REGISTERS, RegisterIndex, UNUSED_REGISTER, UsedRegisters } from "./instructions-regs";
 import { decodeArguments, Program } from "./program";
@@ -70,7 +69,7 @@ export class SimulationState {
   /** c_dot: Calculated cost */
   c_dot: u32 = 0;
   /** n_dot */
-  n_dot: u32 = 0;
+  n_dot: i32 = 0;
   /** d_dot: pending slots? */
   d_dot: u32 = 4;
   /** e_dot */
@@ -84,7 +83,7 @@ export class SimulationState {
   c_vec: i32[] = [];
   /** p_rarr: which previous instructions we have overlapping registers with? */
   p_vec: u32[][] = [];
-  // TODO [ToDr] Rather use fixed-size object to store registers?
+  // TODO [ToDr] Rather use fixed-size object to store registers? We can have up to 13?
   /** r_rarr */
   r_vec: RegisterIndex[][] = [];
   /** x_rarr: a vector of instructions (and their costs) that await execution by virtual CPU. */
@@ -94,35 +93,34 @@ export class SimulationState {
   name_vec: usize[] = [];
   /** Additional data - vcpu history for given instruction (0 - no vcpu) */
   hist_vec: i32[][] = [];
-  /** Additional data - helper to detect whether virtual trap should be processed. */
+  /** TODO [ToDr] Diverging? Additional data - helper to detect whether virtual trap should be processed. */
   was_last_instruction_terminating: boolean = false;
+  isDebug: boolean = false;
 
   constructor(
     /** no_dot_i */
     public pc: PC,
   ) {}
 
-  getDecodedCount(): i32 {
-    // TODO [ToDr] is this just `n_dot`?
-    const all = [this.s_vec.length, this.x_vec.length, this.p_vec.length, this.c_vec.length];
-    const min: i32 = all[0];
-    for (let i = 0; i < all.length; i++) {
-      if (all[i] !== min) {
-        throw new Error(`All vectors are expected to have the same length! Got: ${all[i]}, want: ${min}`);
+  getSimulationDiagram(): string {
+    let hist = "";
+    for (let j = 0; j < this.hist_vec.length; j++) {
+      hist += `${j.toString().padStart(2, " ")}:`;
+      for (let i = 0; i < this.hist_vec[j].length; i++) {
+        if (this.hist_vec[j][i] !== InstructionStatus.EMPTY) {
+          hist += statusToStr(this.hist_vec[j][i]);
+        }
       }
+      hist += `  ${changetype<string>(this.name_vec[j])}\n`;
     }
-    if (min !== this.n_dot) {
-      throw new Error(`min not matching n_dot: ${min} vs ${this.n_dot}`);
-    }
-
-    return min;
+    return hist;
   }
 
   toString(): string {
     let s = `pc=${this.pc}, d_dot=${this.d_dot}, e_dot=${this.e_dot}\n`;
     // print out
     s += `  :s| c | r |  p  | x\n`;
-    const len = this.getDecodedCount();
+    const len = this.n_dot;
     for (let j = 0; j < len; j++) {
       s += `${j.toString().padStart(2, " ")}:`;
       s += `${statusToStr(this.s_vec[j])}|`;
@@ -132,7 +130,7 @@ export class SimulationState {
       s += ` ${this.x_vec[j]} `;
       s += `${changetype<string>(this.name_vec[j])}\n`;
     }
-    s += `c_dot=${this.c_dot}, n_dot=${this.n_dot}, x_dot=${this.x_dot}`;
+    s += `c_dot=${this.c_dot}, x_dot=${this.x_dot}`;
     return s;
   }
 }
@@ -142,10 +140,9 @@ const ERROR = 2 ** 32 - 1;
  * A.52: The function S(Ξn) which checks which instruction inside of the reorder buffer is ready to start executing (and whether such an instruction even exists) is defined as follows:
  */
 function checkReorderBuffer(_stepN: u32, state: SimulationState): u32 {
-  const len = state.getDecodedCount();
+  const len = state.n_dot;
   for (let j = 0; j < len; j++) {
     const s_cond = state.s_vec[j] === InstructionStatus.WAITING;
-    // TODO [ToDr] what does this comparison mean?
     const x_cond = state.x_vec[j].isLessOrEqual(state.x_dot);
     if (s_cond && x_cond) {
       // now check all `k`
@@ -181,8 +178,10 @@ export function simulationStep(stepN: u32, state: SimulationState, p: Program): 
     canDecodeMore = true;
   }
   if (canDecodeMore && (stepN === 0 || cond2)) {
-    decodeMoreInstructions(stepN, state, p);
-    console.log(`(step=${stepN}) decoding. Done: ${state}`);
+    decodeMoreInstructions(state, p);
+    if (state.isDebug) {
+      console.log(`(step=${stepN}) decoding. Done: ${state}`);
+    }
     return true;
   }
 
@@ -193,7 +192,9 @@ export function simulationStep(stepN: u32, state: SimulationState, p: Program): 
   }
 
   if (stepN !== 0 && countActive(state.s_vec) === 0) {
-    console.log(`(step=${stepN}) done: ${state}`);
+    if (state.isDebug) {
+      console.log('exiting');
+    }
     return false;
   }
 
@@ -219,12 +220,14 @@ function countActive(s_vec: InstructionStatus[]): i32 {
  * (those pieces of state which are not explicitly mentioned by the equations are assumed to
  * be unchanged and omitted for clarity):
  */
-function decodeMoreInstructions(_stepN: u32, state: SimulationState, p: Program): void {
+function decodeMoreInstructions(state: SimulationState, p: Program): void {
   const iData = getInstructionData(p, state.pc);
   const registers = usedRegisters(p, state.pc);
-  const len = state.getDecodedCount();
+  const len = state.n_dot;
   state.was_last_instruction_terminating = iData.isTerminating;
-  console.log(`Decoding opcode: ${changetype<string>(iData.namePtr)}. ${registers}`);
+  if (state.isDebug) {
+    console.log(`Decoding opcode: ${changetype<string>(iData.namePtr)}. ${registers}`);
+  }
   // mov
   if (iData === MOVE_REG) {
     state.pc = state.pc + 1 + p.mask.skipBytesToNextInstruction(state.pc);
@@ -270,21 +273,6 @@ function decodeMoreInstructions(_stepN: u32, state: SimulationState, p: Program)
 }
 
 function getInstructionsWithOverlappingRegisters(registers: UsedRegisters, r_vec: RegisterIndex[][]): u32[] {
-  const useTestVersion = false;
-  // TODO [ToDr] diverging: seems that if some later instruction overwrites the registers,
-  // we can safely start executing something further down the line in parallel (branch prediction?)
-  if (useTestVersion) {
-    const maxForEachDestination = new Map<u32, u32>();
-    for (let j = 0; j < r_vec.length; j++) {
-      const overlap = registers.computeOverlapWithSource(r_vec[j]);
-      for (let k = 0; k < overlap.length; k++) {
-        maxForEachDestination.set(overlap[k], j);
-      }
-    }
-    return maxForEachDestination.values();
-  }
-
-  // below code is implementing the GP (but it fails some tests?)
   const res: u32[] = [];
   for (let j = 0; j < r_vec.length; j++) {
     if (registers.sourceOverlapsWith(r_vec[j])) {
@@ -313,7 +301,7 @@ function executePendingInstructions(stepN: u32, state: SimulationState): void {
  * CPU pipeline is defined as follows:
  */
 function executeVcpu(_stepN: u32, state: SimulationState): void {
-  const len = state.getDecodedCount();
+  const len = state.n_dot;
   const previous_s = state.s_vec.slice();
   const previous_c = state.c_vec.slice();
   let vcpuStep = 0;
@@ -328,7 +316,6 @@ function executeVcpu(_stepN: u32, state: SimulationState): void {
     // check if previous steps are all finished
     let canZero = true;
     for (let k = 0; k <= j; k++) {
-      // TODO [ToDr] we probably can zero-out the DONE steps?
       canZero = canZero && (previous_s[k] === InstructionStatus.RETIRED || previous_s[k] === InstructionStatus.REMOVED);
     }
     // transition
@@ -381,7 +368,7 @@ function usedRegisters(p: Program, pc: PC): UsedRegisters {
   const args = decodeArguments(argsRes, iData.kind, p.code, pc + 1, skipBytes);
   const regs = new UsedRegisters();
   // TODO [ToDr] shit
-  if (iData !== VIRTUAL_TRAP) {
+  if (iData !== MISSING_INSTRUCTION) {
     const opcode = p.code[pc];
     if (<i32>opcode < REGISTERS.length) {
       REGISTERS[opcode](args, regs);
@@ -433,10 +420,11 @@ function getInstructionData(p: Program, pc: PC): Instruction {
     const opcode = p.code[pc];
     return <i32>opcode < INSTRUCTIONS.length ? INSTRUCTIONS[opcode] : MISSING_INSTRUCTION;
   }
-  return VIRTUAL_TRAP;
+  return MISSING_INSTRUCTION;
 }
 
-export function computeGasCosts(p: Program): Map<u32, BlockGasCost> {
+const print = [6851]//;, 67410, 506904, 492438, 377875, 314893, 314481, 303645, 303175, 303130, 300149, 299294, 297619, 285803, 280142, 279643, 279284, 279256, 273664, 273495, 273121, 272896, 271208, 271070, 269998, 249489, 212089, 170166, 134486, 128767];
+export function computeGasCosts(p: Program, isDebug: boolean = false): Map<u32, BlockGasCost> {
   const blocks: Map<u32, BlockGasCost> = new Map();
   const len = p.code.length;
 
@@ -444,28 +432,20 @@ export function computeGasCosts(p: Program): Map<u32, BlockGasCost> {
     if (!p.basicBlocks.isStart(pc)) {
       continue;
     }
-    console.log(`[${pc}] Starting simulation`);
     let stepN = 0;
     const state = new SimulationState(pc);
+    let isDebugOn = isDebug || print.indexOf(pc) !== -1;
+    state.isDebug = isDebugOn;
     for (;;) {
-      console.log(`[${pc}] step=${stepN}`);
       const res = simulationStep(stepN, state, p);
       if (res === false) {
         const r = new BlockGasCost();
         r.pc = pc;
         r.gas = i32(state.c_dot) > 3 ? i32(state.c_dot) - 3 : 1;
-        console.log(`[${pc}] simulation done: cost=${r.gas}`);
-        let hist = "";
-        for (let j = 0; j < state.hist_vec.length; j++) {
-          hist += `${j.toString().padStart(2, " ")}:`;
-          for (let i = 0; i < state.hist_vec[j].length; i++) {
-            if (state.hist_vec[j][i] !== InstructionStatus.EMPTY) {
-              hist += statusToStr(state.hist_vec[j][i]);
-            }
-          }
-          hist += `  ${changetype<string>(state.name_vec[j])}\n`;
+        if (isDebug || print.indexOf(pc) !== -1) {
+          console.log(`[${pc}] simulation done: cost=${r.gas}`);
+          console.log(state.getSimulationDiagram());
         }
-        console.log(hist);
         blocks.set(pc, r);
         break;
       }
@@ -473,6 +453,7 @@ export function computeGasCosts(p: Program): Map<u32, BlockGasCost> {
     }
   }
 
+  console.log('gas costs computed, returning');
   return blocks;
 }
 
