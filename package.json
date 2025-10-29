@@ -15,7 +15,8 @@
 		"asbuild:release-stub": "asc assembly/index.ts --uncheckedBehavior=always --target release-stub",
 		"asbuild:raw": "asc assembly/index.ts --target raw",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
-		"build": "npm run asbuild:all && npm run asbuild:test && npm run tsbuild && npm run cp-build",
+		"build": "npm run asbuild:all && npm run asbuild:test && npm run tsbuild && npm run build:inline && npm run cp-build",
+		"build:inline": "tsx ./bin/build-inline.ts",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
 		"format": "biome format --write",
 		"fuzz": "tsx ./bin/fuzz.ts",
@@ -78,8 +79,14 @@
 			"types": "./build/debug-raw.d.ts"
 		},
 		"./debug.wasm": "./build/debug.wasm",
+		"./debug-inline.js": "./build/debug-inline.js",
 		"./release.wasm": "./build/release.wasm",
-		"./release-mini.wasm": "./build/release-mini.wasm"
+		"./release-inline.js": "./build/release-inline.js",
+		"./release-mini.wasm": "./build/release-mini.wasm",
+		"./release-mini-inline.js": "./build/release-mini-inline.js",
+		"./release-stub.wasm": "./build/release-stub.wasm",
+		"./release-stub-inline.js": "./build/release-stub-inline.js"
+
 	},
 	"dependencies": {
 		"@typeberry/lib": "^0.2.0",
