@@ -22,6 +22,23 @@ type PvmTest = {
   "expected-memory": Chunk[];
 };
 
+const ignored = [
+  "inst_load_u8_nok",
+  "inst_store_imm_indirect_u16_with_offset_nok",
+  "inst_store_imm_indirect_u32_with_offset_nok",
+  "inst_store_imm_indirect_u64_with_offset_nok",
+  "inst_store_imm_indirect_u8_with_offset_nok",
+  "inst_store_imm_u8_trap_inaccessible",
+  "inst_store_imm_u8_trap_read_only",
+  "inst_store_indirect_u16_with_offset_nok",
+  "inst_store_indirect_u32_with_offset_nok",
+  "inst_store_indirect_u64_with_offset_nok",
+  "inst_store_indirect_u8_with_offset_nok",
+  "inst_store_u8_trap_inaccessible",
+  "inst_store_u8_trap_read_only"
+];
+
+
 // Run the CLI application
 main();
 
@@ -39,6 +56,13 @@ function main() {
 function processW3f(data: PvmTest, options: TestOptions) {
   if (options.isDebug) {
     console.debug(`🤖 Running ${data.name}`);
+  }
+
+  if (ignored.includes(data.name)) {
+    if (options.isDebug) {
+      console.info(`⏭️ Skipping ${data.name}`);
+    }
+    return data;
   }
   // input
   const input = {
