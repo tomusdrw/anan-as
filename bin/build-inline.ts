@@ -46,12 +46,14 @@ for (const [targetName, config] of Object.entries(asconfig.targets)) {
 // Target: ${targetName}
 // Source: ${config.outFile}
 
+import raw from './debug-raw.js';
+
 export const wasmBase64 = "${wasmBase64}";
 
 // Helper function to decode and instantiate the module
 export async function instantiate(imports) {
 	const wasmBytes = Uint8Array.from(atob(wasmBase64), c => c.charCodeAt(0));
-	return await WebAssembly.instantiate(wasmBytes, imports);
+	return raw.instantiate(wasmBytes, imports);
 }
 
 // Helper function to just get the bytes
@@ -73,7 +75,7 @@ import {__AdapterExports} from "./debug-raw";
 
 export const wasmBase64: string;
 
-export function instantiate(imports?: any): Promise<typeof __AdapterExports>;
+export function instantiate(imports?: { env?: any }): Promise<typeof __AdapterExports>;
 
 export function getWasmBytes(): Uint8Array;
 `;
