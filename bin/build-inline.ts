@@ -71,11 +71,11 @@ export function getWasmBytes() {
 // Target: ${targetName}
 // Source: ${config.outFile}
 
-import {__AdapterExports} from "./debug-raw";
+import {__AdaptedExports} from "./debug-raw.d.ts";
 
 export const wasmBase64: string;
 
-export function instantiate(imports?: { env?: any }): Promise<typeof __AdapterExports>;
+export function instantiate(imports?: { env?: any }): Promise<typeof __AdaptedExports>;
 
 export function getWasmBytes(): Uint8Array;
 `;
