@@ -46,7 +46,7 @@ for (const [targetName, config] of Object.entries(asconfig.targets)) {
 // Target: ${targetName}
 // Source: ${config.outFile}
 
-import raw from './debug-raw.js';
+import * as raw from './debug-raw.js';
 
 export const wasmBase64 = "${wasmBase64}";
 
