@@ -78,14 +78,26 @@
 			"import": "./build/debug-raw.js",
 			"types": "./build/debug-raw.d.ts"
 		},
+		"./debug-inline": {
+			"import": "./build/debug-inline.js",
+			"types": "./build/debug-inline.d.ts"
+		},
+		"./release-inline": {
+			"import": "./build/release-inline.js",
+			"types": "./build/release-inline.d.ts"
+		},
+		"./release-mini-inline": {
+			"import": "./build/release-mini-inline.js",
+			"types": "./build/release-mini-inline.d.ts"
+		},
+		"./release-stub-inline": {
+			"import": "./build/release-stub-inline.js",
+			"types": "./build/release-stub-inline.d.ts"
+		},
 		"./debug.wasm": "./build/debug.wasm",
-		"./debug-inline": "./build/debug-inline.js",
 		"./release.wasm": "./build/release.wasm",
-		"./release-inline": "./build/release-inline.js",
 		"./release-mini.wasm": "./build/release-mini.wasm",
-		"./release-mini-inline": "./build/release-mini-inline.js",
-		"./release-stub.wasm": "./build/release-stub.wasm",
-		"./release-stub-inline": "./build/release-stub-inline.js"
+		"./release-stub.wasm": "./build/release-stub.wasm"
 
 	},
 	"dependencies": {
