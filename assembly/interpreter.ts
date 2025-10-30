@@ -163,7 +163,6 @@ export class Interpreter {
             return false;
           }
           if (outcome.result === Result.FAULT) {
-            this.gas.sub(1);
             // access to reserved memory should end with a panic.
             if (outcome.exitCode < RESERVED_MEMORY) {
               this.status = Status.PANIC;
@@ -174,7 +173,6 @@ export class Interpreter {
             return false;
           }
           if (outcome.result === Result.FAULT_ACCESS) {
-            this.gas.sub(1);
             this.status = Status.PANIC;
             // this.exitCode = outcome.exitCode;
             return false;

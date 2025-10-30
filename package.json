@@ -1,7 +1,7 @@
 {
 	"name": "@fluffylabs/anan-as",
 	"description": "AssemblyScript PVM interpreter.",
-	"version": "1.0.0",
+	"version": "1.1.1",
 	"main": "./bin/index.ts",
 	"repository": {
 		"url": "https://github.com/tomusdrw/anan-as"
@@ -15,7 +15,8 @@
 		"asbuild:release-stub": "asc assembly/index.ts --uncheckedBehavior=always --target release-stub",
 		"asbuild:raw": "asc assembly/index.ts --target raw",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
-		"build": "npm run asbuild:all && npm run asbuild:test && npm run tsbuild && npm run cp-build",
+		"build": "npm run asbuild:all && npm run asbuild:test && npm run tsbuild && npm run build:inline && npm run cp-build",
+		"build:inline": "tsx ./bin/build-inline.ts",
 		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
 		"format": "biome format --write",
 		"fuzz": "tsx ./bin/fuzz.ts",
@@ -77,9 +78,27 @@
 			"import": "./build/debug-raw.js",
 			"types": "./build/debug-raw.d.ts"
 		},
+		"./debug-inline": {
+			"import": "./build/debug-inline.js",
+			"types": "./build/debug-inline.d.ts"
+		},
+		"./release-inline": {
+			"import": "./build/release-inline.js",
+			"types": "./build/release-inline.d.ts"
+		},
+		"./release-mini-inline": {
+			"import": "./build/release-mini-inline.js",
+			"types": "./build/release-mini-inline.d.ts"
+		},
+		"./release-stub-inline": {
+			"import": "./build/release-stub-inline.js",
+			"types": "./build/release-stub-inline.d.ts"
+		},
 		"./debug.wasm": "./build/debug.wasm",
 		"./release.wasm": "./build/release.wasm",
-		"./release-mini.wasm": "./build/release-mini.wasm"
+		"./release-mini.wasm": "./build/release-mini.wasm",
+		"./release-stub.wasm": "./build/release-stub.wasm"
+
 	},
 	"dependencies": {
 		"@typeberry/lib": "^0.2.0",
