@@ -63,6 +63,22 @@ export function getWasmBytes() {
 		// Write the JS file
 		writeFileSync(outputPath, jsContent, "utf-8");
 
+		// Generate and write the .d.ts file
+		const dtsPath = outputPath.replace(/\.js$/, ".d.ts");
+		const dtsContent = `// Auto-generated type definitions for inline WASM module
+// Target: ${targetName}
+// Source: ${config.outFile}
+
+import {__AdapterExports} from "./debug-raw";
+
+export const wasmBase64: string;
+
+export function instantiate(imports?: any): Promise<typeof __AdapterExports>;
+
+export function getWasmBytes(): Uint8Array;
+`;
+		writeFileSync(dtsPath, dtsContent, "utf-8");
+
 		console.log(`✓ ${targetName}: ${outputPath} (${Math.round(wasmBase64.length / 1024)} KB base64)`);
 	} catch (error) {
 		console.error(`✗ ${targetName}: Failed to process ${wasmPath}`);

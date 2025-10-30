@@ -79,13 +79,13 @@
 			"types": "./build/debug-raw.d.ts"
 		},
 		"./debug.wasm": "./build/debug.wasm",
-		"./debug-inline.js": "./build/debug-inline.js",
+		"./debug-inline": "./build/debug-inline.js",
 		"./release.wasm": "./build/release.wasm",
-		"./release-inline.js": "./build/release-inline.js",
+		"./release-inline": "./build/release-inline.js",
 		"./release-mini.wasm": "./build/release-mini.wasm",
-		"./release-mini-inline.js": "./build/release-mini-inline.js",
+		"./release-mini-inline": "./build/release-mini-inline.js",
 		"./release-stub.wasm": "./build/release-stub.wasm",
-		"./release-stub-inline.js": "./build/release-stub-inline.js"
+		"./release-stub-inline": "./build/release-stub-inline.js"
 
 	},
 	"dependencies": {
