@@ -53,7 +53,8 @@ export const wasmBase64 = "${wasmBase64}";
 // Helper function to decode and instantiate the module
 export async function instantiate(imports) {
 	const wasmBytes = Uint8Array.from(atob(wasmBase64), c => c.charCodeAt(0));
-	return raw.instantiate(wasmBytes, imports);
+	const module = await WebAssembly.compile(wasmBytes);
+	return raw.instantiate(module, imports);
 }
 
 // Helper function to just get the bytes
