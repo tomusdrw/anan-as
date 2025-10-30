@@ -1,7 +1,7 @@
 {
 	"name": "@fluffylabs/anan-as",
 	"description": "AssemblyScript PVM interpreter.",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"main": "./bin/index.ts",
 	"repository": {
 		"url": "https://github.com/tomusdrw/anan-as"
