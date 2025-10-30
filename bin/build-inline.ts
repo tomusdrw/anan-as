@@ -49,11 +49,14 @@ for (const [targetName, config] of Object.entries(asconfig.targets)) {
 import * as raw from './debug-raw.js';
 
 export const wasmBase64 = "${wasmBase64}";
+let compiledModulePromise = null;
 
 // Helper function to decode and instantiate the module
 export async function instantiate(imports) {
-	const wasmBytes = Uint8Array.from(atob(wasmBase64), c => c.charCodeAt(0));
-	const module = await WebAssembly.compile(wasmBytes);
+	if (compiledModulePromise === null) {
+		compiledModulePromise = WebAssembly.compile(getWasmBytes());
+	}
+	const module = await compiledModulePromise;
 	return raw.instantiate(module, imports);
 }
 
