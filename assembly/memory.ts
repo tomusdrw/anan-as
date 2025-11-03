@@ -191,6 +191,37 @@ export class Memory {
     this.setBytes(faultRes, address, value, 8);
   }
 
+  /**
+   * DO NOT USE.
+   *
+   * @deprecated exposed temporarily for debugger/typeberry API.
+   */
+  getMemory(fault: MaybePageFault, address: u32, length: u32): Uint8Array | null {
+
+    // first traverse memory and see if we don't page fault
+    let nextAddress = address;
+    let destinationIndex = i32(0);
+    let iLength = i32(length);
+    while (destinationIndex < iLength) {
+      const pageData = this.pageResult;
+      this.getPage(fault, pageData, Access.Read, nextAddress);
+      if (fault.isFault) {
+        return null;
+      }
+      nextAddress += PAGE_SIZE;
+    }
+
+
+    // only after, actually allocate and read the bytes.
+    const destination = new Uint8Array(length);
+    this.bytesRead(fault, address, destination, 0)
+    if (fault.isFault) {
+      return null;
+    }
+
+    return destination;
+  }
+
   bytesRead(faultRes: MaybePageFault, address: u32, destination: Uint8Array, destinationOffset: u32): void {
     let nextAddress = address;
     let destinationIndex = i32(destinationOffset);
@@ -218,6 +249,7 @@ export class Memory {
     return;
   }
 
+  /** Write bytes from given `source` (with `sourceOffset`) at given `address`. */
   bytesWrite(faultRes: MaybePageFault, address: u32, source: Uint8Array, sourceOffset: u32): void {
     let nextAddress = address;
     let sourceIndex = i32(sourceOffset);
@@ -326,6 +358,7 @@ export class Memory {
     return;
   }
 
+  /** Write some bytes to at most 2 pages. */
   private setBytes(faultRes: MaybePageFault, address: u32, value: u64, bytes: u8): void {
     const r = this.chunksResult;
     this.getChunks(faultRes, r, Access.Write, address, bytes);
