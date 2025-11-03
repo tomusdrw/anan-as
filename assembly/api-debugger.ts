@@ -171,15 +171,41 @@ export function getPageDump(index: u32): Uint8Array {
  * Read a chunk of memory at `[address, address + length)`.
  *
  * Returns the requested memory chunk or `null` if reading triggered a page fault.
+ *
+ * @deprecated Getting memory like that is extremely inefficient (copying mulitple times)
+ * and error prone (we may not be able to allocate).
+ * Instead WASM should be able to return memory pointers for already allocated pages.
+ * So reading memory on the caller side should be something like this:
+ * ```ts
+ * let pagesRead = 0;
+ * for (let address = start; address < end; address += PAGE_SIZE) {
+ *   const page = address >> PAGE_SIZE_SHIFT;
+ *   const maybePointer = getPagePointer(page);
+ *   // check page fault
+ *   if (maybePointer === null) {
+ *     throw new Error(`Page fault at ${page << PAGE_SIZE_SHIFT}`);
+ *   }
+ *   // otherwise copy to JS
+ *   destination.set(
+ *     pagesRead << PAGE_SIZE_SHIFT,
+ *     new Uint8Array(wasm.instance.memory, maybePointer, Math.min(end, PAGE_SIZE))
+ *   );
+ *   pagesRead += 1;
+ * }
+ * ```
+ *
+ * goals:
+ * 1. No additional allocations on the WASM side
+ * 2. Copying directly from wasm memory on the JS side
+ *
  */
 export function getMemory(address: u32, length: u32): Uint8Array | null {
   if (interpreter === null) {
     return null;
   }
   const int = <Interpreter>interpreter;
-  const result = new Uint8Array(length);
   const faultRes = new MaybePageFault();
-  int.memory.bytesRead(faultRes, address, result, 0);
+  const result = int.memory.getMemory(faultRes, address, length);
   if (faultRes.isFault) {
     return null;
   }

@@ -110,4 +110,48 @@ export const TESTS: Test[] = [
     assert.isEqual(e.isFault, false, "e.fault");
     return assert;
   }),
+  test("should page fault when going beyond memory", (assert) => {
+    const address = 2343629385;
+    const length = 2145386496;
+
+    const mem = new MemoryBuilder().setData(Access.Read, address, new Uint8Array(0)).build();
+    const fault = new MaybePageFault();
+    const res = mem.getMemory(fault, address, length);
+
+    assert.isEqual(fault.isFault, true);
+    assert.isEqual(res, null);
+
+    return assert;
+  }),
+  test("should page fault when trying to allocate too much", (assert) => {
+    const address = 16 * PAGE_SIZE;
+    const length = 2145386496;
+
+    const mem = new MemoryBuilder().setData(Access.Read, address, new Uint8Array(0)).build();
+    const fault = new MaybePageFault();
+    const res = mem.getMemory(fault, address, length);
+
+    assert.isEqual(fault.isFault, true);
+    assert.isEqual(res, null);
+
+    return assert;
+  }),
+  test("should read memory succesfully", (assert) => {
+    const address = 20 * PAGE_SIZE;
+    const length = 1024;
+
+    const mem = new MemoryBuilder().setData(Access.Read, address, new Uint8Array(4096)).build();
+    const fault = new MaybePageFault();
+    const res = mem.getMemory(fault, address, length);
+
+    assert.isEqual(fault.fault, 0);
+    assert.isEqual(fault.isFault, false);
+    if (res !== null) {
+      assert.isEqual(res.length, length);
+    } else {
+      assert.fail("Expected to read the memory successfully.");
+    }
+
+    return assert;
+  }),
 ];
