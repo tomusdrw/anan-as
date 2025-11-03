@@ -43,6 +43,6 @@
     }
   },
   "files": {
-    "includes": ["**/assembly/**/*", "!build"]
+    "includes": ["**/assembly/**/*", "!build", "!web/build"]
   }
 }
