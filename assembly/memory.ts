@@ -198,17 +198,17 @@ export class Memory {
    */
   getMemory(fault: MaybePageFault, address: u32, length: u32): Uint8Array | null {
     // first traverse memory and see if we don't page fault
-    let nextAddress = address;
-    let destinationIndex = i32(0);
-    const iLength = i32(length);
-    while (destinationIndex < iLength) {
-      const pageData = this.pageResult;
-      this.getPage(fault, pageData, Access.Read, nextAddress);
-      if (fault.isFault) {
-        return null;
+    if (length > 0) {
+      let nextAddress = address;
+      const pagesToCheck = i32((u64(length) + u64(PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT);
+      for (let page = 0; page < pagesToCheck; page++) {
+        const pageData = this.pageResult;
+        this.getPage(fault, pageData, Access.Read, nextAddress);
+        if (fault.isFault) {
+          return null;
+        }
+        nextAddress += PAGE_SIZE;
       }
-      nextAddress += PAGE_SIZE;
-      destinationIndex += PAGE_SIZE;
     }
 
     // only after, actually allocate and read the bytes.
