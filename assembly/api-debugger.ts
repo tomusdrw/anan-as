@@ -176,7 +176,7 @@ export function getPageDump(index: u32): Uint8Array {
  * and error prone (we may not be able to allocate).
  * Instead WASM should be able to return memory pointers for already allocated pages.
  * So reading memory on the caller side should be something like this:
- * ```ts 
+ * ```ts
  * let pagesRead = 0;
  * for (let address = start; address < end; address += PAGE_SIZE) {
  *   const page = address >> PAGE_SIZE_SHIFT;

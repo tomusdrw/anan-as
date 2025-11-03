@@ -197,11 +197,10 @@ export class Memory {
    * @deprecated exposed temporarily for debugger/typeberry API.
    */
   getMemory(fault: MaybePageFault, address: u32, length: u32): Uint8Array | null {
-
     // first traverse memory and see if we don't page fault
     let nextAddress = address;
-    let destinationIndex = i32(0);
-    let iLength = i32(length);
+    const destinationIndex = i32(0);
+    const iLength = i32(length);
     while (destinationIndex < iLength) {
       const pageData = this.pageResult;
       this.getPage(fault, pageData, Access.Read, nextAddress);
@@ -211,10 +210,9 @@ export class Memory {
       nextAddress += PAGE_SIZE;
     }
 
-
     // only after, actually allocate and read the bytes.
     const destination = new Uint8Array(length);
-    this.bytesRead(fault, address, destination, 0)
+    this.bytesRead(fault, address, destination, 0);
     if (fault.isFault) {
       return null;
     }
