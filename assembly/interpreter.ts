@@ -18,6 +18,24 @@ export enum Status {
   OOG = 4,
 }
 
+enum DjumpStatus {
+  OK = 0,
+  HALT = 1,
+  PANIC = 2,
+}
+
+// @unmanaged
+class DjumpResult {
+  status: DjumpStatus = DjumpStatus.OK;
+  newPc: ProgramCounter = 0;
+}
+
+// @unmanaged
+class BranchResult {
+  isOkay: boolean = false;
+  newPc: u32 = 0;
+}
+
 export class Interpreter {
   public readonly program: Program;
   public readonly registers: Registers;
@@ -31,7 +49,9 @@ export class Interpreter {
   public useSbrkGas: boolean;
 
   private djumpRes: DjumpResult = new DjumpResult();
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: biome thinks it's unused
   private argsRes: Args = new Args();
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: biome thinks it's unused
   private outcomeRes: OutcomeData = new OutcomeData();
   private branchRes: BranchResult = new BranchResult();
 
@@ -197,12 +217,6 @@ export class Interpreter {
   }
 }
 
-// @unmanaged
-class BranchResult {
-  isOkay: boolean = false;
-  newPc: u32 = 0;
-}
-
 function branch(r: BranchResult, basicBlocks: BasicBlocks, pc: u32, offset: i32): BranchResult {
   const newPc = pc + offset;
   if (basicBlocks.isStart(newPc)) {
@@ -213,18 +227,6 @@ function branch(r: BranchResult, basicBlocks: BasicBlocks, pc: u32, offset: i32)
     r.newPc = 0;
   }
   return r;
-}
-
-enum DjumpStatus {
-  OK = 0,
-  HALT = 1,
-  PANIC = 2,
-}
-
-// @unmanaged
-class DjumpResult {
-  status: DjumpStatus = DjumpStatus.OK;
-  newPc: ProgramCounter = 0;
 }
 
 const EXIT = 0xff_ff_00_00;
