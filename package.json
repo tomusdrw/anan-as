@@ -102,6 +102,6 @@
 	},
 	"dependencies": {
 		"@typeberry/lib": "^0.4.0",
-		"json-bigint-patch": "^0.0.8"
+		"json-bigint-patch": "^0.0.9"
 	}
 }
