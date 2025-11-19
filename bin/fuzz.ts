@@ -10,7 +10,7 @@ let runNumber = 0;
 export function fuzz(data: Uint8Array | number[]) {
   const gas = 200n;
   const pc = 0;
-  const vm = new pvm.Pvm();
+  const vm = new pvm.DebuggerAdapter();
   const program = wrapAsProgram(new Uint8Array(data));
   if (program.length > 100) {
     return;
