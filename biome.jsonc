@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.6/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
@@ -44,5 +44,17 @@
   },
   "files": {
     "includes": ["**/assembly/**/*", "!build", "!web/build"]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["assembly/**/*.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noPrecisionLoss": "off"
+          }
+        }
+      }
+    }
+  ]
 }

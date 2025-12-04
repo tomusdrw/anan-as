@@ -49,9 +49,7 @@ export class Interpreter {
   public useSbrkGas: boolean;
 
   private djumpRes: DjumpResult = new DjumpResult();
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: biome thinks it's unused
   private argsRes: Args = new Args();
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: biome thinks it's unused
   private outcomeRes: OutcomeData = new OutcomeData();
   private branchRes: BranchResult = new BranchResult();
 

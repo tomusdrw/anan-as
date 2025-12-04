@@ -2,7 +2,7 @@
 
 import "json-bigint-patch";
 import fs from 'node:fs';
-import { pvm } from "@typeberry/lib";
+import { pvm_interpreter } from "@typeberry/lib";
 import { wrapAsProgram, runProgram, disassemble, InputKind, prepareProgram, HasMetadata } from "../build/release.js";
 
 let runNumber = 0;
@@ -10,7 +10,7 @@ let runNumber = 0;
 export function fuzz(data: Uint8Array | number[]) {
   const gas = 200n;
   const pc = 0;
-  const vm = new pvm.DebuggerAdapter();
+  const vm = new pvm_interpreter.DebuggerAdapter();
   const program = wrapAsProgram(new Uint8Array(data));
   if (program.length > 100) {
     return;
@@ -36,11 +36,12 @@ export function fuzz(data: Uint8Array | number[]) {
       []
     );
     const output = runProgram(exe, gas, pc, printDebugInfo);
+    const vmRegisters = decodeRegisters(vm.getRegisters());
     
     collectErrors((assertFn) => {
       assertFn(normalizeStatus(vm.getStatus()), normalizeStatus(output.status), 'status');
       assertFn(vm.getGasLeft(), output.gas, 'gas');
-      assertFn(Array.from(vm.getRegisters()), output.registers, 'registers');
+      assertFn(vmRegisters, output.registers, 'registers');
       assertFn(vm.getProgramCounter(), output.pc, 'pc');
     });
 
@@ -57,7 +58,7 @@ export function fuzz(data: Uint8Array | number[]) {
             status: normalizeStatus(vm.getStatus()),
             gasLeft: vm.getGasLeft(),
             pc: vm.getProgramCounter(),
-            registers: Array.from(vm.getRegisters())
+            registers: vmRegisters,
           },
         );
       }
@@ -79,6 +80,28 @@ function programHex(program: Uint8Array) {
   
 function linkTo(programHex: string) {
   return `https://pvm.fluffylabs.dev/?program=0x${programHex}#/`;
+}
+
+const REGISTER_BYTE_WIDTH = 8;
+
+function decodeRegisters(value: Uint8Array): bigint[] {
+  if (value.length === 0) {
+    return [];
+  }
+
+  if (value.length % REGISTER_BYTE_WIDTH !== 0) {
+    throw new Error(`Invalid register buffer size: ${value.length}`);
+  }
+
+  const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
+  const registerCount = value.length / REGISTER_BYTE_WIDTH;
+  const registers = new Array<bigint>(registerCount);
+
+  for (let i = 0; i < registerCount; i++) {
+    registers[i] = view.getBigUint64(i * REGISTER_BYTE_WIDTH, true);
+  }
+
+  return registers;
 }
 
 function normalizeStatus(status: number) {
