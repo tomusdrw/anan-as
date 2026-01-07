@@ -40,7 +40,9 @@
 	"author": "Fluffy Labs",
 	"license": "MPL-2.0",
 	"devDependencies": {
+		"json-bigint-patch": "^0.0.8",
 		"@biomejs/biome": "^2.3.8",
+		"@typeberry/lib": "^0.5.1",
 		"@types/node": "^25.0.0",
 		"assemblyscript": "^0.28.8",
 		"tsx": "^4.20.6",
@@ -98,10 +100,5 @@
 		"./release.wasm": "./build/release.wasm",
 		"./release-mini.wasm": "./build/release-mini.wasm",
 		"./release-stub.wasm": "./build/release-stub.wasm"
-
-	},
-	"dependencies": {
-		"@typeberry/lib": "^0.5.0",
-		"json-bigint-patch": "^0.0.8"
 	}
 }
