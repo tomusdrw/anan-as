@@ -82,8 +82,8 @@ export class MemoryBuilder {
     return this.pages.get(pageIdx);
   }
 
-  build(sbrkAddress: u32 = RESERVED_MEMORY): Memory {
-    return new Memory(this.arena, this.pages, sbrkAddress);
+  build(sbrkAddress: u32 = RESERVED_MEMORY, maxHeapPointer: u32 = MEMORY_SIZE - 1): Memory {
+    return new Memory(this.arena, this.pages, sbrkAddress, maxHeapPointer);
   }
 }
 
@@ -96,6 +96,7 @@ export class Memory {
     private readonly arena: Arena,
     public readonly pages: Map<PageIndex, Page> = new Map(),
     private sbrkAddress: u32 = 0,
+    private maxHeapPointer: u32 = MEMORY_SIZE - 1,
   ) {
     const sbrkPage = u32(sbrkAddress >> PAGE_SIZE_SHIFT);
     if (sbrkPage < RESERVED_PAGES) {
@@ -127,7 +128,7 @@ export class Memory {
     }
 
     const newSbrk = i64(this.sbrkAddress) + amount;
-    if (newSbrk >= MEMORY_SIZE) {
+    if (newSbrk > this.maxHeapPointer) {
       faultRes.isFault = true;
       return freeMemoryStart;
     }
