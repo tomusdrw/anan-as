@@ -14,7 +14,7 @@ export const RESERVED_MEMORY: u32 = 2 ** 16;
 export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE; // 16
 
 /** Amount of memory to allocate eagerly */
-export const ALLOCATE_EAGERLY: u32 = 2 ** 29; // 512MB
+export const ALLOCATE_EAGERLY: u32 = 2**21; // 2MB
 
 export enum Access {
   None = 0,
