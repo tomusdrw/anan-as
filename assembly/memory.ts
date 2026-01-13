@@ -34,6 +34,7 @@ class PageResult {
 }
 
 const MEMORY_SIZE = 0x1_0000_0000;
+const MAX_MEMORY_ADDRESS: u32 = 0xffff_ffff;
 
 export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
@@ -82,8 +83,8 @@ export class MemoryBuilder {
     return this.pages.get(pageIdx);
   }
 
-  build(sbrkAddress: u32 = RESERVED_MEMORY): Memory {
-    return new Memory(this.arena, this.pages, sbrkAddress);
+  build(sbrkAddress: u32 = RESERVED_MEMORY, maxHeapPointer: u32 = MAX_MEMORY_ADDRESS): Memory {
+    return new Memory(this.arena, this.pages, sbrkAddress, maxHeapPointer);
   }
 }
 
@@ -91,17 +92,20 @@ export class Memory {
   private lastAllocatedPage: i32;
   private pageResult: PageResult = new PageResult();
   private chunksResult: Chunks = new Chunks();
+  private maxHeapPointer: i64;
 
   constructor(
     private readonly arena: Arena,
     public readonly pages: Map<PageIndex, Page> = new Map(),
     private sbrkAddress: u32 = 0,
+    maxHeapPointer: u32 = MAX_MEMORY_ADDRESS,
   ) {
     const sbrkPage = u32(sbrkAddress >> PAGE_SIZE_SHIFT);
     if (sbrkPage < RESERVED_PAGES) {
       throw new Error("sbrk within reserved memory is not allowed!");
     }
     this.lastAllocatedPage = pages.has(sbrkPage) ? sbrkPage : sbrkPage - 1;
+    this.maxHeapPointer = i64(maxHeapPointer);
   }
 
   pageDump(index: PageIndex): Uint8Array | null {
@@ -127,7 +131,7 @@ export class Memory {
     }
 
     const newSbrk = i64(this.sbrkAddress) + amount;
-    if (newSbrk >= MEMORY_SIZE) {
+    if (newSbrk > this.maxHeapPointer) {
       faultRes.isFault = true;
       return freeMemoryStart;
     }
