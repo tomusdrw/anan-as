@@ -2,6 +2,8 @@ import { MaybePageFault, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, PAGE_SIZE_SHIFT, RESERVED_MEMORY, RESERVED_PAGES } from "./memory-page";
 import { Assert, Test, test } from "./test";
 
+const MAX_MEMORY_INDEX: u32 = 0xffff_ffff;
+
 export const TESTS: Test[] = [
   test("Show fail when accessing any of the initial 16 pages", () => {
     const aFault = new MaybePageFault();
@@ -151,6 +153,89 @@ export const TESTS: Test[] = [
     } else {
       assert.fail("Expected to read the memory successfully.");
     }
+
+    return assert;
+  }),
+  test("sbrk should return current address when amount is 0", (assert) => {
+    const sbrkStart: u32 = 0x20000;
+    const mem = new MemoryBuilder().build(sbrkStart);
+    const fault = new MaybePageFault();
+
+    const result = mem.sbrk(fault, 0);
+
+    assert.isEqual(fault.isFault, false, "should not fault");
+    assert.isEqual(result, u64(sbrkStart), "should return current sbrk address");
+    return assert;
+  }),
+  test("sbrk should allocate memory and return previous address", (assert) => {
+    const sbrkStart: u32 = RESERVED_MEMORY;
+    const mem = new MemoryBuilder().build(sbrkStart);
+    const fault = new MaybePageFault();
+
+    const first = mem.sbrk(fault, 1000);
+    assert.isEqual(fault.isFault, false, "first sbrk should not fault");
+    assert.isEqual(first, u64(sbrkStart), "first sbrk should return start");
+
+    const second = mem.sbrk(fault, 500);
+    assert.isEqual(fault.isFault, false, "second sbrk should not fault");
+    assert.isEqual(second, u64(sbrkStart + 1000), "second sbrk should return incremented address");
+
+    return assert;
+  }),
+  test("sbrk should fault when exceeding default maxHeapPointer (MEMORY_SIZE - 1)", (assert) => {
+    const sbrkStart: u32 = u32(MAX_MEMORY_INDEX - 100);
+    const mem = new MemoryBuilder().build(sbrkStart);
+    const fault = new MaybePageFault();
+
+    const result = mem.sbrk(fault, 200);
+
+    assert.isEqual(fault.isFault, true, "should fault when exceeding memory limit");
+    assert.isEqual(result, u64(sbrkStart), "should return current address on fault");
+    return assert;
+  }),
+  test("sbrk should fault when exceeding custom maxHeapPointer", (assert) => {
+    const sbrkStart: u32 = RESERVED_MEMORY;
+    const maxHeap: u32 = sbrkStart + 1000;
+    const mem = new MemoryBuilder().build(sbrkStart, maxHeap);
+    const fault = new MaybePageFault();
+
+    const first = mem.sbrk(fault, 500);
+    assert.isEqual(fault.isFault, false, "first sbrk within limit should not fault");
+    assert.isEqual(first, u64(sbrkStart), "first sbrk should return start");
+
+    const second = mem.sbrk(fault, 600);
+    assert.isEqual(fault.isFault, true, "sbrk exceeding maxHeapPointer should fault");
+    assert.isEqual(second, u64(sbrkStart + 500), "should return current address on fault");
+
+    return assert;
+  }),
+  test("sbrk should allow allocation up to maxHeapPointer boundary", (assert) => {
+    const sbrkStart: u32 = RESERVED_MEMORY;
+    const maxHeap: u32 = sbrkStart + 1000;
+    const mem = new MemoryBuilder().build(sbrkStart, maxHeap);
+    const fault = new MaybePageFault();
+
+    const result = mem.sbrk(fault, 1000);
+    assert.isEqual(fault.isFault, false, "sbrk up to maxHeapPointer should not fault");
+    assert.isEqual(result, u64(sbrkStart), "should return start address");
+
+    mem.sbrk(fault, 1);
+    assert.isEqual(fault.isFault, true, "sbrk beyond maxHeapPointer should fault");
+
+    return assert;
+  }),
+  test("sbrk maxHeapPointer prevents heap from growing into stack region", (assert) => {
+    const heapStart: u32 = RESERVED_MEMORY;
+    const stackStart: u32 = 0xfe000000;
+    const mem = new MemoryBuilder().build(heapStart, stackStart);
+    const fault = new MaybePageFault();
+    const maxHeapSize: u32 = stackStart - heapStart;
+
+    mem.sbrk(fault, maxHeapSize - 100);
+    assert.isEqual(fault.isFault, false, "allocation within limit should succeed");
+
+    mem.sbrk(fault, 200);
+    assert.isEqual(fault.isFault, true, "allocation into stack region should fault");
 
     return assert;
   }),
