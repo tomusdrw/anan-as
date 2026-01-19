@@ -1,3 +1,5 @@
+import { minI32 } from "./math";
+
 export enum Arguments {
   Zero = 0,
   OneImm = 1,
@@ -52,7 +54,7 @@ type ArgsDecoder = (args: Args, code: u8[], offset: u32, end: u32) => Args;
 
 function twoImm(args: Args, code: u8[], offset: u32, end: u32): Args {
   const low = lowNibble(unchecked(code[offset]));
-  const split = <i32>Math.min(4, low) + 1;
+  const split = minI32(4, low) + 1;
   const first = decodeI32(code, offset + 1, offset + split);
   const second = decodeI32(code, offset + split, end);
   return args.fill(first, second, 0, 0);
@@ -88,7 +90,7 @@ export const DECODERS: ArgsDecoder[] = [
   (args, data, o, lim) => {
     const h = higNibble(data[o]);
     const l = lowNibble(data[o]);
-    const split = <i32>Math.min(4, h) + 1;
+    const split = minI32(4, h) + 1;
     const immA = decodeI32(data, o + 1, o + split);
     const immB = decodeI32(data, o + split, lim);
     return args.fill(l, immA, immB, 0);
@@ -97,7 +99,7 @@ export const DECODERS: ArgsDecoder[] = [
   (args, data, o, lim) => {
     const h = higNibble(data[o]);
     const l = lowNibble(data[o]);
-    const split = <i32>Math.min(4, h) + 1;
+    const split = minI32(4, h) + 1;
     const immA = decodeI32(data, o + 1, o + split);
     const offs = decodeI32(data, o + split, lim);
     return args.fill(l, immA, offs, 0);
