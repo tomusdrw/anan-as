@@ -1,4 +1,5 @@
 import { u8SignExtend, u16SignExtend, u32SignExtend } from "./instructions/utils";
+import { minU32 } from "./math";
 import {
   Access,
   Arena,
@@ -371,7 +372,7 @@ export class Memory {
 
     let bytesLeft = value;
     // write to first page
-    const firstPageEnd = Math.min(PAGE_SIZE, r.firstPageOffset + bytes);
+    const firstPageEnd = minU32(PAGE_SIZE, r.firstPageOffset + bytes);
     for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {
       r.firstPageData[i] = u8(bytesLeft);
       bytesLeft >>= 8;
@@ -391,7 +392,7 @@ export class Memory {
 
     // result (bytes in reverse order)
     let r: u64 = 0;
-    const firstPageEnd = Math.min(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
+    const firstPageEnd = minU32(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
 
     // read from first page
     for (let i: u32 = this.chunksResult.firstPageOffset; i < firstPageEnd; i++) {

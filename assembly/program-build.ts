@@ -1,6 +1,7 @@
 import { Arguments, higNibble, lowNibble, REQUIRED_BYTES } from "./arguments";
 import { encodeVarU32 } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
+import { minI32 } from "./math";
 
 /** Turn given bytecode into a valid program. Add JumpTable and Mask. */
 export function wrapAsProgram(bytecode: Uint8Array): Uint8Array {
@@ -59,9 +60,9 @@ function skipBytes(kind: Arguments, data: Uint8Array): i32 {
     case Arguments.TwoReg:
       return 1;
     case Arguments.TwoRegOneImm:
-      return 1 + i32(Math.min(4, data.length));
+      return 1 + minI32(4, data.length);
     case Arguments.TwoRegOneOff:
-      return 1 + i32(Math.min(4, data.length));
+      return 1 + minI32(4, data.length);
     case Arguments.TwoRegTwoImm: {
       const low = lowNibble(data[1]);
       const split = low + 1;
@@ -105,5 +106,5 @@ function immBytes(dataLength: i32, required: i32): i32 {
   if (dataLength < required) {
     return 0;
   }
-  return i32(Math.min(4, dataLength - required));
+  return minI32(4, dataLength - required);
 }
