@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "outDir": "./build",
+    "outDir": "./dist",
     "rootDir": "."
   },
   "include": [
