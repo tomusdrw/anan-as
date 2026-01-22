@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary_in_walkthrough: true
+  fail_commit_status: true
+  changed_files_summary: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  auto_assign_reviewers: true
+  in_progress_fortune: false
+  poem: false
+  path_instructions:
+    - path: '**/*.ts'
+      instructions: >-
+        Do not allow `number` type in assembly script code. Always suggest using fixed-size types
+        instead (`u32, u64, i64, etc`).
+chat:
+  art: false
+issue_enrichment:
+  auto_enrich:
+    enabled: true
+  labeling:
+    auto_apply_labels: true
