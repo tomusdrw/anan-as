@@ -1,30 +1,31 @@
 {
 	"targets": {
 		"raw": {
+			"bindings": "raw",
 			"outFile": "build/debug-raw.wasm",
 			"textFile": "build/debug-raw.wat",
 			"sourceMap": true,
-			"debug": true,
-			"bindings": "raw"
+			"debug": true
 		},
 		"debug": {
+			"bindings": "esm",
 			"outFile": "build/debug.wasm",
 			"textFile": "build/debug.wat",
 			"sourceMap": true,
-			"debug": true,
-			"bindings": "esm"
+			"debug": true
 		},
 		"release": {
+			"bindings": "esm",
 			"outFile": "build/release.wasm",
 			"textFile": "build/release.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
 			"converge": true,
-			"noAssert": true,
-			"bindings": "esm"
+			"noAssert": true
 		},
 		"release-mini": {
+			"bindings": "esm",
 			"outFile": "build/release-mini.wasm",
 			"textFile": "build/release-mini.wat",
 			"sourceMap": true,
@@ -33,10 +34,10 @@
 			"converge": true,
 			"noAssert": true,
 			"runtime": "minimal",
-			"exportRuntime": true,
-			"bindings": "esm"
+			"exportRuntime": true
 		},
 		"release-stub": {
+			"bindings": "esm",
 			"outFile": "build/release-stub.wasm",
 			"textFile": "build/release-stub.wat",
 			"sourceMap": true,
@@ -45,15 +46,14 @@
 			"converge": true,
 			"noAssert": true,
 			"runtime": "stub",
-			"exportRuntime": true,
-			"bindings": "esm"
+			"exportRuntime": true
 		},
 		"test": {
+			"bindings": "esm",
 			"outFile": "build/test.wasm",
 			"textFile": "build/test.wat",
 			"sourceMap": true,
-			"debug": true,
-			"bindings": "esm"
+			"debug": true
 		}
 	},
 	"options": {}

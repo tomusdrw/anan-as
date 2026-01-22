@@ -6,7 +6,7 @@ import { RUN } from "./instructions-exe";
 import { BasicBlocks, deblob, decodeArguments, JumpTable, Mask } from "./program";
 import { Assert, Test, test } from "./test";
 
-export function u8arr(data: number[]): Uint8Array {
+export function u8arr(data: u8[]): Uint8Array {
   const ret = new Uint8Array(data.length);
   ret.set(data, 0);
   return ret;

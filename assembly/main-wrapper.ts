@@ -1,3 +1,5 @@
+// TODO [ToDr] refactor
+
 /**
  * PVM-in-PVM Main Entry Point
  *
@@ -19,8 +21,7 @@
  * Total: 117 bytes
  */
 
-import { getGasLeft, getProgramCounter, getRegisters, getStatus, nSteps, resetGeneric } from "./api-debugger";
-import { NO_OF_REGISTERS, REG_SIZE_BYTES } from "./registers";
+import { getGasLeft, getProgramCounter, getRegisters, getStatus, nSteps, resetJAM } from "./api-debugger";
 
 // Result buffer location (in WASM linear memory)
 const RESULT_BUFFER: u32 = 0x100; // After globals area
@@ -35,7 +36,7 @@ export let result_len: u32 = 0;
  * @param args_ptr Pointer to input arguments (PVM address 0xFEFF0000)
  * @param args_len Length of arguments in bytes
  */
-export function main(args_ptr: u32, args_len: u32): void {
+export function pvmMain(args_ptr: u32, args_len: u32): void {
   // Minimum input: 4 (program_len) + 0 (program) + 104 (registers) + 8 (gas) + 4 (steps) = 120 bytes
   if (args_len < 120) {
     // Invalid input - return error status
@@ -67,54 +68,53 @@ export function main(args_ptr: u32, args_len: u32): void {
   }
   offset += program_len;
 
-  // Read registers (104 bytes = 13 * 8)
-  const flatRegisters: u8[] = [];
-  const reg_bytes: u32 = <u32>(NO_OF_REGISTERS * REG_SIZE_BYTES);
-  for (let i: u32 = 0; i < reg_bytes; i++) {
-    flatRegisters.push(load<u8>(args_ptr + offset + i));
-  }
-  offset += reg_bytes;
+   // Read gas (8 bytes, little-endian u64)
+   const gas = load<u64>(args_ptr + offset);
+   offset += 8;
 
-  // Read gas (8 bytes, little-endian u64)
-  const gas = load<u64>(args_ptr + offset);
-  offset += 8;
+   // Read steps (4 bytes, little-endian u32)
+   const steps = load<u32>(args_ptr + offset);
+   offset += 4;
 
-  // Read steps (4 bytes, little-endian u32)
-  const steps = load<u32>(args_ptr + offset);
+   // Read inner program args (remaining bytes)
+   const innerArgs: u8[] = [];
+   for (let i: u32 = offset; i < args_len; i++) {
+     innerArgs.push(load<u8>(args_ptr + i));
+   }
 
-  // Initialize interpreter
-  resetGeneric(program, flatRegisters, gas, false);
+    // Initialize interpreter with SPI program
+    resetJAM(program, <u32>0, gas, innerArgs);
 
-  // Run steps
-  nSteps(steps);
+   // Run steps
+   nSteps(steps);
 
-  // Get results
-  const status = getStatus();
-  const pc = getProgramCounter();
-  const gasLeft = getGasLeft();
-  const finalRegisters = getRegisters();
+   // Get results
+   const status = getStatus();
+   const pc = getProgramCounter();
+   const gasLeft = getGasLeft();
+   const finalRegisters = getRegisters();
 
-  // Write output to result buffer
-  let out_offset: u32 = 0;
+   // Write output to result buffer
+   let out_offset: u32 = 0;
 
-  // Status (1 byte)
-  store<u8>(RESULT_BUFFER + out_offset, status);
-  out_offset += 1;
+   // Status (1 byte)
+   store<u8>(RESULT_BUFFER + out_offset, status);
+   out_offset += 1;
 
-  // PC (4 bytes)
-  store<u32>(RESULT_BUFFER + out_offset, pc);
-  out_offset += 4;
+   // PC (4 bytes)
+   store<u32>(RESULT_BUFFER + out_offset, pc);
+   out_offset += 4;
 
-  // Gas left (8 bytes)
-  store<u64>(RESULT_BUFFER + out_offset, gasLeft);
-  out_offset += 8;
+   // Gas left (8 bytes)
+   store<u64>(RESULT_BUFFER + out_offset, gasLeft);
+   out_offset += 8;
 
-  // Registers (104 bytes)
-  const final_len: u32 = <u32>finalRegisters.length;
-  for (let i: u32 = 0; i < final_len; i++) {
-    store<u8>(RESULT_BUFFER + out_offset + i, finalRegisters[i]);
-  }
-  out_offset += final_len;
+   // Registers (104 bytes)
+   const final_len: u32 = <u32>finalRegisters.length;
+   for (let i: u32 = 0; i < final_len; i++) {
+     store<u8>(RESULT_BUFFER + out_offset + i, finalRegisters[i]);
+   }
+   out_offset += final_len;
 
   // Set result pointer and length
   result_ptr = RESULT_BUFFER;
