@@ -2,9 +2,9 @@
 	"name": "@fluffylabs/anan-as",
 	"description": "AssemblyScript PVM interpreter.",
 	"version": "1.1.3",
-	"main": "./dist/index.js",
+	"main": "./dist/bin/index.js",
 	"bin": {
-		"anan-as": "./dist/index.js"
+		"anan-as": "./dist/bin/index.js"
 	},
 	"repository": {
 		"url": "https://github.com/tomusdrw/anan-as"
@@ -21,7 +21,7 @@
 		"asbuild:test": "asc assembly/test-run.ts --target test",
 		"build": "npm run asbuild:all && npm run asbuild:test && npm run tsbuild && npm run build:inline && npm run cp-build",
 		"build:inline": "tsx ./bin/build-inline.ts",
-		"cp-build": "rm -rf ./web/build; cp -r ./build ./web/",
+		"cp-build": "rm -rf ./web/build; cp -r ./dist/build ./web/",
 		"format": "biome format --write",
 		"fuzz": "tsx ./bin/fuzz.ts",
 		"lint": "biome lint --write; biome check --write",
@@ -55,62 +55,61 @@
 		"typescript": "^5.9.3"
 	},
 	"files": [
-		"build/**/*.wasm",
-		"build/**/*.js",
-		"build/**/*.d.ts",
+		"dist/**/*.wasm",
 		"dist/**/*.js",
+		"dist/**/*.d.ts",
 		"README.md",
 		"LICENSE"
 	],
 	"exports": {
 		".": {
-			"import": "./build/release.js",
-			"types": "./build/release.d.ts"
+			"import": "./dist/build/release.js",
+			"types": "./dist/build/release.d.ts"
 		},
 		"./debug": {
-			"import": "./build/debug.js",
-			"types": "./build/debug.d.ts"
+			"import": "./dist/build/debug.js",
+			"types": "./dist/build/debug.d.ts"
 		},
 		"./release": {
-			"import": "./build/release.js",
-			"types": "./build/release.d.ts"
+			"import": "./dist/build/release.js",
+			"types": "./dist/build/release.d.ts"
 		},
 		"./release-mini": {
-			"import": "./build/release-mini.js",
-			"types": "./build/release-mini.d.ts"
+			"import": "./dist/build/release-mini.js",
+			"types": "./dist/build/release-mini.d.ts"
 		},
 		"./release-stub": {
-			"import": "./build/release-stub.js",
-			"types": "./build/release-stub.d.ts"
+			"import": "./dist/build/release-stub.js",
+			"types": "./dist/build/release-stub.d.ts"
 		},
 		"./raw": {
-			"import": "./build/debug-raw.js",
-			"types": "./build/debug-raw.d.ts"
+			"import": "./dist/build/debug-raw.js",
+			"types": "./dist/build/debug-raw.d.ts"
 		},
 		"./debug-inline": {
-			"import": "./build/debug-inline.js",
-			"types": "./build/debug-inline.d.ts"
+			"import": "./dist/build/debug-inline.js",
+			"types": "./dist/build/debug-inline.d.ts"
 		},
 		"./release-inline": {
-			"import": "./build/release-inline.js",
-			"types": "./build/release-inline.d.ts"
+			"import": "./dist/build/release-inline.js",
+			"types": "./dist/build/release-inline.d.ts"
 		},
 		"./release-mini-inline": {
-			"import": "./build/release-mini-inline.js",
-			"types": "./build/release-mini-inline.d.ts"
+			"import": "./dist/build/release-mini-inline.js",
+			"types": "./dist/build/release-mini-inline.d.ts"
 		},
 		"./release-stub-inline": {
-			"import": "./build/release-stub-inline.js",
-			"types": "./build/release-stub-inline.d.ts"
+			"import": "./dist/build/release-stub-inline.js",
+			"types": "./dist/build/release-stub-inline.d.ts"
 		},
 		"./compiler": {
-			"import": "./build/compiler.js",
-			"types": "./build/compiler.d.ts"
+			"import": "./dist/build/compiler.js",
+			"types": "./dist/build/compiler.d.ts"
 		},
-		"./debug.wasm": "./build/debug.wasm",
-		"./release.wasm": "./build/release.wasm",
-		"./release-mini.wasm": "./build/release-mini.wasm",
-		"./release-stub.wasm": "./build/release-stub.wasm",
-		"./compiler.wasm": "./build/compiler.wasm"
+		"./debug.wasm": "./dist/build/debug.wasm",
+		"./release.wasm": "./dist/build/release.wasm",
+		"./release-mini.wasm": "./dist/build/release-mini.wasm",
+		"./release-stub.wasm": "./dist/build/release-stub.wasm",
+		"./compiler.wasm": "./dist/build/compiler.wasm"
 	}
 }

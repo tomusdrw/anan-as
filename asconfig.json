@@ -2,22 +2,22 @@
 	"targets": {
 		"raw": {
 			"bindings": "raw",
-			"outFile": "build/debug-raw.wasm",
-			"textFile": "build/debug-raw.wat",
+			"outFile": "dist/build/debug-raw.wasm",
+			"textFile": "dist/build/debug-raw.wat",
 			"sourceMap": true,
 			"debug": true
 		},
 		"debug": {
 			"bindings": "esm",
-			"outFile": "build/debug.wasm",
-			"textFile": "build/debug.wat",
+			"outFile": "dist/build/debug.wasm",
+			"textFile": "dist/build/debug.wat",
 			"sourceMap": true,
 			"debug": true
 		},
 		"release": {
 			"bindings": "esm",
-			"outFile": "build/release.wasm",
-			"textFile": "build/release.wat",
+			"outFile": "dist/build/release.wasm",
+			"textFile": "dist/build/release.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
@@ -26,8 +26,8 @@
 		},
 		"release-mini": {
 			"bindings": "esm",
-			"outFile": "build/release-mini.wasm",
-			"textFile": "build/release-mini.wat",
+			"outFile": "dist/build/release-mini.wasm",
+			"textFile": "dist/build/release-mini.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
@@ -38,8 +38,8 @@
 		},
 		"release-stub": {
 			"bindings": "esm",
-			"outFile": "build/release-stub.wasm",
-			"textFile": "build/release-stub.wat",
+			"outFile": "dist/build/release-stub.wasm",
+			"textFile": "dist/build/release-stub.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
@@ -50,16 +50,16 @@
 		},
 		"test": {
 			"bindings": "esm",
-			"outFile": "build/test.wasm",
-			"textFile": "build/test.wat",
+			"outFile": "dist/build/test.wasm",
+			"textFile": "dist/build/test.wat",
 			"sourceMap": true,
 			"debug": true
 		},
 		"compiler": {
 			"bindings": "esm",
 			"debug": true,
-			"outFile": "build/compiler.wasm",
-			"textFile": "build/compiler.wat",
+			"outFile": "dist/build/compiler.wasm",
+			"textFile": "dist/build/compiler.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
