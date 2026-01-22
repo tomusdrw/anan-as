@@ -7,7 +7,7 @@ import { InputKind, disassemble, HasMetadata, runProgram, prepareProgram } from 
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file1.(jam|pvm|spi|bin)> [file2...]
-  anan-as run [--spi] [--no-logs] [--no-metadata] <file1.jam> [file2...]
+  anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file1.jam> [file2...]
 
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
@@ -15,8 +15,10 @@ Commands:
 
 Flags:
   --spi          Treat input as JAM SPI format
-  --no-metadata  Input does not contain metadata 
+  --no-metadata  Input does not contain metadata
   --no-logs      Disable execution logs (run command only)
+  --pc <number>  Set initial program counter (default: 0)
+  --gas <number> Set initial gas amount (default: 0)
   --help, -h     Show this help message`;
 
 main();
@@ -24,11 +26,10 @@ main();
 function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0) {
-    console.error("Error: No sub-command provided.");
-    console.error("");
-    console.error(HELP_TEXT);
-    process.exit(1);
+  // Handle global help flags
+  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+    console.log(HELP_TEXT);
+    return;
   }
 
   const subCommand = args[0];
@@ -97,6 +98,7 @@ function handleDisassemble(args: string[]) {
 function handleRun(args: string[]) {
   const parsed = minimist(args, {
     boolean: ['spi', 'no-logs', 'no-metadata', 'help'],
+    string: ['pc', 'gas'],
     alias: { h: 'help' }
   });
 
@@ -126,6 +128,27 @@ function handleRun(args: string[]) {
   const logs = !parsed['no-logs'];
   const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
 
+  // Parse and validate PC and gas options
+  let initialPc = 0;
+  if (parsed.pc !== undefined) {
+    const pcValue = parseInt(parsed.pc, 10);
+    if (isNaN(pcValue) || pcValue < 0) {
+      console.error("Error: --pc must be a non-negative integer.");
+      process.exit(1);
+    }
+    initialPc = pcValue;
+  }
+
+  let initialGas = BigInt(0);
+  if (parsed.gas !== undefined) {
+    const gasValue = BigInt(parsed.gas);
+    if (gasValue < 0) {
+      console.error("Error: --gas must be a non-negative integer.");
+      process.exit(1);
+    }
+    initialGas = gasValue;
+  }
+
   files.forEach((file: string) => {
     const f = readFileSync(file);
     const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
@@ -133,7 +156,7 @@ function handleRun(args: string[]) {
 
     try {
       const program = prepareProgram(kind, hasMetadata, Array.from(f), [], [], [], []);
-      const result = runProgram(program, BigInt(0), 0, logs, false);
+      const result = runProgram(program, initialGas, initialPc, logs, false);
 
       console.log(`Status: ${result.status}`);
       console.log(`Exit code: ${result.exitCode}`);
