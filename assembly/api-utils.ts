@@ -1,4 +1,5 @@
-import { buildMemory, getAssembly, InitialChunk, InitialPage, runVm, VmInput, VmOutput } from "./api-internal";
+import { buildMemory, getAssembly, runVm } from "./api-internal";
+import { InitialChunk, InitialPage, ReturnValue, VmInput, VmOutput } from "./api-types";
 import { BlockGasCost, computeGasCosts } from "./gas-costs";
 import { Status } from "./interpreter";
 import { MemoryBuilder } from "./memory";
@@ -94,14 +95,6 @@ export function runProgram(
   vmInput.pc = programCounter;
 
   return runVm(vmInput, logs, useSbrkGas);
-}
-
-export class ReturnValue {
-  status: Status = Status.OK;
-  exitCode: u32 = 0;
-  pc: u32 = 0;
-  gas: i64 = 0;
-  result: u8[] = [];
 }
 
 export function runJAM(

@@ -1,4 +1,5 @@
-import { buildMemory, InitialChunk, InitialPage } from "./api-internal";
+import { buildMemory } from "./api-internal";
+import { InitialChunk, InitialPage } from "./api-types";
 import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
