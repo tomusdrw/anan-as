@@ -6,17 +6,18 @@ import { readFileSync } from 'node:fs';
 import { InputKind, disassemble, HasMetadata, runProgram, prepareProgram } from "../build/release.js";
 
 const HELP_TEXT = `Usage:
-  ./index.js disassemble [--spi] <file1.(jam|pvm|spi|bin)> [file2...]
-  ./index.js run [--spi] [--no-logs] <file1.jam> [file2...]
+  anan-as disassemble [--spi] [--no-metadata] <file1.(jam|pvm|spi|bin)> [file2...]
+  anan-as run [--spi] [--no-logs] [--no-metadata] <file1.jam> [file2...]
 
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
   run          Execute PVM bytecode
 
 Flags:
-  --spi        Treat input as JAM SPI format
-  --no-logs    Disable execution logs (run command only)
-  --help, -h   Show this help message`;
+  --spi          Treat input as JAM SPI format
+  --no-metadata  Input does not contain metadata 
+  --no-logs      Disable execution logs (run command only)
+  --help, -h     Show this help message`;
 
 main();
 
@@ -49,7 +50,7 @@ function main() {
 
 function handleDisassemble(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ['spi', 'help'],
+    boolean: ['spi', 'no-metadata', 'help'],
     alias: { h: 'help' }
   });
 
@@ -61,7 +62,7 @@ function handleDisassemble(args: string[]) {
   const files = parsed._;
   if (files.length === 0) {
     console.error("Error: No files provided for disassemble command.");
-    console.error("Usage: ./index.js disassemble [--spi] <file1.(jam|pvm|spi|bin)> [file2...]");
+    console.error("Usage: anan-as disassemble [--spi] [--no-metadata] <file1.(jam|pvm|spi|bin)> [file2...]");
     process.exit(1);
   }
 
@@ -77,18 +78,19 @@ function handleDisassemble(args: string[]) {
   }
 
   const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
+  const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
 
   files.forEach((file: string) => {
     const f = readFileSync(file);
     const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
     console.log(`🤖 Assembly of ${file} (as ${name})`);
-    console.log(disassemble(Array.from(f), kind, HasMetadata.No));
+    console.log(disassemble(Array.from(f), kind, hasMetadata));
   });
 }
 
 function handleRun(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ['spi', 'no-logs', 'help'],
+    boolean: ['spi', 'no-logs', 'no-metadata', 'help'],
     alias: { h: 'help' }
   });
 
@@ -100,7 +102,7 @@ function handleRun(args: string[]) {
   const files = parsed._;
   if (files.length === 0) {
     console.error("Error: No files provided for run command.");
-    console.error("Usage: ./index.js run [--spi] [--no-logs] <file1.jam> [file2...]");
+    console.error("Usage: anan-as run [--spi] [--no-logs] [--no-metadata] <file1.jam> [file2...]");
     process.exit(1);
   }
 
@@ -116,6 +118,7 @@ function handleRun(args: string[]) {
 
   const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
   const logs = !parsed['no-logs'];
+  const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
 
   files.forEach((file: string) => {
     const f = readFileSync(file);
@@ -123,7 +126,7 @@ function handleRun(args: string[]) {
     console.log(`🚀 Running ${file} (as ${name})`);
 
     try {
-      const program = prepareProgram(kind, HasMetadata.No, Array.from(f), [], [], [], []);
+      const program = prepareProgram(kind, hasMetadata, Array.from(f), [], [], [], []);
       const result = runProgram(program, BigInt(0), 0, logs, false);
 
       console.log(`Status: ${result.status}`);
