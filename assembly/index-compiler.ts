@@ -73,15 +73,15 @@ export function pvmMain(argsPtr: u32, argsLen: u32): void {
 
   // Read program code
   const spiProgram: u8[] = [];
-  for (let i: u32 = offset; i < programLen; i++) {
-    spiProgram.push(load<u8>(argsPtr + i));
+  for (let i: u32 = 0; i < programLen; i++) {
+    spiProgram.push(load<u8>(argsPtr + offset + i));
   }
   offset += programLen;
 
   // Read inner program args (remaining bytes)
   const innerArgs: u8[] = [];
-  for (let i: u32 = offset; i < innerArgsLen; i++) {
-    innerArgs.push(load<u8>(argsPtr + i));
+  for (let i: u32 = 0; i < innerArgsLen; i++) {
+    innerArgs.push(load<u8>(argsPtr + offset + i));
   }
   offset += innerArgsLen;
 

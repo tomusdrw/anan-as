@@ -69,7 +69,13 @@ function handleDisassemble(args: string[]) {
   // Validate file extensions for disassemble command
   const validExtensions = ['.jam', '.pvm', '.spi', '.bin'];
   for (const file of files) {
-    const ext = file.substring(file.lastIndexOf('.'));
+    const dotIndex = file.lastIndexOf('.');
+    if (dotIndex === -1) {
+      console.error(`Error: File '${file}' has no extension.`);
+      console.error("Supported extensions: .jam, .pvm, .spi, .bin");
+      process.exit(1);
+    }
+    const ext = file.substring(dotIndex);
     if (!validExtensions.includes(ext)) {
       console.error(`Error: Invalid file extension '${ext}' for disassemble command.`);
       console.error("Supported extensions: .jam, .pvm, .spi, .bin");

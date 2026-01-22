@@ -2,7 +2,7 @@
 
 AssemblyScript implementation of the JAM PVM (64-bit).
 
-Gray Paper compatiblity:
+Gray Paper compatibility:
 
 - [x] 0.7.2
 

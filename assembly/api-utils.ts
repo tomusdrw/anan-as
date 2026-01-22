@@ -130,7 +130,7 @@ export function runJAM(
       return ret;
     }
 
-    // find the memory chunk with our ooutput result
+    // find the memory chunk with our output result
     const chunksLen = output.memory.length;
     for (let i = 0; i < chunksLen; i++) {
       const chunk = output.memory[i];

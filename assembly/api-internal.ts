@@ -184,7 +184,7 @@ function executeProgram(interpreter: Interpreter, logs: boolean = false): void {
       skipBytes,
       interpreter.registers,
     );
-    if (args !== null) {
+    if (logs && args !== null) {
       console.log(`ARGUMENTS:
   ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)},
   ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},

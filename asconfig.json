@@ -57,13 +57,16 @@
 		},
 		"compiler": {
 			"bindings": "esm",
+			"debug": true,
 			"outFile": "build/compiler.wasm",
 			"textFile": "build/compiler.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
 			"converge": true,
-			"noAssert": true
+			"noAssert": true,
+			"runtime": "stub",
+			"exportRuntime": true
 		}
 	},
 	"options": {}
