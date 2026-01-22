@@ -2,14 +2,11 @@
 
 AssemblyScript implementation of the JAM PVM (64-bit).
 
+Gray Paper compatiblity:
+
+- [x] 0.7.2
+
 [Demo](https://todr.me/anan-as)
-
-## Todo
-
-- [x] Memory
-- [x] [JAM tests](https://github.com/w3f/jamtestvectors/pull/3) compatibility
-- [x] 64-bit & new instructions ([GrayPaper v0.5.0](https://graypaper.fluffylabs.dev))
-- [x] GP 0.5.4 compatibility (ZBB extensions)
 
 ## Why?
 
@@ -19,7 +16,7 @@ AssemblyScript implementation of the JAM PVM (64-bit).
 
 ## Useful where?
 
-- Potentially as an alternative implementation for [`typeberry`](https://github.com/fluffylabs).
+- Main PVM backend of [`typeberry`](https://github.com/fluffylabs) JAM client.
 - To test out the [PVM debugger](https://pvm.fluffylabs.dev).
 
 ## Installation
@@ -112,4 +109,48 @@ To run JSON test vectors.
 
 ```cmd
 npm start ./path/to/tests/*.json
+```
+
+## CLI Usage
+
+The package includes a CLI tool for disassembling and running PVM bytecode:
+
+```bash
+# Disassemble bytecode to assembly
+npx anan-as disassemble [--spi] <file1.(jam|pvm|spi|bin)> [file2...]
+
+# Run JAM programs
+npx anan-as run [--spi] [--no-logs] <file1.jam> [file2...]
+
+# Show help
+npx anan-as --help
+npx anan-as disassemble --help
+npx anan-as run --help
+```
+
+### Commands
+
+- `disassemble`: Convert PVM bytecode to human-readable assembly
+- `run`: Execute PVM bytecode and show results
+
+### Flags
+
+- `--spi`: Treat input as JAM SPI format instead of generic PVM
+- `--no-logs`: Disable execution logs (run command only)
+- `--help`, `-h`: Show help information
+
+### Examples
+
+```bash
+# Disassemble a JAM file
+npx anan-as disassemble program.jam
+
+# Disassemble multiple files with SPI format
+npx anan-as disassemble --spi program1.spi program2.bin
+
+# Run a JAM program with logs
+npx anan-as run program.jam
+
+# Run a JAM program quietly
+npx anan-as run --no-logs program.jam
 ```

@@ -54,6 +54,16 @@
 			"textFile": "build/test.wat",
 			"sourceMap": true,
 			"debug": true
+		},
+		"compiler": {
+			"bindings": "esm",
+			"outFile": "build/compiler.wasm",
+			"textFile": "build/compiler.wat",
+			"sourceMap": true,
+			"optimizeLevel": 3,
+			"shrinkLevel": 0,
+			"converge": true,
+			"noAssert": true
 		}
 	},
 	"options": {}

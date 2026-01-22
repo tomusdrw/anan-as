@@ -71,14 +71,23 @@ export function getAssembly(p: Program): string {
 }
 
 export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  const int = new Interpreter(input.program, input.registers, input.memory);
-  int.useSbrkGas = useSbrkGas;
-  int.nextPc = input.pc;
-  int.gas.set(input.gas);
-  const result = executeProgram(int, logs);
-  // release used pages back
-  int.memory.free();
-  return result;
+  const interpreter = new Interpreter(input.program, input.registers, input.memory);
+  interpreter.useSbrkGas = useSbrkGas;
+  interpreter.nextPc = input.pc;
+  interpreter.gas.set(input.gas);
+
+  executeProgram(interpreter, logs);
+
+  const output = new VmOutput();
+  output.status = interpreter.status;
+  output.registers = interpreter.registers.slice(0);
+  output.pc = interpreter.pc;
+  output.gas = interpreter.gas.get();
+  output.memory = getOutputChunks(interpreter.memory);
+  output.exitCode = interpreter.exitCode;
+
+  interpreter.memory.free();
+  return output;
 }
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
@@ -141,49 +150,48 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
   return builder.build(sbrkIndex);
 }
 
-function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
+function executeProgram(interpreter: Interpreter, logs: boolean = false): void {
   let isOk = true;
   const argsRes = new Args();
+
   for (;;) {
     if (!isOk) {
-      if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
-      if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
-      if (logs) console.log(`Finished with status: ${int.status}`);
-      if (logs) console.log(`Exit code: ${int.exitCode}`);
+      if (logs) console.log(`REGISTERS = ${interpreter.registers.join(", ")} (final)`);
+      if (logs)
+        console.log(`REGISTERS = ${interpreter.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
+      if (logs) console.log(`Finished with status: ${interpreter.status}`);
+      if (logs) console.log(`Exit code: ${interpreter.exitCode}`);
       break;
     }
 
-    if (logs) console.log(`PC = ${int.pc}`);
-    if (logs) console.log(`GAS = ${int.gas.get()}`);
-    if (logs) console.log(`STATUS = ${int.status}`);
-    if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
-    if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
-    if (logs) {
-      const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
-      const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-      const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
-      const name = changetype<string>(iData.namePtr);
-      console.log(`INSTRUCTION = ${name} (${instruction})`);
-      const args = resolveArguments(argsRes, iData.kind, int.program.code, int.pc + 1, skipBytes, int.registers);
-      if (args !== null) {
-        console.log(`ARGUMENTS:
-  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
+    if (logs) console.log(`PC = ${interpreter.pc}`);
+    if (logs) console.log(`GAS = ${interpreter.gas.get()}`);
+    if (logs) console.log(`STATUS = ${interpreter.status}`);
+    if (logs) console.log(`REGISTERS = ${interpreter.registers.join(", ")}`);
+    if (logs) console.log(`REGISTERS = ${interpreter.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
+
+    const instruction =
+      interpreter.pc < u32(interpreter.program.code.length) ? interpreter.program.code[interpreter.pc] : 0;
+    const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
+
+    const skipBytes = interpreter.program.mask.skipBytesToNextInstruction(interpreter.pc);
+
+    const args = resolveArguments(
+      argsRes,
+      iData.kind,
+      interpreter.program.code,
+      interpreter.pc + 1,
+      skipBytes,
+      interpreter.registers,
+    );
+    if (args !== null) {
+      console.log(`ARGUMENTS:
+  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)},
   ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
   ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
   ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
-      }
     }
 
-    isOk = int.nextSteps();
+    isOk = interpreter.nextSteps();
   }
-
-  const output = new VmOutput();
-  output.status = int.status;
-  output.registers = int.registers.slice(0);
-  output.pc = int.pc;
-  output.gas = int.gas.get();
-  output.memory = getOutputChunks(int.memory);
-  output.exitCode = int.exitCode;
-
-  return output;
 }

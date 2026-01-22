@@ -8,12 +8,13 @@
 	},
 	"scripts": {
 		"asbuild": "npm run asbuild:debug && npm run asbuild:release",
-		"asbuild:all": "npm run asbuild:debug && npm run asbuild:release && npm run asbuild:raw && npm run asbuild:release-mini && npm run asbuild:release-stub",
+		"asbuild:all": "npm run asbuild:debug && npm run asbuild:release && npm run asbuild:raw && npm run asbuild:release-mini && npm run asbuild:release-stub && npm run asbuild:compiler",
 		"asbuild:debug": "asc assembly/index.ts --target debug",
 		"asbuild:release": "asc assembly/index.ts --uncheckedBehavior=always --target release",
 		"asbuild:release-mini": "asc assembly/index.ts --uncheckedBehavior=always --target release-mini",
 		"asbuild:release-stub": "asc assembly/index.ts --uncheckedBehavior=always --target release-stub",
 		"asbuild:raw": "asc assembly/index.ts --target raw",
+		"asbuild:compiler": "asc assembly/index-compiler.ts --uncheckedBehavior=always --target compiler",
 		"asbuild:test": "asc assembly/test-run.ts --target test",
 		"build": "npm run asbuild:all && npm run asbuild:test && npm run tsbuild && npm run build:inline && npm run cp-build",
 		"build:inline": "tsx ./bin/build-inline.ts",
@@ -40,11 +41,13 @@
 	"author": "Fluffy Labs",
 	"license": "MPL-2.0",
 	"devDependencies": {
-		"json-bigint-patch": "^0.0.8",
 		"@biomejs/biome": "^2.3.11",
 		"@typeberry/lib": "^0.5.1",
+		"@types/minimist": "^1.2.5",
 		"@types/node": "^25.0.0",
 		"assemblyscript": "^0.28.8",
+		"json-bigint-patch": "^0.0.8",
+		"minimist": "^1.2.8",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3"
 	},
@@ -96,9 +99,14 @@
 			"import": "./build/release-stub-inline.js",
 			"types": "./build/release-stub-inline.d.ts"
 		},
+		"./compiler": {
+			"import": "./build/compiler.js",
+			"types": "./build/compiler.d.ts"
+		},
 		"./debug.wasm": "./build/debug.wasm",
 		"./release.wasm": "./build/release.wasm",
 		"./release-mini.wasm": "./build/release-mini.wasm",
-		"./release-stub.wasm": "./build/release-stub.wasm"
+		"./release-stub.wasm": "./build/release-stub.wasm",
+		"./compiler.wasm": "./build/compiler.wasm"
 	}
 }
