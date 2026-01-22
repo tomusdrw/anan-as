@@ -117,10 +117,10 @@ The package includes a CLI tool for disassembling and running PVM bytecode:
 
 ```bash
 # Disassemble bytecode to assembly
-npx @fluffylabs/anan-as disassemble [--spi] [--no-metadata] <file1.(jam|pvm|spi|bin)> [file2...]
+npx @fluffylabs/anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
 
 # Run JAM programs
-npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] <file1.jam> [file2...]
+npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]
 
 # Show help
 npx @fluffylabs/anan-as --help
@@ -138,6 +138,8 @@ npx @fluffylabs/anan-as run --help
 - `--spi`: Treat input as JAM SPI format instead of generic PVM
 - `--no-metadata`: Input does not start with metadata
 - `--no-logs`: Disable execution logs (run command only)
+- `--pc <number>`: Set initial program counter (default: 0)
+- `--gas <number>`: Set initial gas amount (default: 0)
 - `--help`, `-h`: Show help information
 
 ### Examples
@@ -149,8 +151,8 @@ npx @fluffylabs/anan-as disassemble program.jam
 # Disassemble without metadata
 npx @fluffylabs/anan-as disassemble --no-metadata program.jam
 
-# Disassemble multiple files with SPI format
-npx @fluffylabs/anan-as disassemble --spi program1.spi program2.bin
+# Disassemble SPI program
+npx @fluffylabs/anan-as disassemble --spi program.spi
 
 # Run a JAM program with logs (includes metadata by default)
 npx @fluffylabs/anan-as run program.jam
@@ -160,4 +162,10 @@ npx @fluffylabs/anan-as run --no-metadata program.jam
 
 # Run a JAM program quietly
 npx @fluffylabs/anan-as run --no-logs program.jam
+
+# Run a JAM program with custom initial PC and gas
+npx @fluffylabs/anan-as run --pc 100 --gas 10000 program.jam
+
+# Run SPI program with arguments
+npx @fluffylabs/anan-as run --spi program.spi args.bin
 ```

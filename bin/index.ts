@@ -6,8 +6,8 @@ import { readFileSync } from 'node:fs';
 import { InputKind, disassemble, HasMetadata, runProgram, prepareProgram } from "../build/release.js";
 
 const HELP_TEXT = `Usage:
-  anan-as disassemble [--spi] [--no-metadata] <file1.(jam|pvm|spi|bin)> [file2...]
-  anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file1.jam> [file2...]
+  anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
+  anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]
 
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
@@ -62,37 +62,40 @@ function handleDisassemble(args: string[]) {
 
   const files = parsed._;
   if (files.length === 0) {
-    console.error("Error: No files provided for disassemble command.");
-    console.error("Usage: anan-as disassemble [--spi] [--no-metadata] <file1.(jam|pvm|spi|bin)> [file2...]");
+    console.error("Error: No file provided for disassemble command.");
+    console.error("Usage: anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>");
+    process.exit(1);
+  }
+  if (files.length > 1) {
+    console.error("Error: Only one file can be disassembled at a time.");
+    console.error("Usage: anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>");
     process.exit(1);
   }
 
-  // Validate file extensions for disassemble command
+  const file = files[0];
+
+  // Validate file extension for disassemble command
   const validExtensions = ['.jam', '.pvm', '.spi', '.bin'];
-  for (const file of files) {
-    const dotIndex = file.lastIndexOf('.');
-    if (dotIndex === -1) {
-      console.error(`Error: File '${file}' has no extension.`);
-      console.error("Supported extensions: .jam, .pvm, .spi, .bin");
-      process.exit(1);
-    }
-    const ext = file.substring(dotIndex);
-    if (!validExtensions.includes(ext)) {
-      console.error(`Error: Invalid file extension '${ext}' for disassemble command.`);
-      console.error("Supported extensions: .jam, .pvm, .spi, .bin");
-      process.exit(1);
-    }
+  const dotIndex = file.lastIndexOf('.');
+  if (dotIndex === -1) {
+    console.error(`Error: File '${file}' has no extension.`);
+    console.error("Supported extensions: .jam, .pvm, .spi, .bin");
+    process.exit(1);
+  }
+  const ext = file.substring(dotIndex);
+  if (!validExtensions.includes(ext)) {
+    console.error(`Error: Invalid file extension '${ext}' for disassemble command.`);
+    console.error("Supported extensions: .jam, .pvm, .spi, .bin");
+    process.exit(1);
   }
 
   const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
   const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
 
-  files.forEach((file: string) => {
-    const f = readFileSync(file);
-    const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
-    console.log(`🤖 Assembly of ${file} (as ${name})`);
-    console.log(disassemble(Array.from(f), kind, hasMetadata));
-  });
+  const f = readFileSync(file);
+  const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
+  console.log(`🤖 Assembly of ${file} (as ${name})`);
+  console.log(disassemble(Array.from(f), kind, hasMetadata));
 }
 
 function handleRun(args: string[]) {
@@ -109,22 +112,55 @@ function handleRun(args: string[]) {
 
   const files = parsed._;
   if (files.length === 0) {
-    console.error("Error: No files provided for run command.");
-    console.error("Usage: anan-as run [--spi] [--no-logs] [--no-metadata] <file1.jam> [file2...]");
+    console.error("Error: No file provided for run command.");
+    console.error("Usage: anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]");
     process.exit(1);
   }
 
-  // Validate file extensions for run command
-  for (const file of files) {
-    const ext = file.substring(file.lastIndexOf('.'));
-    if (ext !== '.jam') {
-      console.error(`Error: Invalid file extension '${ext}' for run command.`);
-      console.error("Only .jam files are supported for the run command.");
+  const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
+
+  let programFile: string;
+  let spiArgsFile: string | undefined;
+
+  if (kind === InputKind.SPI) {
+    // For SPI programs, expect: <program.spi> [spi-args.bin]
+    if (files.length > 2) {
+      console.error("Error: Too many arguments for SPI run command.");
+      console.error("Usage: anan-as run --spi [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <program.spi> [spi-args.bin]");
       process.exit(1);
     }
+    programFile = files[0];
+    spiArgsFile = files[1]; // optional
+  } else {
+    // For generic programs, expect exactly one file
+    if (files.length > 1) {
+      console.error("Error: Only one file can be run at a time.");
+      console.error("Usage: anan-as run [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam>");
+      process.exit(1);
+    }
+    programFile = files[0];
   }
 
-  const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
+  // Validate program file extension
+  const expectedExt = kind === InputKind.SPI ? '.spi' : '.jam';
+  const ext = programFile.substring(programFile.lastIndexOf('.'));
+  if (ext !== expectedExt) {
+    console.error(`Error: Invalid file extension '${ext}' for run command.`);
+    console.error(`Expected: ${expectedExt}`);
+    process.exit(1);
+  }
+
+  // Validate SPI args file if provided
+  let spiArgs: Uint8Array | undefined;
+  if (spiArgsFile) {
+    const argsExt = spiArgsFile.substring(spiArgsFile.lastIndexOf('.'));
+    if (argsExt !== '.bin') {
+      console.error(`Error: SPI args file must have .bin extension, got '${argsExt}'.`);
+      process.exit(1);
+    }
+    spiArgs = new Uint8Array(readFileSync(spiArgsFile));
+  }
+
   const logs = !parsed['no-logs'];
   const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
 
@@ -149,22 +185,20 @@ function handleRun(args: string[]) {
     initialGas = gasValue;
   }
 
-  files.forEach((file: string) => {
-    const f = readFileSync(file);
-    const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
-    console.log(`🚀 Running ${file} (as ${name})`);
+  const f = readFileSync(programFile);
+  const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
+  console.log(`🚀 Running ${programFile} (as ${name})`);
 
-    try {
-      const program = prepareProgram(kind, hasMetadata, Array.from(f), [], [], [], []);
-      const result = runProgram(program, initialGas, initialPc, logs, false);
+  try {
+    const program = prepareProgram(kind, hasMetadata, Array.from(f), [], [], [], spiArgs ? Array.from(spiArgs) : []);
+    const result = runProgram(program, initialGas, initialPc, logs, false);
 
-      console.log(`Status: ${result.status}`);
-      console.log(`Exit code: ${result.exitCode}`);
-      console.log(`Program counter: ${result.pc}`);
-      console.log(`Gas remaining: ${result.gas}`);
-      console.log(`Registers: [${result.registers.join(', ')}]`);
-    } catch (error) {
-      console.error(`Error running ${file}:`, error);
-    }
-  });
+    console.log(`Status: ${result.status}`);
+    console.log(`Exit code: ${result.exitCode}`);
+    console.log(`Program counter: ${result.pc}`);
+    console.log(`Gas remaining: ${result.gas}`);
+    console.log(`Registers: [${result.registers.join(', ')}]`);
+  } catch (error) {
+    console.error(`Error running ${programFile}:`, error);
+  }
 }
