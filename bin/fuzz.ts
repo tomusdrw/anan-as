@@ -2,7 +2,8 @@
 
 import "json-bigint-patch";
 import fs from 'node:fs';
-import { pvm_interpreter } from "@typeberry/lib";
+import { Interpreter } from "@typeberry/lib/pvm-interpreter";
+import { tryAsGas } from "@typeberry/lib/pvm-interface";
 import { wrapAsProgram, runProgram, disassemble, InputKind, prepareProgram, HasMetadata } from "../build/release.js";
 
 let runNumber = 0;
@@ -10,19 +11,19 @@ let runNumber = 0;
 export function fuzz(data: Uint8Array | number[]) {
   const gas = 200n;
   const pc = 0;
-  const vm = new pvm_interpreter.DebuggerAdapter();
+  const vm = new Interpreter();
   const program = wrapAsProgram(new Uint8Array(data));
   if (program.length > 100) {
     return;
   }
 
   try {
-    vm.reset(
+    vm.resetGeneric(
       program,
       pc,
-      gas,
+      tryAsGas(gas),
     );
-    while(vm.nSteps(100)) {}
+    vm.runProgram();
 
     const printDebugInfo = false;
     const registers = Array(13).join(',').split(',').map(() => BigInt(0));
@@ -36,13 +37,13 @@ export function fuzz(data: Uint8Array | number[]) {
       []
     );
     const output = runProgram(exe, gas, pc, printDebugInfo);
-    const vmRegisters = decodeRegisters(vm.getRegisters());
+    const vmRegisters = decodeRegistersFromTypeberry(vm);
     
     collectErrors((assertFn) => {
       assertFn(normalizeStatus(vm.getStatus()), normalizeStatus(output.status), 'status');
-      assertFn(vm.getGasLeft(), output.gas, 'gas');
+      assertFn(vm.gas.get(), output.gas, 'gas');
       assertFn(vmRegisters, output.registers, 'registers');
-      assertFn(vm.getProgramCounter(), output.pc, 'pc');
+      assertFn(vm.getPC(), output.pc, 'pc');
     });
 
     try {
@@ -56,8 +57,8 @@ export function fuzz(data: Uint8Array | number[]) {
           },
           {
             status: normalizeStatus(vm.getStatus()),
-            gasLeft: vm.getGasLeft(),
-            pc: vm.getProgramCounter(),
+            gasLeft: vm.gas.get(),
+            pc: vm.getPC(),
             registers: vmRegisters,
           },
         );
@@ -101,6 +102,20 @@ function decodeRegisters(value: Uint8Array): bigint[] {
     registers[i] = view.getBigUint64(i * REGISTER_BYTE_WIDTH, true);
   }
 
+  return registers;
+}
+
+function decodeRegistersFromTypeberry(vm: Interpreter): bigint[] {
+  const registers: bigint[] = [];
+  // Try to get up to 13 registers (common register count)
+  for (let i = 0; i < 13; i++) {
+    try {
+      registers.push(vm.registers.getU64(i));
+    } catch (e) {
+      // If we can't get a register, break
+      break;
+    }
+  }
   return registers;
 }
 
