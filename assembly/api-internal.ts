@@ -139,18 +139,18 @@ function executeProgram(int: Interpreter, logs: boolean = false): void {
     if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
     if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
 
-    const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
-    const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
-
-    const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
-
-    const args = resolveArguments(argsRes, iData.kind, int.program.code, int.pc + 1, skipBytes, int.registers);
-    if (logs && args !== null) {
-      console.log(`ARGUMENTS:
+    if (logs && int.pc < u32(int.program.code.length)) {
+      const instruction = int.program.code[int.pc];
+      const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
+      const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
+      const args = resolveArguments(argsRes, iData.kind, int.program.code, int.pc + 1, skipBytes, int.registers);
+      if (args !== null) {
+        console.log(`ARGUMENTS:
   ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)},
   ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
   ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
   ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
+      }
     }
 
     isOk = int.nextSteps();

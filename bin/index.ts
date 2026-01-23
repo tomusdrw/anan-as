@@ -167,9 +167,22 @@ function handleRun(args: string[]) {
   // Parse and validate PC and gas options
   let initialPc = 0;
   if (parsed.pc !== undefined) {
-    const pcValue = parseInt(parsed.pc, 10);
-    if (isNaN(pcValue) || pcValue < 0) {
-      console.error("Error: --pc must be a non-negative integer.");
+    // Ensure it's a string/number, not boolean
+    if (typeof parsed.pc === 'boolean') {
+      console.error("Error: --pc requires a value.");
+      process.exit(1);
+    }
+
+    const pcStr = String(parsed.pc);
+    // Reject floats and non-integer strings
+    if (pcStr.includes('.') || !/^-?\d+$/.test(pcStr)) {
+      console.error("Error: --pc must be a valid integer.");
+      process.exit(1);
+    }
+
+    const pcValue = parseInt(pcStr, 10);
+    if (!Number.isInteger(pcValue) || pcValue < 0 || pcValue > 0xFFFFFFFF) {
+      console.error("Error: --pc must be a non-negative integer <= 2^32-1.");
       process.exit(1);
     }
     initialPc = pcValue;
@@ -177,9 +190,29 @@ function handleRun(args: string[]) {
 
   let initialGas = BigInt(0);
   if (parsed.gas !== undefined) {
-    const gasValue = BigInt(parsed.gas);
-    if (gasValue < 0) {
-      console.error("Error: --gas must be a non-negative integer.");
+    // Ensure it's a string/number, not boolean
+    if (typeof parsed.gas === 'boolean') {
+      console.error("Error: --gas requires a value.");
+      process.exit(1);
+    }
+
+    const gasStr = String(parsed.gas);
+    // Reject floats and non-integer strings
+    if (gasStr.includes('.') || !/^-?\d+$/.test(gasStr)) {
+      console.error("Error: --gas must be a valid integer.");
+      process.exit(1);
+    }
+
+    let gasValue: bigint;
+    try {
+      gasValue = BigInt(gasStr);
+    } catch (e) {
+      console.error("Error: --gas must be a valid integer.");
+      process.exit(1);
+    }
+
+    if (gasValue < 0 || gasValue > BigInt("0xFFFFFFFFFFFFFFFF")) {
+      console.error("Error: --gas must be a non-negative integer <= 2^64-1.");
       process.exit(1);
     }
     initialGas = gasValue;

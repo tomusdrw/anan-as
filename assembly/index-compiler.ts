@@ -21,9 +21,11 @@
  */
 
 import { runJAM } from "./api-utils";
+import { Status } from "./interpreter";
 
 // Result buffer location (in WASM linear memory)
 const RESULT_BUFFER: u32 = 0x100; // After globals area
+const MAX_RESULT_SIZE: u32 = 0x10000; // 64KB max result size
 
 // Globals for result pointer and length (SPI convention)
 // These must be mutable globals that the compiler can read
@@ -39,7 +41,7 @@ export function pvmMain(argsPtr: u32, argsLen: u32): void {
   // 8 (gas) + 4 (pc) + 4 (spi-program-len) + 4 (inner-args-len) + ? (spi-program) + ? (inner-args) = 20 + ? bytes
   if (argsLen < 20) {
     // Invalid input - return error status
-    store<u8>(RESULT_BUFFER, 1); // PANIC status
+    store<u8>(RESULT_BUFFER, Status.PANIC);
     result_ptr = RESULT_BUFFER;
     result_len = 1;
     return;
@@ -62,10 +64,10 @@ export function pvmMain(argsPtr: u32, argsLen: u32): void {
   const innerArgsLen = load<u32>(argsPtr + offset);
   offset += 4;
 
-  // we don't have enough data
-  if (argsLen - offset !== programLen + innerArgsLen) {
+  // we don't have enough data - prevent u32 overflow by casting to u64
+  if (u64(argsLen) - u64(offset) !== u64(programLen) + u64(innerArgsLen)) {
     // Invalid input - return error status
-    store<u8>(RESULT_BUFFER, 1); // PANIC status
+    store<u8>(RESULT_BUFFER, Status.PANIC);
     result_ptr = RESULT_BUFFER;
     result_len = 1;
     return;
@@ -88,33 +90,63 @@ export function pvmMain(argsPtr: u32, argsLen: u32): void {
   // Execute the program
   const result = runJAM(pc, gas, spiProgram, innerArgs, false, false);
 
-  // Write output to result buffer
-  let outOffset: u32 = 0;
+  // Write output to result buffer with bounds checking
+  let resultLen: u32 = 0;
 
   // Status (1 byte)
-  store<u8>(RESULT_BUFFER + outOffset, result.status);
-  outOffset += 1;
+  if (resultLen >= MAX_RESULT_SIZE) {
+    store<u8>(RESULT_BUFFER, Status.PANIC);
+    result_ptr = RESULT_BUFFER;
+    result_len = 1;
+    return;
+  }
+  store<u8>(RESULT_BUFFER + resultLen, result.status);
+  resultLen += 1;
 
   // exitCode (4 bytes)
-  store<u32>(RESULT_BUFFER + outOffset, result.exitCode);
-  outOffset += 4;
+  if (resultLen + 4 > MAX_RESULT_SIZE) {
+    store<u8>(RESULT_BUFFER, Status.PANIC);
+    result_ptr = RESULT_BUFFER;
+    result_len = 1;
+    return;
+  }
+  store<u32>(RESULT_BUFFER + resultLen, result.exitCode);
+  resultLen += 4;
 
   // Gas left (8 bytes)
-  store<u64>(RESULT_BUFFER + outOffset, result.gas);
-  outOffset += 8;
+  if (resultLen + 8 > MAX_RESULT_SIZE) {
+    store<u8>(RESULT_BUFFER, Status.PANIC);
+    result_ptr = RESULT_BUFFER;
+    result_len = 1;
+    return;
+  }
+  store<u64>(RESULT_BUFFER + resultLen, result.gas);
+  resultLen += 8;
 
   // PC (4 bytes)
-  store<u32>(RESULT_BUFFER + outOffset, result.pc);
-  outOffset += 4;
-
-  // Result
-  const resultLen = result.result.length;
-  for (let i: i32 = 0; i < resultLen; i++) {
-    store<u8>(RESULT_BUFFER + outOffset + i, result.result[i]);
+  if (resultLen + 4 > MAX_RESULT_SIZE) {
+    store<u8>(RESULT_BUFFER, Status.PANIC);
+    result_ptr = RESULT_BUFFER;
+    result_len = 1;
+    return;
   }
-  outOffset += resultLen;
+  store<u32>(RESULT_BUFFER + resultLen, result.pc);
+  resultLen += 4;
+
+  // Result data
+  const dataLen: u32 = <u32>result.result.length;
+  if (resultLen + dataLen > MAX_RESULT_SIZE) {
+    store<u8>(RESULT_BUFFER, Status.PANIC);
+    result_ptr = RESULT_BUFFER;
+    result_len = 1;
+    return;
+  }
+  for (let i: u32 = 0; i < dataLen; i++) {
+    store<u8>(RESULT_BUFFER + resultLen + i, result.result[i]);
+  }
+  resultLen += dataLen;
 
   // Set result pointer and length
   result_ptr = RESULT_BUFFER;
-  result_len = outOffset;
+  result_len = resultLen;
 }

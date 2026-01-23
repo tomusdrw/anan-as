@@ -122,6 +122,8 @@ npx @fluffylabs/anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|b
 # Run JAM programs
 npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]
 
+The `run` command executes PVM bytecode until it encounters a `halt` instruction or the first host call. For full execution including host call handling, use the disassemble command or other tooling.
+
 # Show help
 npx @fluffylabs/anan-as --help
 npx @fluffylabs/anan-as disassemble --help

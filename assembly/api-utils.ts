@@ -123,20 +123,40 @@ export function runJAM(
       return ret;
     }
 
-    // find the memory chunk with our output result
+    // reconstruct result across all output.memory chunks that intersect the pointer range
+    const resultChunks: u8[][] = [];
     const chunksLen = output.memory.length;
     for (let i = 0; i < chunksLen; i++) {
       const chunk = output.memory[i];
       const start = chunk.address;
       const end = start + chunk.data.length;
-      // we have the right chunk
-      if (ptr_start >= start && ptr_end <= end) {
-        const s = ptr_start - start;
-        const e = ptr_end - start;
-        ret.result = chunk.data.slice(<i32>s, <i32>e);
-      } else if (start > ptr_end) {
+
+      // compute overlapping slice
+      const s = max(ptr_start, start);
+      const e = min(ptr_end, end);
+
+      if (s < e) {
+        const sliceStart = <i32>(s - start);
+        const sliceEnd = <i32>(e - start);
+        resultChunks.push(chunk.data.slice(sliceStart, sliceEnd));
+      }
+
+      // stop once we've accumulated the full range
+      if (end >= ptr_end) {
         break;
       }
+    }
+
+    // concatenate all chunks
+    const totalLength = ptr_end - ptr_start;
+    ret.result = new Array<u8>(<i32>totalLength);
+    let offset = 0;
+    for (let i = 0; i < resultChunks.length; i++) {
+      const chunk = resultChunks[i];
+      for (let j = 0; j < chunk.length; j++) {
+        ret.result[offset + j] = chunk[j];
+      }
+      offset += chunk.length;
     }
   }
   return ret;
