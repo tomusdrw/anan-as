@@ -159,13 +159,13 @@ function handleRun(args: string[]) {
   // Validate SPI args file if provided
   let spiArgs: Uint8Array | undefined;
   if (spiArgsFile) {
-    const dotIndex = spiArgsFile.lastIndexOf('.');
-    if (dotIndex === -1) {
+    const argsDotIndex = spiArgsFile.lastIndexOf('.');
+    if (argsDotIndex === -1) {
       console.error(`Error: SPI args file '${spiArgsFile}' has no extension.`);
       console.error(`Expected: .bin`);
       process.exit(1);
     }
-    const argsExt = spiArgsFile.substring(dotIndex);
+    const argsExt = spiArgsFile.substring(argsDotIndex);
     if (argsExt !== '.bin') {
       console.error(`Error: SPI args file must have .bin extension, got '${argsExt}'.`);
       process.exit(1);
