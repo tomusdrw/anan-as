@@ -124,7 +124,9 @@ export function runJAM(
     }
 
     // reconstruct result across all output.memory chunks that intersect the pointer range
-    const resultChunks: u8[][] = [];
+    const totalLength = ptr_end - ptr_start;
+    ret.result = new Array<u8>(<i32>totalLength);
+
     const chunksLen = output.memory.length;
     for (let i = 0; i < chunksLen; i++) {
       const chunk = output.memory[i];
@@ -138,25 +140,19 @@ export function runJAM(
       if (s < e) {
         const sliceStart = <i32>(s - start);
         const sliceEnd = <i32>(e - start);
-        resultChunks.push(chunk.data.slice(sliceStart, sliceEnd));
+        const writeOffset = <i32>(s - ptr_start);
+        const sliceData = chunk.data.slice(sliceStart, sliceEnd);
+
+        // copy slice data to the correct position in result
+        for (let j = 0; j < sliceData.length; j++) {
+          ret.result[writeOffset + j] = sliceData[j];
+        }
       }
 
-      // stop once we've accumulated the full range
+      // stop once we've covered the full range
       if (end >= ptr_end) {
         break;
       }
-    }
-
-    // concatenate all chunks
-    const totalLength = ptr_end - ptr_start;
-    ret.result = new Array<u8>(<i32>totalLength);
-    let offset = 0;
-    for (let i = 0; i < resultChunks.length; i++) {
-      const chunk = resultChunks[i];
-      for (let j = 0; j < chunk.length; j++) {
-        ret.result[offset + j] = chunk[j];
-      }
-      offset += chunk.length;
     }
   }
   return ret;

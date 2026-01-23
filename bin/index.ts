@@ -211,8 +211,9 @@ function handleRun(args: string[]) {
       process.exit(1);
     }
 
-    if (gasValue < 0 || gasValue > BigInt("0xFFFFFFFFFFFFFFFF")) {
-      console.error("Error: --gas must be a non-negative integer <= 2^64-1.");
+    const MAX_I64 = (1n << 63n) - 1n;
+    if (gasValue < 0n || gasValue > MAX_I64) {
+      console.error("Error: --gas must be a non-negative integer <= 2^63-1.");
       process.exit(1);
     }
     initialGas = gasValue;
@@ -231,7 +232,8 @@ function handleRun(args: string[]) {
     console.log(`Program counter: ${result.pc}`);
     console.log(`Gas remaining: ${result.gas}`);
     console.log(`Registers: [${result.registers.join(', ')}]`);
-  } catch (error) {
-    console.error(`Error running ${programFile}:`, error);
-  }
+   } catch (error) {
+     console.error(`Error running ${programFile}:`, error);
+     process.exit(1);
+   }
 }
