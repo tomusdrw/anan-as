@@ -143,7 +143,13 @@ function handleRun(args: string[]) {
 
   // Validate program file extension
   const expectedExt = kind === InputKind.SPI ? '.spi' : '.jam';
-  const ext = programFile.substring(programFile.lastIndexOf('.'));
+  const dotIndex = programFile.lastIndexOf('.');
+  if (dotIndex === -1) {
+    console.error(`Error: File '${programFile}' has no extension.`);
+    console.error(`Expected: ${expectedExt}`);
+    process.exit(1);
+  }
+  const ext = programFile.substring(dotIndex);
   if (ext !== expectedExt) {
     console.error(`Error: Invalid file extension '${ext}' for run command.`);
     console.error(`Expected: ${expectedExt}`);
@@ -153,7 +159,13 @@ function handleRun(args: string[]) {
   // Validate SPI args file if provided
   let spiArgs: Uint8Array | undefined;
   if (spiArgsFile) {
-    const argsExt = spiArgsFile.substring(spiArgsFile.lastIndexOf('.'));
+    const dotIndex = spiArgsFile.lastIndexOf('.');
+    if (dotIndex === -1) {
+      console.error(`Error: SPI args file '${spiArgsFile}' has no extension.`);
+      console.error(`Expected: .bin`);
+      process.exit(1);
+    }
+    const argsExt = spiArgsFile.substring(dotIndex);
     if (argsExt !== '.bin') {
       console.error(`Error: SPI args file must have .bin extension, got '${argsExt}'.`);
       process.exit(1);
