@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
-// @ts-ignore - minimist types issue with ESM
-import minimist from 'minimist';
-import { readFileSync } from 'node:fs';
-import { InputKind, disassemble, HasMetadata, runProgram, prepareProgram } from "../build/release.js";
+import { readFileSync } from "node:fs";
+import minimist from "minimist";
+import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
@@ -27,7 +26,7 @@ function main() {
   const args = process.argv.slice(2);
 
   // Handle global help flags
-  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log(HELP_TEXT);
     return;
   }
@@ -35,10 +34,10 @@ function main() {
   const subCommand = args[0];
 
   switch (subCommand) {
-    case 'disassemble':
+    case "disassemble":
       handleDisassemble(args.slice(1));
       break;
-    case 'run':
+    case "run":
       handleRun(args.slice(1));
       break;
     default:
@@ -51,8 +50,8 @@ function main() {
 
 function handleDisassemble(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ['spi', 'no-metadata', 'help'],
-    alias: { h: 'help' }
+    boolean: ["spi", "no-metadata", "help"],
+    alias: { h: "help" },
   });
 
   if (parsed.help) {
@@ -75,8 +74,8 @@ function handleDisassemble(args: string[]) {
   const file = files[0];
 
   // Validate file extension for disassemble command
-  const validExtensions = ['.jam', '.pvm', '.spi', '.bin'];
-  const dotIndex = file.lastIndexOf('.');
+  const validExtensions = [".jam", ".pvm", ".spi", ".bin"];
+  const dotIndex = file.lastIndexOf(".");
   if (dotIndex === -1) {
     console.error(`Error: File '${file}' has no extension.`);
     console.error("Supported extensions: .jam, .pvm, .spi, .bin");
@@ -90,19 +89,19 @@ function handleDisassemble(args: string[]) {
   }
 
   const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
-  const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
+  const hasMetadata = parsed["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
 
   const f = readFileSync(file);
-  const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
+  const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
   console.log(`🤖 Assembly of ${file} (as ${name})`);
   console.log(disassemble(Array.from(f), kind, hasMetadata));
 }
 
 function handleRun(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ['spi', 'no-logs', 'no-metadata', 'help'],
-    string: ['pc', 'gas'],
-    alias: { h: 'help' }
+    boolean: ["spi", "no-logs", "no-metadata", "help"],
+    string: ["pc", "gas"],
+    alias: { h: "help" },
   });
 
   if (parsed.help) {
@@ -113,7 +112,9 @@ function handleRun(args: string[]) {
   const files = parsed._;
   if (files.length === 0) {
     console.error("Error: No file provided for run command.");
-    console.error("Usage: anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]");
+    console.error(
+      "Usage: anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]",
+    );
     process.exit(1);
   }
 
@@ -126,7 +127,9 @@ function handleRun(args: string[]) {
     // For SPI programs, expect: <program.spi> [spi-args.bin]
     if (files.length > 2) {
       console.error("Error: Too many arguments for SPI run command.");
-      console.error("Usage: anan-as run --spi [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <program.spi> [spi-args.bin]");
+      console.error(
+        "Usage: anan-as run --spi [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <program.spi> [spi-args.bin]",
+      );
       process.exit(1);
     }
     programFile = files[0];
@@ -142,8 +145,8 @@ function handleRun(args: string[]) {
   }
 
   // Validate program file extension
-  const expectedExt = kind === InputKind.SPI ? '.spi' : '.jam';
-  const dotIndex = programFile.lastIndexOf('.');
+  const expectedExt = kind === InputKind.SPI ? ".spi" : ".jam";
+  const dotIndex = programFile.lastIndexOf(".");
   if (dotIndex === -1) {
     console.error(`Error: File '${programFile}' has no extension.`);
     console.error(`Expected: ${expectedExt}`);
@@ -159,41 +162,41 @@ function handleRun(args: string[]) {
   // Validate SPI args file if provided
   let spiArgs: Uint8Array | undefined;
   if (spiArgsFile) {
-    const argsDotIndex = spiArgsFile.lastIndexOf('.');
+    const argsDotIndex = spiArgsFile.lastIndexOf(".");
     if (argsDotIndex === -1) {
       console.error(`Error: SPI args file '${spiArgsFile}' has no extension.`);
       console.error(`Expected: .bin`);
       process.exit(1);
     }
     const argsExt = spiArgsFile.substring(argsDotIndex);
-    if (argsExt !== '.bin') {
+    if (argsExt !== ".bin") {
       console.error(`Error: SPI args file must have .bin extension, got '${argsExt}'.`);
       process.exit(1);
     }
     spiArgs = new Uint8Array(readFileSync(spiArgsFile));
   }
 
-  const logs = !parsed['no-logs'];
-  const hasMetadata = parsed['no-metadata'] ? HasMetadata.No : HasMetadata.Yes;
+  const logs = !parsed["no-logs"];
+  const hasMetadata = parsed["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
 
   // Parse and validate PC and gas options
   let initialPc = 0;
   if (parsed.pc !== undefined) {
     // Ensure it's a string/number, not boolean
-    if (typeof parsed.pc === 'boolean') {
+    if (typeof parsed.pc === "boolean") {
       console.error("Error: --pc requires a value.");
       process.exit(1);
     }
 
     const pcStr = String(parsed.pc);
     // Reject floats and non-integer strings
-    if (pcStr.includes('.') || !/^-?\d+$/.test(pcStr)) {
+    if (pcStr.includes(".") || !/^-?\d+$/.test(pcStr)) {
       console.error("Error: --pc must be a valid integer.");
       process.exit(1);
     }
 
     const pcValue = parseInt(pcStr, 10);
-    if (!Number.isInteger(pcValue) || pcValue < 0 || pcValue > 0xFFFFFFFF) {
+    if (!Number.isInteger(pcValue) || pcValue < 0 || pcValue > 0xffffffff) {
       console.error("Error: --pc must be a non-negative integer <= 2^32-1.");
       process.exit(1);
     }
@@ -203,14 +206,14 @@ function handleRun(args: string[]) {
   let initialGas = BigInt(0);
   if (parsed.gas !== undefined) {
     // Ensure it's a string/number, not boolean
-    if (typeof parsed.gas === 'boolean') {
+    if (typeof parsed.gas === "boolean") {
       console.error("Error: --gas requires a value.");
       process.exit(1);
     }
 
     const gasStr = String(parsed.gas);
     // Reject floats and non-integer strings
-    if (gasStr.includes('.') || !/^-?\d+$/.test(gasStr)) {
+    if (gasStr.includes(".") || !/^-?\d+$/.test(gasStr)) {
       console.error("Error: --gas must be a valid integer.");
       process.exit(1);
     }
@@ -218,7 +221,7 @@ function handleRun(args: string[]) {
     let gasValue: bigint;
     try {
       gasValue = BigInt(gasStr);
-    } catch (e) {
+    } catch (_e) {
       console.error("Error: --gas must be a valid integer.");
       process.exit(1);
     }
@@ -232,7 +235,7 @@ function handleRun(args: string[]) {
   }
 
   const f = readFileSync(programFile);
-  const name = kind === InputKind.Generic ? 'generic PVM' : 'JAM SPI';
+  const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
   console.log(`🚀 Running ${programFile} (as ${name})`);
 
   try {
@@ -243,9 +246,9 @@ function handleRun(args: string[]) {
     console.log(`Exit code: ${result.exitCode}`);
     console.log(`Program counter: ${result.pc}`);
     console.log(`Gas remaining: ${result.gas}`);
-    console.log(`Registers: [${result.registers.join(', ')}]`);
-   } catch (error) {
-     console.error(`Error running ${programFile}:`, error);
-     process.exit(1);
-   }
+    console.log(`Registers: [${result.registers.join(", ")}]`);
+  } catch (error) {
+    console.error(`Error running ${programFile}:`, error);
+    process.exit(1);
+  }
 }

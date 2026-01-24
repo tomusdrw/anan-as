@@ -1,18 +1,18 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve, dirname, basename } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
 
 interface AsconfigTarget {
-	outFile: string;
-	[key: string]: unknown;
+  outFile: string;
+  [key: string]: unknown;
 }
 
 interface Asconfig {
-	targets: Record<string, AsconfigTarget>;
-	[key: string]: unknown;
+  targets: Record<string, AsconfigTarget>;
+  [key: string]: unknown;
 }
 
 // Load asconfig.json
@@ -23,26 +23,22 @@ console.log("Building inline JS files with base64-encoded WASM...\n");
 
 // Process each target
 for (const [targetName, config] of Object.entries(asconfig.targets)) {
-	const wasmPath = resolve(projectRoot, config.outFile);
+  const wasmPath = resolve(projectRoot, config.outFile);
 
-	try {
-		// Read the WASM file
-		const wasmBuffer = readFileSync(wasmPath);
+  try {
+    // Read the WASM file
+    const wasmBuffer = readFileSync(wasmPath);
 
-		// Base64 encode
-		const wasmBase64 = wasmBuffer.toString("base64");
+    // Base64 encode
+    const wasmBase64 = wasmBuffer.toString("base64");
 
-		// Generate the output JS file name
-		// e.g., "build/release.wasm" -> "build/release-inline.js"
-		const wasmFileName = basename(config.outFile, ".wasm");
-		const outputPath = resolve(
-			projectRoot,
-			dirname(config.outFile),
-			`${wasmFileName}-inline.js`
-		);
+    // Generate the output JS file name
+    // e.g., "build/release.wasm" -> "build/release-inline.js"
+    const wasmFileName = basename(config.outFile, ".wasm");
+    const outputPath = resolve(projectRoot, dirname(config.outFile), `${wasmFileName}-inline.js`);
 
-		// Create the JS content
-		const jsContent = `// Auto-generated inline WASM module
+    // Create the JS content
+    const jsContent = `// Auto-generated inline WASM module
 // Target: ${targetName}
 // Source: ${config.outFile}
 
@@ -66,12 +62,12 @@ export function getWasmBytes() {
 }
 `;
 
-		// Write the JS file
-		writeFileSync(outputPath, jsContent, "utf-8");
+    // Write the JS file
+    writeFileSync(outputPath, jsContent, "utf-8");
 
-		// Generate and write the .d.ts file
-		const dtsPath = outputPath.replace(/\.js$/, ".d.ts");
-		const dtsContent = `// Auto-generated type definitions for inline WASM module
+    // Generate and write the .d.ts file
+    const dtsPath = outputPath.replace(/\.js$/, ".d.ts");
+    const dtsContent = `// Auto-generated type definitions for inline WASM module
 // Target: ${targetName}
 // Source: ${config.outFile}
 
@@ -83,13 +79,13 @@ export function instantiate(imports?: { env?: any }): Promise<typeof __AdaptedEx
 
 export function getWasmBytes(): Uint8Array;
 `;
-		writeFileSync(dtsPath, dtsContent, "utf-8");
+    writeFileSync(dtsPath, dtsContent, "utf-8");
 
-		console.log(`✓ ${targetName}: ${outputPath} (${Math.round(wasmBase64.length / 1024)} KB base64)`);
-	} catch (error) {
-		console.error(`✗ ${targetName}: Failed to process ${wasmPath}`);
-		console.error(`  ${error instanceof Error ? error.message : error}`);
-	}
+    console.log(`✓ ${targetName}: ${outputPath} (${Math.round(wasmBase64.length / 1024)} KB base64)`);
+  } catch (error) {
+    console.error(`✗ ${targetName}: Failed to process ${wasmPath}`);
+    console.error(`  ${error instanceof Error ? error.message : error}`);
+  }
 }
 
 console.log("\nDone!");
