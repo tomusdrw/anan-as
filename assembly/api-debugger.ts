@@ -1,4 +1,5 @@
-import { buildMemory, InitialChunk, InitialPage } from "./api-internal";
+import { buildMemory } from "./api-internal";
+import { InitialChunk, InitialPage } from "./api-types";
 import { Decoder } from "./codec";
 import { Gas } from "./gas";
 import { Interpreter, Status } from "./interpreter";
@@ -10,7 +11,7 @@ import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;
 
-export function resetJAM(program: u8[], pc: number, initialGas: Gas, args: u8[], hasMetadata: boolean = false): void {
+export function resetJAM(program: u8[], pc: u32, initialGas: Gas, args: u8[], hasMetadata: boolean = false): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
   const p = decodeSpi(code, liftBytes(args));

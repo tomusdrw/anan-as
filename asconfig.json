@@ -1,59 +1,72 @@
 {
 	"targets": {
 		"raw": {
-			"outFile": "build/debug-raw.wasm",
-			"textFile": "build/debug-raw.wat",
+			"bindings": "raw",
+			"outFile": "dist/build/debug-raw.wasm",
+			"textFile": "dist/build/debug-raw.wat",
 			"sourceMap": true,
-			"debug": true,
-			"bindings": "raw"
+			"debug": true
 		},
 		"debug": {
-			"outFile": "build/debug.wasm",
-			"textFile": "build/debug.wat",
+			"bindings": "esm",
+			"outFile": "dist/build/debug.wasm",
+			"textFile": "dist/build/debug.wat",
 			"sourceMap": true,
-			"debug": true,
-			"bindings": "esm"
+			"debug": true
 		},
 		"release": {
-			"outFile": "build/release.wasm",
-			"textFile": "build/release.wat",
+			"bindings": "esm",
+			"outFile": "dist/build/release.wasm",
+			"textFile": "dist/build/release.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
 			"converge": true,
-			"noAssert": true,
-			"bindings": "esm"
+			"noAssert": true
 		},
 		"release-mini": {
-			"outFile": "build/release-mini.wasm",
-			"textFile": "build/release-mini.wat",
+			"bindings": "esm",
+			"outFile": "dist/build/release-mini.wasm",
+			"textFile": "dist/build/release-mini.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
 			"converge": true,
 			"noAssert": true,
 			"runtime": "minimal",
-			"exportRuntime": true,
-			"bindings": "esm"
+			"exportRuntime": true
 		},
 		"release-stub": {
-			"outFile": "build/release-stub.wasm",
-			"textFile": "build/release-stub.wat",
+			"bindings": "esm",
+			"outFile": "dist/build/release-stub.wasm",
+			"textFile": "dist/build/release-stub.wat",
 			"sourceMap": true,
 			"optimizeLevel": 3,
 			"shrinkLevel": 0,
 			"converge": true,
 			"noAssert": true,
 			"runtime": "stub",
-			"exportRuntime": true,
-			"bindings": "esm"
+			"exportRuntime": true
 		},
 		"test": {
-			"outFile": "build/test.wasm",
-			"textFile": "build/test.wat",
+			"bindings": "esm",
+			"outFile": "dist/build/test.wasm",
+			"textFile": "dist/build/test.wat",
 			"sourceMap": true,
+			"debug": true
+		},
+		"compiler": {
+			"bindings": "esm",
 			"debug": true,
-			"bindings": "esm"
+			"outFile": "dist/build/compiler.wasm",
+			"textFile": "dist/build/compiler.wat",
+			"sourceMap": true,
+			"optimizeLevel": 3,
+			"shrinkLevel": 0,
+			"converge": true,
+			"noAssert": true,
+			"runtime": "stub",
+			"exportRuntime": true
 		}
 	},
 	"options": {}

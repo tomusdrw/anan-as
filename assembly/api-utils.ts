@@ -1,5 +1,7 @@
-import { buildMemory, getAssembly, InitialChunk, InitialPage, runVm, VmInput, VmOutput } from "./api-internal";
+import { buildMemory, getAssembly, runVm } from "./api-internal";
+import { InitialChunk, InitialPage, ReturnValue, VmInput, VmOutput } from "./api-types";
 import { BlockGasCost, computeGasCosts } from "./gas-costs";
+import { Status } from "./interpreter";
 import { MemoryBuilder } from "./memory";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
@@ -93,4 +95,65 @@ export function runProgram(
   vmInput.pc = programCounter;
 
   return runVm(vmInput, logs, useSbrkGas);
+}
+
+export function runJAM(
+  pc: u32,
+  gas: i64,
+  program: u8[],
+  args: u8[],
+  logs: boolean = false,
+  useSbrkGas: boolean = true,
+): ReturnValue {
+  const prog = prepareProgram(InputKind.SPI, HasMetadata.Yes, program, [], [], [], args);
+  const output = runProgram(prog, gas, pc, logs, useSbrkGas);
+
+  const ret = new ReturnValue();
+  ret.gas = output.gas;
+  ret.pc = output.pc;
+  ret.exitCode = output.exitCode;
+  ret.status = output.status;
+
+  if (output.status === Status.HALT) {
+    // JAM return convention
+    const ptr_start = output.registers[7];
+    const ptr_end = output.registers[8];
+    // invalid output result
+    if (ptr_start >= ptr_end) {
+      return ret;
+    }
+
+    // reconstruct result across all output.memory chunks that intersect the pointer range
+    const totalLength = ptr_end - ptr_start;
+    ret.result = new Array<u8>(<i32>totalLength);
+
+    const chunksLen = output.memory.length;
+    for (let i = 0; i < chunksLen; i++) {
+      const chunk = output.memory[i];
+      const start = chunk.address;
+      const end = start + chunk.data.length;
+
+      // compute overlapping slice
+      const s = max(ptr_start, start);
+      const e = min(ptr_end, end);
+
+      if (s < e) {
+        const sliceStart = <i32>(s - start);
+        const sliceEnd = <i32>(e - start);
+        const writeOffset = <i32>(s - ptr_start);
+        const sliceData = chunk.data.slice(sliceStart, sliceEnd);
+
+        // copy slice data to the correct position in result
+        for (let j = 0; j < sliceData.length; j++) {
+          ret.result[writeOffset + j] = sliceData[j];
+        }
+      }
+
+      // stop once we've covered the full range
+      if (end >= ptr_end) {
+        break;
+      }
+    }
+  }
+  return ret;
 }

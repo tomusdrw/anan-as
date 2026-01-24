@@ -43,7 +43,7 @@
     }
   },
   "files": {
-    "includes": ["**/assembly/**/*", "!build", "!web/build"]
+    "includes": ["**/assembly/**/*", "**/bin/**/*", "!dist", "!web/build"]
   },
   "overrides": [
     {

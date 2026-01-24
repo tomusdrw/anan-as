@@ -1,40 +1,10 @@
+import { InitialChunk, InitialPage, VmInput, VmOutput } from "./api-types";
 import { Args, RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
-import { Interpreter, Status } from "./interpreter";
+import { Interpreter } from "./interpreter";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
 import { decodeArguments, Program, resolveArguments } from "./program";
-import { Registers } from "./registers";
-
-export class InitialPage {
-  address: u32 = 0;
-  length: u32 = 0;
-  access: Access = Access.None;
-}
-export class InitialChunk {
-  address: u32 = 0;
-  data: u8[] = [];
-}
-
-export class VmInput {
-  pc: u32 = 0;
-  gas: i64 = 0;
-
-  constructor(
-    public readonly program: Program,
-    public readonly memory: Memory,
-    public readonly registers: Registers,
-  ) {}
-}
-
-export class VmOutput {
-  status: Status = Status.OK;
-  registers: u64[] = [];
-  pc: u32 = 0;
-  memory: InitialChunk[] = [];
-  gas: i64 = 0;
-  exitCode: u32 = 0;
-}
 
 export function getAssembly(p: Program): string {
   const len = p.code.length;
@@ -75,10 +45,19 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
   int.useSbrkGas = useSbrkGas;
   int.nextPc = input.pc;
   int.gas.set(input.gas);
-  const result = executeProgram(int, logs);
-  // release used pages back
+
+  executeProgram(int, logs);
+
+  const output = new VmOutput();
+  output.status = int.status;
+  output.registers = int.registers.slice(0);
+  output.pc = int.pc;
+  output.gas = int.gas.get();
+  output.memory = getOutputChunks(int.memory);
+  output.exitCode = int.exitCode;
+
   int.memory.free();
-  return result;
+  return output;
 }
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
@@ -141,9 +120,10 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
   return builder.build(sbrkIndex);
 }
 
-function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
+function executeProgram(int: Interpreter, logs: boolean = false): void {
   let isOk = true;
   const argsRes = new Args();
+
   for (;;) {
     if (!isOk) {
       if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
@@ -158,16 +138,15 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
     if (logs) console.log(`STATUS = ${int.status}`);
     if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
     if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
-    if (logs) {
-      const instruction = int.pc < u32(int.program.code.length) ? int.program.code[int.pc] : 0;
+
+    if (logs && int.pc < u32(int.program.code.length)) {
+      const instruction = int.program.code[int.pc];
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
       const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
-      const name = changetype<string>(iData.namePtr);
-      console.log(`INSTRUCTION = ${name} (${instruction})`);
       const args = resolveArguments(argsRes, iData.kind, int.program.code, int.pc + 1, skipBytes, int.registers);
       if (args !== null) {
         console.log(`ARGUMENTS:
-  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)}, 
+  ${args.a} (${args.decoded.a}) = 0x${u64(args.a).toString(16)},
   ${args.b} (${args.decoded.b}) = 0x${u64(args.b).toString(16)},
   ${args.c} (${args.decoded.c}) = 0x${u64(args.c).toString(16)},
   ${args.d} (${args.decoded.d}) = 0x${u64(args.d).toString(16)}`);
@@ -176,14 +155,4 @@ function executeProgram(int: Interpreter, logs: boolean = false): VmOutput {
 
     isOk = int.nextSteps();
   }
-
-  const output = new VmOutput();
-  output.status = int.status;
-  output.registers = int.registers.slice(0);
-  output.pc = int.pc;
-  output.gas = int.gas.get();
-  output.memory = getOutputChunks(int.memory);
-  output.exitCode = int.exitCode;
-
-  return output;
 }
