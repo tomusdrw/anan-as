@@ -50,8 +50,9 @@ function main() {
 
 function handleDisassemble(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ["spi", "no-metadata", "help"],
+    boolean: ["spi", "metadata", "help"],
     alias: { h: "help" },
+    default: { metadata: true },
   });
 
   if (parsed.help) {
@@ -89,7 +90,7 @@ function handleDisassemble(args: string[]) {
   }
 
   const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
-  const hasMetadata = parsed["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
+  const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
 
   const f = readFileSync(file);
   const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
@@ -99,10 +100,11 @@ function handleDisassemble(args: string[]) {
 
 function handleRun(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ["spi", "no-logs", "no-metadata", "help"],
+    boolean: ["spi", "logs", "metadata", "help"],
     /** Prevents parsing hex values as numbers. */
     string: ["pc", "gas", "_"],
     alias: { h: "help" },
+    default: { metadata: true, logs: true },
   });
 
   if (parsed.help) {
@@ -148,8 +150,8 @@ function handleRun(args: string[]) {
   // Validate SPI args file if provided
   const spiArgs = parseSpiArgs(spiArgsStr);
 
-  const logs = !parsed["no-logs"];
-  const hasMetadata = parsed["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
+  const logs = parsed.logs;
+  const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
 
   // Parse and validate PC and gas options
   const initialPc = parsePc(parsed);
