@@ -252,7 +252,7 @@ function hexEncode(result: number[]) {
 }
 
 function hexDecode(data: string) {
-  if (data.startsWith("0x")) {
+  if (!data.startsWith("0x")) {
     throw new Error("hex input must start with 0x");
   }
 
