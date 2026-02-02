@@ -268,7 +268,12 @@ function hexDecode(data: string) {
   const bytes = new Uint8Array(len / 2);
   for (let i = 0; i < len; i += 2) {
     const c = hex.substring(i, i + 2);
-    bytes[i / 2] = Number(`0x${c}`);
+    const byteIndex = i / 2;
+    const value = parseInt(c, 16);
+    if (Number.isNaN(value)) {
+      throw new Error(`hexDecode: invalid hex pair "${c}" in data "${data}" for bytes[${byteIndex}]`);
+    }
+    bytes[byteIndex] = value;
   }
 
   return bytes;
