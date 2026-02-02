@@ -100,7 +100,8 @@ function handleDisassemble(args: string[]) {
 function handleRun(args: string[]) {
   const parsed = minimist(args, {
     boolean: ["spi", "no-logs", "no-metadata", "help"],
-    string: ["pc", "gas"],
+    /** Prevents parsing hex values as numbers. */
+    string: ["pc", "gas", "_"],
     alias: { h: "help" },
   });
 
