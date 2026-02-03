@@ -91,8 +91,6 @@ function alignToSegmentSize(size: u32): u32 {
  */
 export class StandardProgram {
   metadata: Uint8Array = new Uint8Array(0);
-  pc: u32 = 0;
-  gas: i64 = 0;
 
   constructor(
     public readonly program: Program,

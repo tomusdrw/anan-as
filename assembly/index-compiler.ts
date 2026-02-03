@@ -20,7 +20,7 @@
  * ? (result)
  */
 
-import { runJAM } from "./api-utils";
+import { HasMetadata, InputKind, prepareProgram, runProgram } from "./api-utils";
 import { Status } from "./interpreter";
 
 // Result buffer location (in WASM linear memory)
@@ -37,7 +37,7 @@ export let result_len: u32 = 0;
  * @param argsPtr Pointer to input arguments (PVM address 0xFEFF0000)
  * @param argsLen Length of arguments in bytes
  */
-export function pvmMain(argsPtr: u32, argsLen: u32): void {
+export function main(argsPtr: u32, argsLen: u32): void {
   // 8 (gas) + 4 (pc) + 4 (spi-program-len) + 4 (inner-args-len) + ? (spi-program) + ? (inner-args) = 20 + ? bytes
   if (argsLen < 20) {
     // Invalid input - return error status
@@ -87,8 +87,11 @@ export function pvmMain(argsPtr: u32, argsLen: u32): void {
   }
   offset += innerArgsLen;
 
-  // Execute the program
-  const result = runJAM(pc, gas, spiProgram, innerArgs, false, false);
+  // Parse SPI program and prepare memory layout
+  const program = prepareProgram(InputKind.SPI, HasMetadata.Yes, spiProgram, [], [], [], innerArgs);
+
+  // Run the program
+  const result = runProgram(program, gas, pc, false, false);
 
   // Write output to result buffer with bounds checking
   let resultLen: u32 = 0;

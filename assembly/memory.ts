@@ -14,8 +14,11 @@ import {
 
 // @unmanaged
 export class MaybePageFault {
+  /** Accessing memory triggered a page fault. */
   isFault: boolean = false;
+  /** The page fault was caused by invalid memory access (i.e. writing to read-only memory). */
   isAccess: boolean = false;
+  /** Start memory index of a page that triggered the fault. */
   fault: u32 = 0;
 }
 

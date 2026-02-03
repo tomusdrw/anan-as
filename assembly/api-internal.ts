@@ -1,8 +1,8 @@
 import { InitialChunk, InitialPage, VmInput, VmOutput } from "./api-types";
 import { Args, RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
-import { Interpreter } from "./interpreter";
-import { Memory, MemoryBuilder } from "./memory";
+import { Interpreter, Status } from "./interpreter";
+import { MaybePageFault, Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
 import { decodeArguments, Program, resolveArguments } from "./program";
 
@@ -55,9 +55,46 @@ export function runVm(input: VmInput, logs: boolean = false, useSbrkGas: boolean
   output.gas = int.gas.get();
   output.memory = getOutputChunks(int.memory);
   output.exitCode = int.exitCode;
+  output.result = readResult(int);
 
   int.memory.free();
   return output;
+}
+
+function readResult(int: Interpreter): u8[] {
+  if (int.status !== Status.HALT) {
+    return [];
+  }
+
+  // JAM return convention
+  const ptr_start = u32(int.registers[7] & 0xffff_ffff);
+  const ptr_end = u32(int.registers[8] & 0xffff_ffff);
+
+  // invalid output result
+  if (ptr_start >= ptr_end) {
+    return [];
+  }
+
+  // attempt to read the output memory (up to 1MB)
+  const totalLength = ptr_end - ptr_start;
+  if (totalLength > 1_024 * 1_024) {
+    return [];
+  }
+
+  const result = new Uint8Array(totalLength);
+  const faultRes = new MaybePageFault();
+  int.memory.bytesRead(faultRes, ptr_start, result, 0);
+  // we couldn't access the mem - i.e. no output
+  if (faultRes.isFault) {
+    return [];
+  }
+
+  // copy the Uint8Array to a regular array
+  const out = new Array<u8>(totalLength);
+  for (let i: u32 = 0; i < totalLength; i++) {
+    out[i] = result[i];
+  }
+  return out;
 }
 
 export function getOutputChunks(memory: Memory): InitialChunk[] {
