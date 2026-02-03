@@ -3,19 +3,23 @@
 import { readFileSync } from "node:fs";
 import minimist, { ParsedArgs } from "minimist";
 import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
+import { replayTraceFile } from "./trace-replay.js";
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
   anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
+  anan-as replay-trace [--no-metadata] [--no-verify] <trace.log>
 
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
   run          Execute PVM bytecode
+  replay-trace  Re-execute a JIP-6 IO trace
 
 Flags:
   --spi          Treat input as JAM SPI format
   --no-metadata  Input does not contain metadata
   --no-logs      Disable execution logs (run command only)
+  --no-verify    Skip verification against trace data (replay-trace only)
   --pc <number>  Set initial program counter (default: 0)
   --gas <number> Set initial gas amount (default: 10_000)
   --help, -h     Show this help message`;
@@ -39,6 +43,9 @@ function main() {
       break;
     case "run":
       handleRun(args.slice(1));
+      break;
+    case "replay-trace":
+      handleReplayTrace(args.slice(1));
       break;
     default:
       console.error(`Error: Unknown sub-command '${subCommand}'`);
@@ -173,6 +180,49 @@ function handleRun(args: string[]) {
     console.log(`Result: [${hexEncode(result.result)}]`);
   } catch (error) {
     console.error(`Error running ${programFile}:`, error);
+    process.exit(1);
+  }
+}
+
+function handleReplayTrace(args: string[]) {
+  const parsed = minimist(args, {
+    boolean: ["no-metadata", "no-verify", "help"],
+    alias: { h: "help" },
+  });
+
+  if (parsed.help) {
+    console.log(HELP_TEXT);
+    return;
+  }
+
+  const files = parsed._;
+  if (files.length === 0) {
+    console.error("Error: No trace file provided for replay-trace command.");
+    console.error("Usage: anan-as replay-trace [--no-metadata] [--no-verify] <trace.log>");
+    process.exit(1);
+  }
+  if (files.length > 1) {
+    console.error("Error: Only one trace file can be replayed at a time.");
+    console.error("Usage: anan-as replay-trace [--no-metadata] [--no-verify] <trace.log>");
+    process.exit(1);
+  }
+
+  const file = files[0];
+  const hasMetadata = parsed["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
+  const verify = !parsed["no-verify"];
+
+  try {
+    const summary = replayTraceFile(file, {
+      hasMetadata,
+      verify,
+    });
+
+    console.log(`✅ Replay complete: ${summary.ecalliCount} ecalli entries`);
+    console.log(`Status: ${summary.termination.type}`);
+    console.log(`Program counter: ${summary.termination.pc}`);
+    console.log(`Gas remaining: ${summary.termination.gas}`);
+  } catch (error) {
+    console.error(`Error replaying trace ${file}:`, error);
     process.exit(1);
   }
 }

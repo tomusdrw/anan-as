@@ -32,7 +32,7 @@
 		"qa": "biome ci",
 		"qa-fix": "npm run format; npm run lint",
 		"start": "tsx ./bin/index.ts",
-		"test": "npm run asbuild:test && tsx ./bin/test.ts",
+    "test": "npm run asbuild:test && tsx ./bin/test.ts && tsx ./test/test-trace-replay.ts",
 		"tsbuild": "tsc",
 		"test:w3f": "tsx ./bin/test-w3f.ts",
 		"test:gas-cost": "tsx ./bin/test-gas-cost.ts",
