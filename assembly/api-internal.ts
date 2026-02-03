@@ -75,8 +75,12 @@ function readResult(int: Interpreter): u8[] {
     return [];
   }
 
-  // attempt to read the output memory
+  // attempt to read the output memory (up to 1MB)
   const totalLength = i32(ptr_end - ptr_start);
+  if (totalLength > 1_024 * 1_024) {
+    return [];
+  }
+
   const result = new Uint8Array(totalLength);
   const faultRes = new MaybePageFault();
   int.memory.bytesRead(faultRes, ptr_start, result, 0);
