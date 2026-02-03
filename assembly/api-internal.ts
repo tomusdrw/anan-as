@@ -76,7 +76,7 @@ function readResult(int: Interpreter): u8[] {
   }
 
   // attempt to read the output memory (up to 1MB)
-  const totalLength = i32(ptr_end - ptr_start);
+  const totalLength = ptr_end - ptr_start;
   if (totalLength > 1_024 * 1_024) {
     return [];
   }
@@ -91,7 +91,7 @@ function readResult(int: Interpreter): u8[] {
 
   // copy the Uint8Array to a regular array
   const out = new Array<u8>(totalLength);
-  for (let i = 0; i < totalLength; i++) {
+  for (let i: u32 = 0; i < totalLength; i++) {
     out[i] = result[i];
   }
   return out;
