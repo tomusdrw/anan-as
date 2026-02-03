@@ -105,7 +105,7 @@ function processW3f(data: PvmTest, options: TestOptions) {
   // compare with expected values
   const expected = {
     // just copy JAM-output result field
-    result: result.result, 
+    result: result.result,
     status: read(data, "expected-status"),
     registers: read(data, "expected-regs").map((x: number | bigint) => BigInt(x)),
     pc: read(data, "expected-pc"),
