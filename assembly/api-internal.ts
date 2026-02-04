@@ -56,8 +56,8 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
     const initChunk = chunks[i];
     // access should not matter now, since we created the pages already.
     const data = new Uint8Array(initChunk.data.length);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = initChunk.data[i];
+    for (let j = 0; j < data.length; j++) {
+      data[j] = initChunk.data[j];
     }
     builder.setData(Access.None, initChunk.address, data);
   }
@@ -87,8 +87,8 @@ export function vmExecute(int: Interpreter, logs: boolean = false): void {
 
   for (;;) {
     if (!isOk) {
-      if (logs) console.log(`REGISTERS = ${int.registers.join(", ")} (final)`);
-      if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")} (final)`);
+      if (logs)
+        console.log(`REGISTERS (final) = [${int.registers.map((x: u64) => `${x} (0x${x.toString(16)})`).join(", ")}]`);
       if (logs) console.log(`Finished with status: ${int.status}`);
       if (logs) console.log(`Exit code: ${int.exitCode}`);
       break;
@@ -97,8 +97,7 @@ export function vmExecute(int: Interpreter, logs: boolean = false): void {
     if (logs) console.log(`PC = ${int.pc}`);
     if (logs) console.log(`GAS = ${int.gas.get()}`);
     if (logs) console.log(`STATUS = ${int.status}`);
-    if (logs) console.log(`REGISTERS = ${int.registers.join(", ")}`);
-    if (logs) console.log(`REGISTERS = ${int.registers.map((x: u64) => `0x${x.toString(16)}`).join(", ")}`);
+    if (logs) console.log(`REGISTERS = [${int.registers.map((x: u64) => `${x} (0x${x.toString(16)})`).join(", ")}]`);
 
     if (logs && int.pc < u32(int.program.code.length)) {
       const instruction = int.program.code[int.pc];

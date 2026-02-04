@@ -107,7 +107,10 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         // Apply memory writes
         for (const write of expectedEcalli.memWrites) {
           tracer.memwrite(write.address, write.data);
-          pvmWriteMemory(id, write.address, write.data);
+          const written = pvmWriteMemory(id, write.address, write.data);
+          if (!written) {
+            throw new Error(`Failed to write memory at 0x${write.address.toString(16)} for PVM ${id}`);
+          }
         }
 
         // Apply register writes

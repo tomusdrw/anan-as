@@ -66,10 +66,10 @@ export function fuzz(data: Uint8Array | number[]) {
   }
 }
 
+import { hexEncode } from "./utils.js";
+
 function programHex(program: Uint8Array) {
-  return Array.from(program)
-    .map((x: number) => x.toString(16).padStart(2, "0"))
-    .join("");
+  return hexEncode(Array.from(program), false);
 }
 
 function linkTo(programHex: string) {

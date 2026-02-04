@@ -1,5 +1,8 @@
 const NO_OF_REGISTERS = 13;
 
+// Access.Write = 2 from assembly/memory-page.ts
+const ACCESS_WRITE = 2;
+
 export const STATUS = {
   OK: 255,
   HALT: 0,
@@ -323,7 +326,7 @@ export function buildInitialPages(memWrites: MemWrite[]) {
     .map((write) => ({
       address: write.address,
       length: write.data.length,
-      access: 2,
+      access: ACCESS_WRITE,
     }));
 }
 

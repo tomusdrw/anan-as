@@ -188,8 +188,6 @@ function handleRun(args: string[]) {
 function handleReplayTrace(args: string[]) {
   const parsed = minimist(args, {
     boolean: ["metadata", "verify", "logs", "help"],
-    /** Prevents parsing hex values as numbers. */
-    string: ["pc", "gas", "_"],
     alias: { h: "help" },
     default: { metadata: true, logs: true, verify: true },
   });
