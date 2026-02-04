@@ -8,9 +8,12 @@ import { replayTraceFile } from "../bin/trace-replay.js";
 const fixture = fileURLToPath(new URL("./fixtures/io-trace-output.log", import.meta.url));
 
 const summary = replayTraceFile(fixture, {
+  logs: false,
   hasMetadata: HasMetadata.Yes,
-  verify: false,
+  verify: true,
 });
+
+console.log(summary);
 
 assert.ok(summary.ecalliCount > 0, "Expected at least one ecalli entry");
 assert.strictEqual(summary.termination.type, "HALT");
