@@ -3,8 +3,8 @@
 import { readFileSync } from "node:fs";
 import minimist, { ParsedArgs } from "minimist";
 import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
-import { replayTraceFile } from "./trace-replay.js";
-import {hexDecode, hexEncode} from "./utils.js";
+import { replayTraceFile } from "./src/trace-replay.js";
+import { hexDecode, hexEncode } from "./src/utils.js";
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
@@ -191,7 +191,7 @@ function handleReplayTrace(args: string[]) {
     /** Prevents parsing hex values as numbers. */
     string: ["pc", "gas", "_"],
     alias: { h: "help" },
-    default: { metadata: true, logs: true, verify: true},
+    default: { metadata: true, logs: true, verify: true },
   });
 
   if (parsed.help) {

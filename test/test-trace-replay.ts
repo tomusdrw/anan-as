@@ -2,8 +2,8 @@
 
 import * as assert from "node:assert";
 import { fileURLToPath } from "node:url";
+import { replayTraceFile } from "../bin/src/trace-replay.js";
 import { HasMetadata } from "../build/release.js";
-import { replayTraceFile } from "../bin/trace-replay.js";
 
 const fixture = fileURLToPath(new URL("./fixtures/io-trace-output.log", import.meta.url));
 
