@@ -17,3 +17,4 @@ console.log(summary);
 
 assert.ok(summary.ecalliCount > 0, "Expected at least one ecalli entry");
 assert.strictEqual(summary.termination.type, "HALT");
+assert.ok(summary.success, "Expected succesful re-execution");

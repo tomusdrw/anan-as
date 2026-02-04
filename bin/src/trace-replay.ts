@@ -178,4 +178,3 @@ function assertMemEq(actual: Uint8Array, expected: Uint8Array, label: string) {
   const expectedString = hexEncode(Array.from(expected));
   assertEq(actualString, expectedString, label);
 }
-

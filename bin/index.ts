@@ -14,7 +14,7 @@ const HELP_TEXT = `Usage:
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
   run          Execute PVM bytecode
-  replay-trace  Re-execute a JIP-6 IO trace
+  replay-trace  Re-execute a ecalli IO trace
 
 Flags:
   --spi          Treat input as JAM SPI format
