@@ -22,12 +22,14 @@ import {
   statusToTermination,
   TraceSummary,
 } from "./trace-parse.js";
+import { ConsoleTracer, Tracer } from "./tracer.js";
 import { hexEncode } from "./utils.js";
 
 type ReplayOptions = {
   logs: boolean;
   hasMetadata: number;
   verify: boolean;
+  tracer?: Tracer;
 };
 
 export function replayTraceFile(filePath: string, options: ReplayOptions): TraceSummary {
@@ -55,15 +57,16 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
 
   const id = pvmStart(preparedProgram, true);
   const initialEcalliCount = ecalliEntries.length;
+  const tracer = options.tracer ?? new ConsoleTracer();
 
   try {
     let gas = start.gas;
     let pc = start.pc;
 
     // Print start line
-    console.log(`start pc=${pc} gas=${gas} ${formatRegisters(start.registers)}`);
+    tracer.start(pc, gas, start.registers);
     if (spiArgs.length > 0) {
-      console.log(`  memwrite ${ARGS_SEGMENT_START} len=${spiArgs.length} <- ${hexEncode(spiArgs)}`);
+      tracer.spiArgs(ARGS_SEGMENT_START, spiArgs);
     }
 
     for (;;) {
@@ -80,9 +83,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         }
 
         // Print ecalli line
-        console.log(
-          `\necalli=${expectedEcalli.index} pc=${pause.pc} gas=${pause.gas} ${formatRegisters(pause.registers)}`,
-        );
+        tracer.ecalli(expectedEcalli.index, pause.pc, pause.gas, pause.registers);
 
         if (options.verify) {
           assertEq(pause.exitCode, expectedEcalli.index, "ecalli index");
@@ -93,7 +94,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
 
         // Print and verify memreads
         for (const read of expectedEcalli.memReads) {
-          console.log(`  memread 0x${read.address.toString(16)} len=${read.data.length} -> ${formatHex(read.data)}`);
+          tracer.memread(read.address, read.data);
           if (options.verify) {
             const actualData = pvmReadMemory(id, read.address, read.data.length);
             if (!actualData) {
@@ -105,23 +106,21 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
 
         // Apply memory writes
         for (const write of expectedEcalli.memWrites) {
-          console.log(
-            `  memwrite 0x${write.address.toString(16)} len=${write.data.length} <- ${formatHex(write.data)}`,
-          );
+          tracer.memwrite(write.address, write.data);
           pvmWriteMemory(id, write.address, write.data);
         }
 
         // Apply register writes
         const regs = pause.registers;
         for (const setReg of expectedEcalli.setRegs) {
-          console.log(`  setreg r${setReg.index.toString().padStart(2, "0")} <- 0x${setReg.value.toString(16)}`);
+          tracer.setreg(setReg.index, setReg.value);
           regs[setReg.index] = setReg.value;
         }
         pvmSetRegisters(id, regs);
 
         // Update gas
         if (expectedEcalli.setGas !== undefined) {
-          console.log(`  setgas <- ${expectedEcalli.setGas}`);
+          tracer.setgas(expectedEcalli.setGas);
           gas = expectedEcalli.setGas;
         } else {
           gas = pause.gas;
@@ -133,12 +132,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         // Termination
         const type = statusToTermination(pause.status);
 
-        let termLine = `\n------\n${type}`;
-        if (type === "PANIC" && pause.exitCode !== 0) {
-          termLine += `=${pause.exitCode}`;
-        }
-        termLine += ` pc=${pause.pc} gas=${pause.gas} ${formatRegisters(pause.registers)}`;
-        console.log(termLine);
+        tracer.termination(type, pause.exitCode, pause.pc, pause.gas, pause.registers);
 
         if (options.verify) {
           assertEq(ecalliEntries.length, 0, "more host calls expected!");
@@ -185,24 +179,3 @@ function assertMemEq(actual: Uint8Array, expected: Uint8Array, label: string) {
   assertEq(actualString, expectedString, label);
 }
 
-function formatRegisters(registers: bigint[] | Map<number, bigint>): string {
-  const entries: { idx: number; val: bigint }[] = [];
-  if (Array.isArray(registers)) {
-    registers.forEach((val, idx) => {
-      if (val !== 0n) entries.push({ idx, val });
-    });
-  } else {
-    for (const [idx, val] of registers) {
-      if (val !== 0n) entries.push({ idx, val });
-    }
-  }
-
-  return entries
-    .sort((a, b) => a.idx - b.idx)
-    .map((e) => `r${e.idx}=0x${e.val.toString(16)}`)
-    .join(" ");
-}
-
-function formatHex(data: Uint8Array): string {
-  return `0x${Buffer.from(data).toString("hex")}`;
-}
