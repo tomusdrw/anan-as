@@ -123,7 +123,7 @@ export function pvmStart(program: StandardProgram, useSbrkGas: boolean = false):
 /** Deallocate PVM resources. */
 export function pvmDestroy(pvmId: u32): VmOutput | null {
   if (pvms.has(pvmId)) {
-    const int = pvms.get(pvmId)!;
+    const int = pvms.get(pvmId);
     pvms.delete(pvmId);
     return vmDestroy(int, false);
   }
@@ -133,7 +133,7 @@ export function pvmDestroy(pvmId: u32): VmOutput | null {
 /** Set register values of a paused PVM. */
 export function pvmSetRegisters(pvmId: u32, registers: u64[]): void {
   if (pvms.has(pvmId)) {
-    const int = pvms.get(pvmId)!;
+    const int = pvms.get(pvmId);
     const safeIter = registers.length < NO_OF_REGISTERS ? registers.length : NO_OF_REGISTERS;
     for (let i = 0; i < safeIter; i++) {
       int.registers[i] = registers[i];
@@ -148,7 +148,7 @@ export function pvmSetRegisters(pvmId: u32, registers: u64[]): void {
  */
 export function pvmReadMemory(pvmId: u32, address: u32, length: u32): Uint8Array | null {
   if (pvms.has(pvmId)) {
-    const int = pvms.get(pvmId)!;
+    const int = pvms.get(pvmId);
     const faultRes = new MaybePageFault();
     const result = int.memory.getMemory(faultRes, address, length);
     if (!faultRes.isFault) {
@@ -161,7 +161,7 @@ export function pvmReadMemory(pvmId: u32, address: u32, length: u32): Uint8Array
 /** Write a chunk of memory to given PVM instance. */
 export function pvmWriteMemory(pvmId: u32, address: u32, data: Uint8Array): boolean {
   if (pvms.has(pvmId)) {
-    const int = pvms.get(pvmId)!;
+    const int = pvms.get(pvmId);
     const faultRes = new MaybePageFault();
 
     // Preflight: verify the entire target range is accessible before writing
@@ -185,7 +185,7 @@ export function pvmWriteMemory(pvmId: u32, address: u32, data: Uint8Array): bool
 /** Resume execution of paused VM. */
 export function pvmResume(pvmId: u32, gas: i64, pc: u32, logs: boolean = false): VmPause | null {
   if (pvms.has(pvmId)) {
-    const int = pvms.get(pvmId)!;
+    const int = pvms.get(pvmId);
     int.nextPc = pc;
     int.gas.set(gas);
     vmExecute(int, logs);
