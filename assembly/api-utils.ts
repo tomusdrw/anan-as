@@ -134,7 +134,8 @@ export function pvmDestroy(pvmId: u32): VmOutput | null {
 export function pvmSetRegisters(pvmId: u32, registers: u64[]): void {
   if (pvms.has(pvmId)) {
     const int = pvms.get(pvmId)!;
-    for (let i = 0; i < registers.length; i++) {
+    const safeIter = registers.length < NO_OF_REGISTERS ? registers.length : NO_OF_REGISTERS;
+    for (let i = 0; i < safeIter; i++) {
       int.registers[i] = registers[i];
     }
   }
@@ -162,6 +163,17 @@ export function pvmWriteMemory(pvmId: u32, address: u32, data: Uint8Array): bool
   if (pvms.has(pvmId)) {
     const int = pvms.get(pvmId)!;
     const faultRes = new MaybePageFault();
+
+    // Preflight: verify the entire target range is accessible before writing
+    const tempBuffer = new Uint8Array(data.length);
+    int.memory.bytesRead(faultRes, address, tempBuffer, 0);
+    if (faultRes.isFault) {
+      return false;
+    }
+
+    // Now perform the actual write
+    faultRes.isFault = false;
+    faultRes.isAccess = false;
     int.memory.bytesWrite(faultRes, address, data, 0);
     if (!faultRes.isFault) {
       return true;

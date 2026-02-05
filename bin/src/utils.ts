@@ -18,10 +18,10 @@ export function hexDecode(data: string) {
   for (let i = 0; i < len; i += 2) {
     const c = hex.substring(i, i + 2);
     const byteIndex = i / 2;
-    const value = parseInt(c, 16);
-    if (Number.isNaN(value)) {
+    if (!/^[0-9a-fA-F]{2}$/.test(c)) {
       throw new Error(`hexDecode: invalid hex pair "${c}" in data "${data}" for bytes[${byteIndex}]`);
     }
+    const value = parseInt(c, 16);
     bytes[byteIndex] = value;
   }
 

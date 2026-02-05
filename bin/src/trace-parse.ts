@@ -230,8 +230,12 @@ function parseSetReg(line: string) {
   if (!match) {
     throw new Error(`Invalid setreg line: ${line}`);
   }
+  const index = parseInt(match[1], 10);
+  if (index < 0 || index >= NO_OF_REGISTERS) {
+    throw new Error(`Register index out of range: ${index}`);
+  }
   return {
-    index: parseInt(match[1], 10),
+    index,
     value: BigInt(`0x${match[2]}`),
   };
 }
@@ -291,6 +295,9 @@ function parseRegisterDump(input: string): RegisterDump {
   const regex = /r(\d+)=0x([0-9a-f]+)/gi;
   for (const match of input.matchAll(regex)) {
     const index = parseInt(match[1], 10);
+    if (index < 0 || index >= NO_OF_REGISTERS) {
+      throw new Error(`Register index out of range: ${index}`);
+    }
     const value = BigInt(`0x${match[2]}`);
     dump.set(index, value);
   }
@@ -307,7 +314,11 @@ function parseHexBytes(hex: string): Uint8Array {
   }
   const bytes = new Uint8Array(data.length / 2);
   for (let i = 0; i < data.length; i += 2) {
-    bytes[i / 2] = Number.parseInt(data.slice(i, i + 2), 16);
+    const pair = data.slice(i, i + 2);
+    if (!/^[0-9a-fA-F]{2}$/.test(pair)) {
+      throw new Error(`Invalid hex pair "${pair}" in hex value: ${hex}`);
+    }
+    bytes[i / 2] = Number.parseInt(pair, 16);
   }
   return bytes;
 }

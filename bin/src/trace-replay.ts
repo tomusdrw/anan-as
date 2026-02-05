@@ -27,7 +27,7 @@ import { hexEncode } from "./utils.js";
 
 type ReplayOptions = {
   logs: boolean;
-  hasMetadata: number;
+  hasMetadata: HasMetadata;
   verify: boolean;
   tracer?: Tracer;
 };
@@ -38,7 +38,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
 
   const { program, initialMemWrites, start, ecalliEntries, termination } = trace;
 
-  const hasMetadata = options.hasMetadata === 0 ? HasMetadata.Yes : HasMetadata.No;
+  const hasMetadata = options.hasMetadata;
   const useSpi = isSpiTrace(start, initialMemWrites);
   const programInput = Array.from(program);
   const spiArgs = Array.from(extractSpiArgs(start, initialMemWrites));

@@ -46,9 +46,10 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
   for (let i = 0; i < pages.length; i++) {
     const initPage = pages[i];
     builder.setData(initPage.access, initPage.address, new Uint8Array(initPage.length));
-    // find the highest writeable page and set the sbrk index there.
+    // find the highest writeable page and set the sbrk index to the end of that range.
     if (initPage.access === Access.Write) {
-      sbrkIndex = initPage.address < sbrkIndex ? sbrkIndex : initPage.address;
+      const pageEnd = initPage.address + initPage.length;
+      sbrkIndex = pageEnd < sbrkIndex ? sbrkIndex : pageEnd;
     }
   }
 
@@ -60,6 +61,9 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
       data[j] = initChunk.data[j];
     }
     builder.setData(Access.None, initChunk.address, data);
+    // consider initialized chunk lengths when setting sbrk index
+    const chunkEnd = initChunk.address + initChunk.data.length;
+    sbrkIndex = chunkEnd < sbrkIndex ? sbrkIndex : chunkEnd;
   }
 
   return builder.build(sbrkIndex);
