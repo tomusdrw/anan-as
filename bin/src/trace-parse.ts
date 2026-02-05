@@ -359,7 +359,15 @@ export function isSpiTrace(start: TraceData["start"], memWrites: MemWrite[]) {
 }
 
 export function extractSpiArgs(start: TraceData["start"], memWrites: MemWrite[]): Uint8Array {
-  const argLen = Number(start.registers.get(8) ?? 0n);
+  const argLenBig = start.registers.get(8) ?? 0n;
+
+  // Validate bounds: must be non-negative and <= 1 MiB (2^20)
+  const MAX_ARG_LEN = 1n << 20n;
+  if (argLenBig < 0n || argLenBig > MAX_ARG_LEN) {
+    return new Uint8Array(0);
+  }
+
+  const argLen = Number(argLenBig);
   if (argLen <= 0) {
     return new Uint8Array(0);
   }
