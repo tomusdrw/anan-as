@@ -28,6 +28,15 @@ export class VmInput {
   ) {}
 }
 
+export class VmPause {
+  status: Status = Status.OK;
+  exitCode: u32 = 0;
+  pc: u32 = 0;
+  nextPc: u32 = 0;
+  gas: i64 = 0;
+  registers: u64[] = [];
+}
+
 export class VmOutput {
   status: Status = Status.OK;
   exitCode: u32 = 0;

@@ -2,8 +2,8 @@
 
 import "json-bigint-patch";
 import * as assert from "node:assert";
+import { ERR, OK, read, run, TestOptions } from "../bin/src/test-json.js";
 import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
-import { ERR, OK, read, run, TestOptions } from "./test-json.js";
 
 type PvmTest = {
   name: string;

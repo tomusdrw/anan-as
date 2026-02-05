@@ -3,19 +3,24 @@
 import { readFileSync } from "node:fs";
 import minimist, { ParsedArgs } from "minimist";
 import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
+import { replayTraceFile } from "./src/trace-replay.js";
+import { hexDecode, hexEncode } from "./src/utils.js";
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
   anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
+  anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] <trace.log>
 
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
   run          Execute PVM bytecode
+  replay-trace  Re-execute a ecalli IO trace
 
 Flags:
   --spi          Treat input as JAM SPI format
   --no-metadata  Input does not contain metadata
-  --no-logs      Disable execution logs (run command only)
+  --no-logs      Disable execution logs
+  --no-verify    Skip verification against trace data (replay-trace only)
   --pc <number>  Set initial program counter (default: 0)
   --gas <number> Set initial gas amount (default: 10_000)
   --help, -h     Show this help message`;
@@ -39,6 +44,9 @@ function main() {
       break;
     case "run":
       handleRun(args.slice(1));
+      break;
+    case "replay-trace":
+      handleReplayTrace(args.slice(1));
       break;
     default:
       console.error(`Error: Unknown sub-command '${subCommand}'`);
@@ -177,6 +185,52 @@ function handleRun(args: string[]) {
   }
 }
 
+function handleReplayTrace(args: string[]) {
+  const parsed = minimist(args, {
+    boolean: ["metadata", "verify", "logs", "help"],
+    alias: { h: "help" },
+    default: { metadata: true, logs: true, verify: true },
+  });
+
+  if (parsed.help) {
+    console.log(HELP_TEXT);
+    return;
+  }
+
+  const files = parsed._;
+  if (files.length === 0) {
+    console.error("Error: No trace file provided for replay-trace command.");
+    console.error("Usage: anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] <trace.log>");
+    process.exit(1);
+  }
+  if (files.length > 1) {
+    console.error("Error: Only one trace file can be replayed at a time.");
+    console.error("Usage: anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] <trace.log>");
+    process.exit(1);
+  }
+
+  const file = files[0];
+  const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
+  const verify = parsed.verify;
+  const logs = parsed.logs;
+
+  try {
+    const summary = replayTraceFile(file, {
+      logs,
+      hasMetadata,
+      verify,
+    });
+
+    console.log(`✅ Replay complete: ${summary.ecalliCount} ecalli entries`);
+    console.log(`Status: ${summary.termination.type}`);
+    console.log(`Program counter: ${summary.termination.pc}`);
+    console.log(`Gas remaining: ${summary.termination.gas}`);
+  } catch (error) {
+    console.error(`Error replaying trace ${file}:`, error);
+    process.exit(1);
+  }
+}
+
 function parseGas(parsed: ParsedArgs) {
   if (parsed.gas === undefined) {
     return BigInt(10_000);
@@ -248,33 +302,4 @@ function parsePc(parsed: ParsedArgs) {
     process.exit(1);
   }
   return pcValue;
-}
-
-function hexEncode(result: number[]) {
-  return `0x${result.map((x) => x.toString(16).padStart(2, "0")).join("")}`;
-}
-
-function hexDecode(data: string) {
-  if (!data.startsWith("0x")) {
-    throw new Error("hex input must start with 0x");
-  }
-
-  const hex = data.substring(2);
-  const len = hex.length;
-  if (len % 2 === 1) {
-    throw new Error("Odd number of nibbles");
-  }
-
-  const bytes = new Uint8Array(len / 2);
-  for (let i = 0; i < len; i += 2) {
-    const c = hex.substring(i, i + 2);
-    const byteIndex = i / 2;
-    const value = parseInt(c, 16);
-    if (Number.isNaN(value)) {
-      throw new Error(`hexDecode: invalid hex pair "${c}" in data "${data}" for bytes[${byteIndex}]`);
-    }
-    bytes[byteIndex] = value;
-  }
-
-  return bytes;
 }

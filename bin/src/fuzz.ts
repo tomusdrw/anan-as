@@ -4,7 +4,7 @@ import "json-bigint-patch";
 import fs from "node:fs";
 import { tryAsGas } from "@typeberry/lib/pvm-interface";
 import { Interpreter } from "@typeberry/lib/pvm-interpreter";
-import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram, wrapAsProgram } from "../build/release.js";
+import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram, wrapAsProgram } from "../../build/release.js";
 
 const runNumber = 0;
 
@@ -66,36 +66,14 @@ export function fuzz(data: Uint8Array | number[]) {
   }
 }
 
+import { hexEncode } from "./utils.js";
+
 function programHex(program: Uint8Array) {
-  return Array.from(program)
-    .map((x: number) => x.toString(16).padStart(2, "0"))
-    .join("");
+  return hexEncode(Array.from(program), false);
 }
 
 function linkTo(programHex: string) {
   return `https://pvm.fluffylabs.dev/?program=0x${programHex}#/`;
-}
-
-const REGISTER_BYTE_WIDTH = 8;
-
-function _decodeRegisters(value: Uint8Array): bigint[] {
-  if (value.length === 0) {
-    return [];
-  }
-
-  if (value.length % REGISTER_BYTE_WIDTH !== 0) {
-    throw new Error(`Invalid register buffer size: ${value.length}`);
-  }
-
-  const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
-  const registerCount = value.length / REGISTER_BYTE_WIDTH;
-  const registers = new Array<bigint>(registerCount);
-
-  for (let i = 0; i < registerCount; i++) {
-    registers[i] = view.getBigUint64(i * REGISTER_BYTE_WIDTH, true);
-  }
-
-  return registers;
 }
 
 function decodeRegistersFromTypeberry(vm: Interpreter): bigint[] {

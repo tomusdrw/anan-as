@@ -48,9 +48,26 @@ import ananAs from '@fluffylabs/anan-as/release-mini';
 // make sure to call GC after multiple independent runs
 ananAs.__collect();
 
+// Release build with stub host functions (for standalone testing)
+import ananAs from '@fluffylabs/anan-as/release-stub';
+
+// Compiler module (for PVM bytecode compilation)
+import ananAs from '@fluffylabs/anan-as/compiler';
 ```
 
-## Raw Bindings
+### Inline Builds
+
+Inline builds bundle the WASM binary directly into the JavaScript module (base64 encoded),
+eliminating the need to fetch a separate `.wasm` file:
+
+```javascript
+import ananAs from '@fluffylabs/anan-as/debug-inline';
+import ananAs from '@fluffylabs/anan-as/release-inline';
+import ananAs from '@fluffylabs/anan-as/release-mini-inline';
+import ananAs from '@fluffylabs/anan-as/release-stub-inline';
+```
+
+### Raw Bindings
 
 Raw bindings give you direct access to WebAssembly exports
 without the JavaScript wrapper layer.
@@ -69,7 +86,6 @@ const module = await WebAssembly.instantiateStreaming(
   imports
 );
 const ananAs = await instantiate(module);
-
 ```
 
 ## Version Tags
@@ -105,24 +121,33 @@ To run the example in the browser at [http://localhost:3000](http://localhost:30
 npm run web
 ```
 
-To run JSON test vectors.
+To run tests:
 
 ```cmd
-npm start ./path/to/tests/*.json
+# Run AssemblyScript unit tests and trace replay tests
+npm test
+
+# Run W3F test vectors
+npm run test:w3f
+
+# Run gas cost tests
+npm run test:gas-cost
 ```
 
 ## CLI Usage
 
-The package includes a CLI tool for disassembling and running PVM bytecode:
+The package includes a CLI tool for disassembling, running, and replaying PVM bytecode:
 
 ```bash
 # Disassemble bytecode to assembly
 npx @fluffylabs/anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
 
 # Run JAM programs
-npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin]
+npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
 
-The `run` command executes PVM bytecode until it encounters a `halt` instruction or the first host call. For full execution including host call handling, use the disassemble command or other tooling.
+# Replay an ecalli trace
+# Learn more: https://github.com/tomusdrw/JIPs/blob/td-jip6-ecalliloggin/JIP-6.md
+npx @fluffylabs/anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] <trace.log>
 
 # Show help
 npx @fluffylabs/anan-as --help
@@ -130,18 +155,23 @@ npx @fluffylabs/anan-as disassemble --help
 npx @fluffylabs/anan-as run --help
 ```
 
+The `run` command executes PVM bytecode until it encounters a `halt` instruction or a host call.
+The `replay-trace` command re-executes an ecalli trace, replaying recorded host call responses.
+
 ### Commands
 
 - `disassemble`: Convert PVM bytecode to human-readable assembly
 - `run`: Execute PVM bytecode and show results
+- `replay-trace`: Re-execute an ecalli trace with recorded host call responses
 
 ### Flags
 
 - `--spi`: Treat input as JAM SPI format instead of generic PVM
 - `--no-metadata`: Input does not start with metadata
-- `--no-logs`: Disable execution logs (run command only)
+- `--no-logs`: Disable execution logs (run and replay-trace commands)
+- `--no-verify`: Skip verification against trace data (replay-trace only)
 - `--pc <number>`: Set initial program counter (default: 0)
-- `--gas <number>`: Set initial gas amount (default: 0)
+- `--gas <number>`: Set initial gas amount (default: 10,000)
 - `--help`, `-h`: Show help information
 
 ### Examples
@@ -168,6 +198,13 @@ npx @fluffylabs/anan-as run --no-logs program.jam
 # Run a JAM program with custom initial PC and gas
 npx @fluffylabs/anan-as run --pc 100 --gas 10000 program.jam
 
-# Run SPI program with arguments
+# Run SPI program with arguments (file or hex)
 npx @fluffylabs/anan-as run --spi program.spi args.bin
+npx @fluffylabs/anan-as run --spi program.spi 0xdeadbeef
+
+# Replay an ecalli trace
+npx @fluffylabs/anan-as replay-trace trace.log
+
+# Replay without verification
+npx @fluffylabs/anan-as replay-trace --no-verify trace.log
 ```
