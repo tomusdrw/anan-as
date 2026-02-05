@@ -352,7 +352,7 @@ export function buildInitialChunks(memWrites: MemWrite[]) {
 
 export function isSpiTrace(start: TraceData["start"], memWrites: MemWrite[]) {
   const r07 = start.registers.get(7);
-  if (r07 !== undefined && r07 === BigInt(ARGS_SEGMENT_START)) {
+  if (r07 === BigInt(ARGS_SEGMENT_START)) {
     return true;
   }
   return memWrites.some((write) => write.address === ARGS_SEGMENT_START);

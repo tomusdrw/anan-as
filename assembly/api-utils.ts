@@ -68,7 +68,8 @@ export function prepareProgram(
     const memory = buildMemory(builder, initialPageMap, initialMemory);
 
     const registers: Registers = new StaticArray(NO_OF_REGISTERS);
-    for (let r = 0; r < initialRegisters.length; r++) {
+    const safeLen = initialRegisters.length < NO_OF_REGISTERS ? initialRegisters.length : NO_OF_REGISTERS;
+    for (let r = 0; r < safeLen; r++) {
       registers[r] = initialRegisters[r];
     }
 
