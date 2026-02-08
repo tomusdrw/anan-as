@@ -1,7 +1,8 @@
-import { buildMemory, getAssembly, runVm } from "./api-internal";
-import { InitialChunk, InitialPage, VmInput, VmOutput } from "./api-types";
+import { buildMemory, getAssembly, vmDestroy, vmExecute, vmInit, vmRunOnce } from "./api-internal";
+import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause } from "./api-types";
 import { BlockGasCost, computeGasCosts } from "./gas-costs";
-import { MemoryBuilder } from "./memory";
+import { Interpreter } from "./interpreter";
+import { MaybePageFault, MemoryBuilder } from "./memory";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
 import { NO_OF_REGISTERS, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
@@ -67,7 +68,8 @@ export function prepareProgram(
     const memory = buildMemory(builder, initialPageMap, initialMemory);
 
     const registers: Registers = new StaticArray(NO_OF_REGISTERS);
-    for (let r = 0; r < initialRegisters.length; r++) {
+    const safeLen = initialRegisters.length < NO_OF_REGISTERS ? initialRegisters.length : NO_OF_REGISTERS;
+    for (let r = 0; r < safeLen; r++) {
       registers[r] = initialRegisters[r];
     }
 
@@ -86,6 +88,7 @@ export function prepareProgram(
   throw new Error(`Unknown kind: ${kind}`);
 }
 
+/** Execute PVM program and stop. */
 export function runProgram(
   program: StandardProgram,
   initialGas: i64 = 0,
@@ -97,5 +100,107 @@ export function runProgram(
   vmInput.gas = initialGas;
   vmInput.pc = programCounter;
 
-  return runVm(vmInput, logs, useSbrkGas);
+  return vmRunOnce(vmInput, logs, useSbrkGas);
+}
+
+/** Next available pvm id. */
+let nextPvmId: u32 = 0;
+/** Currently allocated pvms. */
+const pvms = new Map<u32, Interpreter>();
+
+/**
+ * Allocate new PVM instance to execute given program.
+ *
+ * NOTE: the PVM MUST be de-allocated using `pvmDestroy`.
+ */
+export function pvmStart(program: StandardProgram, useSbrkGas: boolean = false): u32 {
+  const vmInput = new VmInput(program.program, program.memory, program.registers);
+
+  nextPvmId += 1;
+  pvms.set(nextPvmId, vmInit(vmInput, useSbrkGas));
+  return nextPvmId;
+}
+
+/** Deallocate PVM resources. */
+export function pvmDestroy(pvmId: u32): VmOutput | null {
+  if (pvms.has(pvmId)) {
+    const int = pvms.get(pvmId);
+    pvms.delete(pvmId);
+    return vmDestroy(int, false);
+  }
+  return null;
+}
+
+/** Set register values of a paused PVM. */
+export function pvmSetRegisters(pvmId: u32, registers: u64[]): void {
+  if (pvms.has(pvmId)) {
+    const int = pvms.get(pvmId);
+    const safeIter = registers.length < NO_OF_REGISTERS ? registers.length : NO_OF_REGISTERS;
+    for (let i = 0; i < safeIter; i++) {
+      int.registers[i] = registers[i];
+    }
+  }
+}
+
+/**
+ * Read a continuous chunk of memory from given PVM instance.
+ *
+ * @deprecated see getMemory for details
+ */
+export function pvmReadMemory(pvmId: u32, address: u32, length: u32): Uint8Array | null {
+  if (pvms.has(pvmId)) {
+    const int = pvms.get(pvmId);
+    const faultRes = new MaybePageFault();
+    const result = int.memory.getMemory(faultRes, address, length);
+    if (!faultRes.isFault) {
+      return result;
+    }
+  }
+  return null;
+}
+
+/** Write a chunk of memory to given PVM instance. */
+export function pvmWriteMemory(pvmId: u32, address: u32, data: Uint8Array): boolean {
+  if (pvms.has(pvmId)) {
+    const int = pvms.get(pvmId);
+    const faultRes = new MaybePageFault();
+
+    // Preflight: verify the entire target range is accessible before writing
+    const tempBuffer = new Uint8Array(data.length);
+    int.memory.bytesRead(faultRes, address, tempBuffer, 0);
+    if (faultRes.isFault) {
+      return false;
+    }
+
+    // Now perform the actual write
+    faultRes.isFault = false;
+    faultRes.isAccess = false;
+    int.memory.bytesWrite(faultRes, address, data, 0);
+    if (!faultRes.isFault) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Resume execution of paused VM. */
+export function pvmResume(pvmId: u32, gas: i64, pc: u32, logs: boolean = false): VmPause | null {
+  if (pvms.has(pvmId)) {
+    const int = pvms.get(pvmId);
+    int.nextPc = pc;
+    int.gas.set(gas);
+    vmExecute(int, logs);
+
+    const pause = new VmPause();
+    pause.status = int.status;
+    pause.exitCode = int.exitCode;
+    pause.pc = int.pc;
+    pause.nextPc = int.nextPc;
+    pause.gas = int.gas.get();
+    pause.registers = int.registers.slice(0);
+
+    return pause;
+  }
+
+  return null;
 }

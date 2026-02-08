@@ -2,8 +2,8 @@
 
 import "json-bigint-patch";
 import * as assert from "node:assert";
+import { ERR, OK, ProcessableData, read, run, TestOptions } from "../bin/src/test-json.js";
 import { disassemble, getGasCosts, HasMetadata, InputKind } from "../build/release.js";
-import { ERR, OK, ProcessableData, read, run, TestOptions } from "./test-json.js";
 
 // Run the CLI application
 main();
