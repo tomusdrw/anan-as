@@ -184,7 +184,7 @@ function assertRegisters(actual: bigint[], expected: Map<number, bigint>) {
 }
 
 function assertMemEq(actual: Uint8Array, expected: Uint8Array, label: string) {
-  const actualString = hexEncode(Array.from(actual));
-  const expectedString = hexEncode(Array.from(expected));
+  const actualString = hexEncode(actual);
+  const expectedString = hexEncode(expected);
   assertEq(actualString, expectedString, label);
 }

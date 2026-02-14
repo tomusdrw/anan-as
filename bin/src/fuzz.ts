@@ -69,7 +69,7 @@ export function fuzz(data: Uint8Array | number[]) {
 import { hexEncode } from "./utils.js";
 
 function programHex(program: Uint8Array) {
-  return hexEncode(Array.from(program), false);
+  return hexEncode(program, false);
 }
 
 function linkTo(programHex: string) {

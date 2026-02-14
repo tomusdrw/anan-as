@@ -1,5 +1,5 @@
-export function hexEncode(result: number[], includePrefix = true) {
-  const hex = result.map((x) => x.toString(16).padStart(2, "0")).join("");
+export function hexEncode(result: number[] | Uint8Array, includePrefix = true) {
+  const hex = Array.from(result, (x) => x.toString(16).padStart(2, "0")).join("");
   return includePrefix ? `0x${hex}` : hex;
 }
 
