@@ -10,6 +10,7 @@ import {
   pvmStart,
   pvmWriteMemory,
 } from "../../build/release.js";
+import { LOG_HOST_CALL_INDEX, printLogHostCall } from "./log-host-call.js";
 import {
   ARGS_SEGMENT_START,
   buildInitialChunks,
@@ -29,6 +30,7 @@ type ReplayOptions = {
   logs: boolean;
   hasMetadata: HasMetadata;
   verify: boolean;
+  logHostCall?: boolean;
   tracer?: Tracer;
 };
 
@@ -84,6 +86,11 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
 
         // Print ecalli line
         tracer.ecalli(expectedEcalli.index, pause.pc, pause.gas, pause.registers);
+
+        // Print log message for JIP-1 log host call
+        if (pause.exitCode === LOG_HOST_CALL_INDEX && options.logHostCall) {
+          printLogHostCall(id, pause.registers);
+        }
 
         if (options.verify) {
           assertEq(pause.exitCode, expectedEcalli.index, "ecalli index");
@@ -177,7 +184,7 @@ function assertRegisters(actual: bigint[], expected: Map<number, bigint>) {
 }
 
 function assertMemEq(actual: Uint8Array, expected: Uint8Array, label: string) {
-  const actualString = hexEncode(Array.from(actual));
-  const expectedString = hexEncode(Array.from(expected));
+  const actualString = hexEncode(actual);
+  const expectedString = hexEncode(expected);
   assertEq(actualString, expectedString, label);
 }
