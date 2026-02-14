@@ -187,7 +187,6 @@ function handleRun(args: string[]) {
     const id = pvmStart(program, false);
     let gas = initialGas;
     let pc = initialPc;
-    let lastPause: { status: number; exitCode: number; pc: number; gas: bigint; registers: bigint[] } | null = null;
 
     for (;;) {
       const pause = pvmResume(id, gas, pc, logs);
@@ -207,21 +206,18 @@ function handleRun(args: string[]) {
         gas = pause.gas >= LOG_GAS_COST ? pause.gas - LOG_GAS_COST : 0n;
         pc = pause.nextPc;
       } else {
-        lastPause = pause;
+        console.warn(`Unhandled host call: ecalli ${pause.exitCode}. Finishing.`);
         break;
       }
     }
 
     const result = pvmDestroy(id);
-
-    if (lastPause) {
-      console.log(`Status: ${lastPause.status}`);
-      console.log(`Exit code: ${lastPause.exitCode}`);
-      console.log(`Program counter: ${lastPause.pc}`);
-      console.log(`Gas remaining: ${lastPause.gas}`);
-      console.log(`Registers: [${lastPause.registers.join(", ")}]`);
-      console.log(`Result: [${hexEncode(result?.result ?? [])}]`);
-    }
+    console.log(`Status: ${result?.status}`);
+    console.log(`Exit code: ${result?.exitCode}`);
+    console.log(`Program counter: ${result?.pc}`);
+    console.log(`Gas remaining: ${result?.gas}`);
+    console.log(`Registers: [${result?.registers.join(", ")}]`);
+    console.log(`Result: [${hexEncode(result?.result ?? [])}]`);
   } catch (error) {
     console.error(`Error running ${programFile}:`, error);
     process.exit(1);
