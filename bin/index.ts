@@ -2,14 +2,25 @@
 
 import { readFileSync } from "node:fs";
 import minimist, { ParsedArgs } from "minimist";
-import { disassemble, HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
+import {
+  disassemble,
+  HasMetadata,
+  InputKind,
+  prepareProgram,
+  pvmDestroy,
+  pvmResume,
+  pvmSetRegisters,
+  pvmStart,
+} from "../build/release.js";
+import { LOG_GAS_COST, LOG_HOST_CALL_INDEX, printLogHostCall, WHAT } from "./src/log-host-call.js";
+import { STATUS } from "./src/trace-parse.js";
 import { replayTraceFile } from "./src/trace-replay.js";
 import { hexDecode, hexEncode } from "./src/utils.js";
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
-  anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
-  anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] <trace.log>
+  anan-as run [--spi] [--no-logs] [--no-metadata] [--no-log-host-call] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
+  anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] [--no-log-host-call] <trace.log>
 
 Commands:
   disassemble  Disassemble PVM bytecode to assembly
@@ -17,13 +28,14 @@ Commands:
   replay-trace  Re-execute a ecalli IO trace
 
 Flags:
-  --spi          Treat input as JAM SPI format
-  --no-metadata  Input does not contain metadata
-  --no-logs      Disable execution logs
-  --no-verify    Skip verification against trace data (replay-trace only)
-  --pc <number>  Set initial program counter (default: 0)
-  --gas <number> Set initial gas amount (default: 10_000)
-  --help, -h     Show this help message`;
+  --spi               Treat input as JAM SPI format
+  --no-metadata       Input does not contain metadata
+  --no-logs           Disable execution logs
+  --no-log-host-call  Disable built-in handling of JIP-1 log host call (ecalli 100)
+  --no-verify         Skip verification against trace data (replay-trace only)
+  --pc <number>       Set initial program counter (default: 0)
+  --gas <number>      Set initial gas amount (default: 10_000)
+  --help, -h          Show this help message`;
 
 main();
 
@@ -108,11 +120,11 @@ function handleDisassemble(args: string[]) {
 
 function handleRun(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ["spi", "logs", "metadata", "help"],
+    boolean: ["spi", "logs", "metadata", "help", "log-host-call"],
     /** Prevents parsing hex values as numbers. */
     string: ["pc", "gas", "_"],
     alias: { h: "help" },
-    default: { metadata: true, logs: true },
+    default: { metadata: true, logs: true, "log-host-call": true },
   });
 
   if (parsed.help) {
@@ -159,6 +171,7 @@ function handleRun(args: string[]) {
   const spiArgs = parseSpiArgs(spiArgsStr);
 
   const logs = parsed.logs;
+  const logHostCall = parsed["log-host-call"];
   const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
 
   // Parse and validate PC and gas options
@@ -171,14 +184,44 @@ function handleRun(args: string[]) {
 
   try {
     const program = prepareProgram(kind, hasMetadata, programCode, [], [], [], spiArgs);
-    const result = runProgram(program, initialGas, initialPc, logs, false);
+    const id = pvmStart(program, false);
+    let gas = initialGas;
+    let pc = initialPc;
+    let lastPause: { status: number; exitCode: number; pc: number; gas: bigint; registers: bigint[] } | null = null;
 
-    console.log(`Status: ${result.status}`);
-    console.log(`Exit code: ${result.exitCode}`);
-    console.log(`Program counter: ${result.pc}`);
-    console.log(`Gas remaining: ${result.gas}`);
-    console.log(`Registers: [${result.registers.join(", ")}]`);
-    console.log(`Result: [${hexEncode(result.result)}]`);
+    for (;;) {
+      const pause = pvmResume(id, gas, pc, logs);
+      if (!pause) {
+        throw new Error("pvmResume returned null");
+      }
+
+      if (pause.status === STATUS.HOST && pause.exitCode === LOG_HOST_CALL_INDEX && logHostCall) {
+        printLogHostCall(id, pause.registers);
+
+        // Set r7 = WHAT
+        const regs = pause.registers;
+        regs[7] = WHAT;
+        pvmSetRegisters(id, regs);
+
+        // Deduct gas and advance PC
+        gas = pause.gas >= LOG_GAS_COST ? pause.gas - LOG_GAS_COST : 0n;
+        pc = pause.nextPc;
+      } else {
+        lastPause = pause;
+        break;
+      }
+    }
+
+    const result = pvmDestroy(id);
+
+    if (lastPause) {
+      console.log(`Status: ${lastPause.status}`);
+      console.log(`Exit code: ${lastPause.exitCode}`);
+      console.log(`Program counter: ${lastPause.pc}`);
+      console.log(`Gas remaining: ${lastPause.gas}`);
+      console.log(`Registers: [${lastPause.registers.join(", ")}]`);
+      console.log(`Result: [${hexEncode(result?.result ?? [])}]`);
+    }
   } catch (error) {
     console.error(`Error running ${programFile}:`, error);
     process.exit(1);
@@ -187,9 +230,9 @@ function handleRun(args: string[]) {
 
 function handleReplayTrace(args: string[]) {
   const parsed = minimist(args, {
-    boolean: ["metadata", "verify", "logs", "help"],
+    boolean: ["metadata", "verify", "logs", "help", "log-host-call"],
     alias: { h: "help" },
-    default: { metadata: true, logs: true, verify: true },
+    default: { metadata: true, logs: true, verify: true, "log-host-call": true },
   });
 
   if (parsed.help) {
@@ -213,12 +256,14 @@ function handleReplayTrace(args: string[]) {
   const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
   const verify = parsed.verify;
   const logs = parsed.logs;
+  const logHostCall = parsed["log-host-call"];
 
   try {
     const summary = replayTraceFile(file, {
       logs,
       hasMetadata,
       verify,
+      logHostCall,
     });
 
     console.log(`✅ Replay complete: ${summary.ecalliCount} ecalli entries`);
