@@ -23,10 +23,6 @@
 import { HasMetadata, InputKind, prepareProgram, runProgram } from "./api-utils";
 import { Status } from "./interpreter";
 
-// Result buffer location (in WASM linear memory)
-const RESULT_BUFFER: u32 = 0x100; // After globals area
-const MAX_RESULT_SIZE: u32 = 0x10000; // 64KB max result size
-
 // Globals for result pointer and length (SPI convention)
 // These must be mutable globals that the compiler can read
 export let result_ptr: u32 = 0;
@@ -41,9 +37,7 @@ export function main(argsPtr: u32, argsLen: u32): void {
   // 8 (gas) + 4 (pc) + 4 (spi-program-len) + 4 (inner-args-len) + ? (spi-program) + ? (inner-args) = 20 + ? bytes
   if (argsLen < 20) {
     // Invalid input - return error status
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
+    setPanicResult();
     return;
   }
 
@@ -67,9 +61,7 @@ export function main(argsPtr: u32, argsLen: u32): void {
   // we don't have enough data - prevent u32 overflow by casting to u64
   if (u64(argsLen) - u64(offset) !== u64(programLen) + u64(innerArgsLen)) {
     // Invalid input - return error status
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
+    setPanicResult();
     return;
   }
 
@@ -88,68 +80,57 @@ export function main(argsPtr: u32, argsLen: u32): void {
   offset += innerArgsLen;
 
   // Parse SPI program and prepare memory layout
-  const program = prepareProgram(InputKind.SPI, HasMetadata.Yes, spiProgram, [], [], [], innerArgs);
+  const preallocateMemoryPages = 0;
+  const program = prepareProgram(
+    InputKind.SPI,
+    HasMetadata.Yes,
+    spiProgram,
+    [],
+    [],
+    [],
+    innerArgs,
+    preallocateMemoryPages,
+  );
 
   // Run the program
   const result = runProgram(program, gas, pc, false, false);
 
-  // Write output to result buffer with bounds checking
-  let resultLen: u32 = 0;
+  // Calculate exact result size: 1 (status) + 4 (exitCode) + 8 (gas) + 4 (pc) + ? (result data)
+  const dataLen: u32 = <u32>result.result.length;
+  const totalLen: u32 = 1 + 4 + 8 + 4 + dataLen;
+  const buf: u32 = <u32>heap.alloc(totalLen);
+
+  let pos: u32 = 0;
 
   // Status (1 byte)
-  if (resultLen >= MAX_RESULT_SIZE) {
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
-    return;
-  }
-  store<u8>(RESULT_BUFFER + resultLen, result.status);
-  resultLen += 1;
+  store<u8>(buf + pos, result.status);
+  pos += 1;
 
   // exitCode (4 bytes)
-  if (resultLen + 4 > MAX_RESULT_SIZE) {
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
-    return;
-  }
-  store<u32>(RESULT_BUFFER + resultLen, result.exitCode);
-  resultLen += 4;
+  store<u32>(buf + pos, result.exitCode);
+  pos += 4;
 
   // Gas left (8 bytes)
-  if (resultLen + 8 > MAX_RESULT_SIZE) {
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
-    return;
-  }
-  store<u64>(RESULT_BUFFER + resultLen, result.gas);
-  resultLen += 8;
+  store<u64>(buf + pos, result.gas);
+  pos += 8;
 
   // PC (4 bytes)
-  if (resultLen + 4 > MAX_RESULT_SIZE) {
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
-    return;
-  }
-  store<u32>(RESULT_BUFFER + resultLen, result.pc);
-  resultLen += 4;
+  store<u32>(buf + pos, result.pc);
+  pos += 4;
 
   // Result data
-  const dataLen: u32 = <u32>result.result.length;
-  if (resultLen + dataLen > MAX_RESULT_SIZE) {
-    store<u8>(RESULT_BUFFER, Status.PANIC);
-    result_ptr = RESULT_BUFFER;
-    result_len = 1;
-    return;
-  }
   for (let i: u32 = 0; i < dataLen; i++) {
-    store<u8>(RESULT_BUFFER + resultLen + i, result.result[i]);
+    store<u8>(buf + pos + i, result.result[i]);
   }
-  resultLen += dataLen;
 
   // Set result pointer and length
-  result_ptr = RESULT_BUFFER;
-  result_len = resultLen;
+  result_ptr = buf;
+  result_len = totalLen;
+}
+
+function setPanicResult(): void {
+  const buf: u32 = <u32>heap.alloc(1);
+  store<u8>(buf, Status.PANIC);
+  result_ptr = buf;
+  result_len = 1;
 }
