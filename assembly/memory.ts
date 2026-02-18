@@ -42,7 +42,11 @@ const MAX_MEMORY_ADDRESS: u32 = 0xffff_ffff;
 
 export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
-  private arena: Arena = new Arena(128);
+  private readonly arena: Arena;
+
+  constructor(preAllocatePages: u32 = 0) {
+    this.arena = new Arena(preAllocatePages);
+  }
 
   /** Allocates memory pages with given `access`, for given `address` and initialize with `zeroes` */
   setEmpty(access: Access, address: u32, len: u32): MemoryBuilder {

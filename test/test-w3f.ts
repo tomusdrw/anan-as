@@ -87,6 +87,7 @@ function processW3f(data: PvmTest, options: TestOptions) {
     input.pageMap,
     input.memory,
     [],
+    16,
   );
   const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
   const status = statusAsString(result.status);

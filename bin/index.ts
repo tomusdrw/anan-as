@@ -183,7 +183,8 @@ function handleRun(args: string[]) {
   console.log(`🚀 Running ${programFile} (as ${name})`);
 
   try {
-    const program = prepareProgram(kind, hasMetadata, programCode, [], [], [], spiArgs);
+    const preallocateMemoryPages = 128;
+    const program = prepareProgram(kind, hasMetadata, programCode, [], [], [], spiArgs, preallocateMemoryPages);
     const id = pvmStart(program, false);
     let gas = initialGas;
     let pc = initialPc;

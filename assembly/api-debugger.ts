@@ -14,7 +14,7 @@ let interpreter: Interpreter | null = null;
 export function resetJAM(program: u8[], pc: u32, initialGas: Gas, args: u8[], hasMetadata: boolean = false): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = decodeSpi(code, liftBytes(args));
+  const p = decodeSpi(code, liftBytes(args), 128);
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
   int.gas.set(initialGas);

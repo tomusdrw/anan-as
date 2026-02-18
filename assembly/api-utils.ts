@@ -18,13 +18,13 @@ export enum HasMetadata {
 }
 
 export function getGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
-  const program = prepareProgram(kind, withMetadata, input, [], [], [], []);
+  const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0);
 
   return computeGasCosts(program.program).values();
 }
 
 export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata): string {
-  const program = prepareProgram(kind, withMetadata, input, [], [], [], []);
+  const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0);
 
   let output = "";
   if (withMetadata === HasMetadata.Yes) {
@@ -51,6 +51,8 @@ export function prepareProgram(
   initialMemory: InitialChunk[],
   /** NOTE: ONLY needed for SPI. */
   args: u8[],
+  /** Preallocate a bunch of memory pages for faster execution. */
+  preallocateMemoryPages: u32,
 ): StandardProgram {
   let code = liftBytes(program);
   let metadata = new Uint8Array(0);
@@ -64,7 +66,7 @@ export function prepareProgram(
   if (kind === InputKind.Generic) {
     const program = deblob(code);
 
-    const builder = new MemoryBuilder();
+    const builder = new MemoryBuilder(preallocateMemoryPages);
     const memory = buildMemory(builder, initialPageMap, initialMemory);
 
     const registers: Registers = new StaticArray(NO_OF_REGISTERS);
@@ -80,7 +82,7 @@ export function prepareProgram(
   }
 
   if (kind === InputKind.SPI) {
-    const exe = decodeSpi(code, liftBytes(args));
+    const exe = decodeSpi(code, liftBytes(args), preallocateMemoryPages);
     exe.metadata = metadata;
     return exe;
   }
