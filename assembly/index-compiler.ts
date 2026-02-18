@@ -80,7 +80,7 @@ export function main(argsPtr: u32, argsLen: u32): void {
   offset += innerArgsLen;
 
   // Parse SPI program and prepare memory layout
-  const preallocateMemoryPages = 0;
+  const preallocateMemoryPages: u32 = 0;
   const program = prepareProgram(
     InputKind.SPI,
     HasMetadata.Yes,
