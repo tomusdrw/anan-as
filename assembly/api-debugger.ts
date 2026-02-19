@@ -169,36 +169,44 @@ export function getPageDump(index: u32): Uint8Array {
 }
 
 /**
+ * Returns the WASM linear memory pointer (byte offset) for the backing buffer of the page at `page`.
+ *
+ * Returns `0` if the page does not exist or is not readable (page/access fault).
+ *
+ * Use this instead of `getMemory` to read memory efficiently from the JS side:
+ * ```ts
+ * let pagesRead = 0;
+ * for (let address = start; address < end; address += PAGE_SIZE) {
+ *   const page = address >> PAGE_SIZE_SHIFT;
+ *   const ptr = getPagePointer(page);
+ *   if (ptr === 0) {
+ *     throw new Error(`Page fault at ${page << PAGE_SIZE_SHIFT}`);
+ *   }
+ *   destination.set(
+ *     new Uint8Array(wasm.instance.exports.memory.buffer, ptr, Math.min(end - address, PAGE_SIZE)),
+ *     pagesRead << PAGE_SIZE_SHIFT,
+ *   );
+ *   pagesRead += 1;
+ * }
+ * ```
+ */
+export function getPagePointer(page: u32): usize {
+  if (interpreter === null) {
+    return 0;
+  }
+  const int = <Interpreter>interpreter;
+  return int.memory.getPagePointer(page);
+}
+
+/**
  * Read a chunk of memory at `[address, address + length)`.
  *
  * Returns the requested memory chunk or `null` if reading triggered a page fault.
  *
  * @deprecated Getting memory like that is extremely inefficient (copying mulitple times)
  * and error prone (we may not be able to allocate).
- * Instead WASM should be able to return memory pointers for already allocated pages.
- * So reading memory on the caller side should be something like this:
- * ```ts
- * let pagesRead = 0;
- * for (let address = start; address < end; address += PAGE_SIZE) {
- *   const page = address >> PAGE_SIZE_SHIFT;
- *   const maybePointer = getPagePointer(page);
- *   // check page fault
- *   if (maybePointer === null) {
- *     throw new Error(`Page fault at ${page << PAGE_SIZE_SHIFT}`);
- *   }
- *   // otherwise copy to JS
- *   destination.set(
- *     pagesRead << PAGE_SIZE_SHIFT,
- *     new Uint8Array(wasm.instance.memory, maybePointer, Math.min(end, PAGE_SIZE))
- *   );
- *   pagesRead += 1;
- * }
- * ```
- *
- * goals:
- * 1. No additional allocations on the WASM side
- * 2. Copying directly from wasm memory on the JS side
- *
+ * Use `getPagePointer` instead to read memory directly from WASM linear memory on the JS side
+ * with no additional WASM-side allocations.
  */
 export function getMemory(address: u32, length: u32): Uint8Array | null {
   if (interpreter === null) {
