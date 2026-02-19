@@ -1,4 +1,4 @@
-import { InitialChunk, InitialPage, VmInput, VmOutput } from "./api-types";
+import { InitialChunk, InitialPage, VmInput, VmOutput, VmRunOptions } from "./api-types";
 import { Args, RELEVANT_ARGS } from "./arguments";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
@@ -79,10 +79,10 @@ export function vmInit(input: VmInput, useSbrkGas: boolean = false): Interpreter
 }
 
 /** Initialize & run & destroy a VM in a single go. */
-export function vmRunOnce(input: VmInput, logs: boolean = false, useSbrkGas: boolean = false): VmOutput {
-  const int = vmInit(input, useSbrkGas);
-  vmExecute(int, logs);
-  return vmDestroy(int, true);
+export function vmRunOnce(input: VmInput, options: VmRunOptions): VmOutput {
+  const int = vmInit(input, options.useSbrkGas);
+  vmExecute(int, options.logs);
+  return vmDestroy(int, options.dumpMemory);
 }
 
 export function vmExecute(int: Interpreter, logs: boolean = false): void {

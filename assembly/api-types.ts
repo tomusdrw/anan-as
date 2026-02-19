@@ -17,6 +17,12 @@ export class InitialChunk {
   data: u8[] = [];
 }
 
+export class VmRunOptions {
+  useSbrkGas: boolean = false;
+  logs: boolean = false;
+  dumpMemory: boolean = false;
+}
+
 export class VmInput {
   pc: u32 = 0;
   gas: i64 = 0;
