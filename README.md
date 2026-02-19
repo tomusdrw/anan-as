@@ -2,9 +2,9 @@
 
 AssemblyScript implementation of the JAM PVM (64-bit).
 
-Gray Paper compatibility:
-
-- [x] 0.7.2
+![Gray Paper](https://img.shields.io/badge/Gray%20Paper-0.7.2-green)
+[![npm](https://img.shields.io/npm/v/@fluffylabs/anan-as)](https://www.npmjs.com/package/@fluffylabs/anan-as)
+[![npm dev](https://img.shields.io/npm/v/@fluffylabs/anan-as/next?label=dev)](https://www.npmjs.com/package/@fluffylabs/anan-as)
 
 [Demo](https://todr.me/anan-as)
 
@@ -140,10 +140,10 @@ The package includes a CLI tool for disassembling, running, and replaying PVM by
 
 ```bash
 # Disassemble bytecode to assembly
-npx @fluffylabs/anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
+npx @fluffylabs/anan-as disassemble [--spi] [--no-metadata] <file.pvm>
 
 # Run JAM programs
-npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
+npx @fluffylabs/anan-as run [--spi] [--no-logs] [--no-metadata] [--pc <number>] [--gas <number>] <file.pvm> [spi-args.bin or hex]
 
 # Replay an ecalli trace
 # Learn more: https://github.com/tomusdrw/JIPs/blob/td-jip6-ecalliloggin/JIP-6.md
@@ -178,29 +178,29 @@ The `replay-trace` command re-executes an ecalli trace, replaying recorded host 
 
 ```bash
 # Disassemble a JAM file (includes metadata by default)
-npx @fluffylabs/anan-as disassemble program.jam
+npx @fluffylabs/anan-as disassemble program.pvm
 
 # Disassemble without metadata
-npx @fluffylabs/anan-as disassemble --no-metadata program.jam
+npx @fluffylabs/anan-as disassemble --no-metadata program.pvm
 
-# Disassemble SPI program
-npx @fluffylabs/anan-as disassemble --spi program.spi
+# Disassemble JAM SPI program
+npx @fluffylabs/anan-as disassemble --spi program.jam
 
 # Run a JAM program with logs (includes metadata by default)
-npx @fluffylabs/anan-as run program.jam
+npx @fluffylabs/anan-as run program.pvm
 
 # Run a JAM program without metadata
-npx @fluffylabs/anan-as run --no-metadata program.jam
+npx @fluffylabs/anan-as run --no-metadata program.pvm
 
 # Run a JAM program quietly
-npx @fluffylabs/anan-as run --no-logs program.jam
+npx @fluffylabs/anan-as run --no-logs program.pvm
 
 # Run a JAM program with custom initial PC and gas
-npx @fluffylabs/anan-as run --pc 100 --gas 10000 program.jam
+npx @fluffylabs/anan-as run --pc 100 --gas 10000 program.pvm
 
-# Run SPI program with arguments (file or hex)
-npx @fluffylabs/anan-as run --spi program.spi args.bin
-npx @fluffylabs/anan-as run --spi program.spi 0xdeadbeef
+# Run JAM SPI program with arguments (file or hex)
+npx @fluffylabs/anan-as run --spi program.jam args.bin
+npx @fluffylabs/anan-as run --spi program.jam 0xdeadbeef
 
 # Replay an ecalli trace
 npx @fluffylabs/anan-as replay-trace trace.log
