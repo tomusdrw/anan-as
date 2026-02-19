@@ -257,7 +257,7 @@ export const TESTS: Test[] = [
     assert.isEqual(ptr, <usize>0, "should return 0 for reserved page");
     return assert;
   }),
-  test("getPagePointer returns 0 for write-only page when read is requested", (assert) => {
+  test("getPagePointer returns non-zero pointer for read-accessible page", (assert) => {
     // Access.Write pages ARE readable (can(Access.Read) returns true for Write pages).
     // Access.None pages are not. Create a Read-only page and verify pointer is non-zero.
     const builder = new MemoryBuilder();
