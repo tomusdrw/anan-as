@@ -100,7 +100,7 @@ export class Memory {
   private lastAllocatedPage: i32;
   private pageResult: PageResult = new PageResult();
   private chunksResult: Chunks = new Chunks();
-  private maxHeapPointer: i64;
+  private maxHeapPointer: u64;
 
   constructor(
     private readonly arena: Arena,
@@ -113,7 +113,7 @@ export class Memory {
       throw new Error("sbrk within reserved memory is not allowed!");
     }
     this.lastAllocatedPage = pages.has(sbrkPage) ? sbrkPage : sbrkPage - 1;
-    this.maxHeapPointer = i64(maxHeapPointer);
+    this.maxHeapPointer = u64(maxHeapPointer);
   }
 
   pageDump(index: PageIndex): Uint8Array | null {
@@ -138,7 +138,7 @@ export class Memory {
       return freeMemoryStart;
     }
 
-    const newSbrk = i64(this.sbrkAddress) + amount;
+    const newSbrk = u64(this.sbrkAddress) + amount;
     if (newSbrk > this.maxHeapPointer) {
       faultRes.isFault = true;
       return freeMemoryStart;
