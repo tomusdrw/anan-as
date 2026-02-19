@@ -1,5 +1,5 @@
 import { buildMemory, getAssembly, vmDestroy, vmExecute, vmInit, vmRunOnce } from "./api-internal";
-import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause } from "./api-types";
+import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause, VmRunOptions } from "./api-types";
 import { BlockGasCost, computeGasCosts } from "./gas-costs";
 import { Interpreter } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
@@ -97,12 +97,18 @@ export function runProgram(
   programCounter: u32 = 0,
   logs: boolean = false,
   useSbrkGas: boolean = false,
+  dumpMemory: boolean = false,
 ): VmOutput {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
   vmInput.gas = initialGas;
   vmInput.pc = programCounter;
 
-  return vmRunOnce(vmInput, logs, useSbrkGas);
+  const vmOptions = new VmRunOptions();
+  vmOptions.logs = logs;
+  vmOptions.useSbrkGas = useSbrkGas;
+  vmOptions.dumpMemory = dumpMemory;
+
+  return vmRunOnce(vmInput, vmOptions);
 }
 
 /** Next available pvm id. */

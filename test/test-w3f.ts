@@ -89,7 +89,7 @@ function processW3f(data: PvmTest, options: TestOptions) {
     [],
     16,
   );
-  const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas);
+  const result = runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas, true);
   const status = statusAsString(result.status);
 
   // silent mode - just put our vals into expected (comparison done externally)
