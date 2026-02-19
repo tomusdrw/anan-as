@@ -1,43 +1,44 @@
 import { InstructionRun, ok } from "./outcome";
 import { mulUpperSigned, mulUpperSignedUnsigned, mulUpperUnsigned, reg, u32SignExtend } from "./utils";
+import { portable } from "../portable";
 
 // ADD_IMM_32
 export const add_imm_32: InstructionRun = (r, args, registers) => {
   const a = registers[reg(args.a)];
   const c = u32SignExtend(args.c);
-  registers[reg(args.b)] = u32SignExtend(u32(a + c));
+  registers[reg(args.b)] = u32SignExtend(u32(portable.u64_add(a, c)));
   return ok(r);
 };
 
 // MUL_IMM_32
 export const mul_imm_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.b)] = u32SignExtend(u32(registers[reg(args.a)] * args.c));
+  registers[reg(args.b)] = u32SignExtend(u32(portable.u64_mul(registers[reg(args.a)], u64(args.c))));
   return ok(r);
 };
 
 // NEG_ADD_IMM_32
 export const neg_add_imm_32: InstructionRun = (r, args, registers) => {
-  const sum = (u64(args.c) | 0x1_0000_0000) - registers[reg(args.a)];
+  const sum = portable.u64_sub((u64(args.c) | u64(0x1_0000_0000)), registers[reg(args.a)]);
   registers[reg(args.b)] = u32SignExtend(u32(sum));
   return ok(r);
 };
 
 // ADD_IMM
 export const add_imm: InstructionRun = (r, args, registers) => {
-  const sum: u64 = registers[reg(args.a)] + u32SignExtend(args.c);
+  const sum: u64 = portable.u64_add(registers[reg(args.a)], u32SignExtend(args.c));
   registers[reg(args.b)] = sum;
   return ok(r);
 };
 
 // MUL_IMM
 export const mul_imm: InstructionRun = (r, args, registers) => {
-  registers[reg(args.b)] = registers[reg(args.a)] * u32SignExtend(args.c);
+  registers[reg(args.b)] = portable.u64_mul(registers[reg(args.a)], u32SignExtend(args.c));
   return ok(r);
 };
 
 // NEG_ADD_IMM
 export const neg_add_imm: InstructionRun = (r, args, registers) => {
-  const sum = u32SignExtend(args.c) - registers[reg(args.a)];
+  const sum = portable.u64_sub(u32SignExtend(args.c), registers[reg(args.a)]);
   registers[reg(args.b)] = sum;
   return ok(r);
 };
@@ -52,13 +53,15 @@ export const add_32: InstructionRun = (r, args, registers) => {
 
 // SUB_32
 export const sub_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.b)] + 2 ** 32 - u32(registers[reg(args.a)])));
+  const a = registers[reg(args.b)];
+  const b = u64(2 ** 32 - u32(registers[reg(args.a)]));
+  registers[reg(args.c)] = u32SignExtend(u32(portable.u64_add(a, b)));
   return ok(r);
 };
 
 // MUL_32
 export const mul_32: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = u32SignExtend(u32(registers[reg(args.a)] * registers[reg(args.b)]));
+  registers[reg(args.c)] = u32SignExtend(u32(portable.u64_mul(registers[reg(args.a)], registers[reg(args.b)])));
   return ok(r);
 };
 
@@ -76,11 +79,11 @@ export const div_u_32: InstructionRun = (r, args, registers) => {
 
 // DIV_S_32
 export const div_s_32: InstructionRun = (r, args, registers) => {
-  const b = u32SignExtend(u32(registers[reg(args.b)]));
-  const a = u32SignExtend(u32(registers[reg(args.a)]));
-  if (a === 0) {
+  const b = i64(u32SignExtend(u32(registers[reg(args.b)])));
+  const a = i64(u32SignExtend(u32(registers[reg(args.a)])));
+  if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
-  } else if (a === -1 && b === i32.MIN_VALUE) {
+  } else if (a === i64(-1) && b === i64(i32.MIN_VALUE)) {
     registers[reg(args.c)] = b;
   } else {
     registers[reg(args.c)] = b / a;
@@ -107,7 +110,7 @@ export const rem_s_32: InstructionRun = (r, args, registers) => {
   if (a === 0) {
     registers[reg(args.c)] = i64(b);
   } else if (a === -1 && b === i32.MIN_VALUE) {
-    registers[reg(args.c)] = 0;
+    registers[reg(args.c)] = u64(0);
   } else {
     registers[reg(args.c)] = i64(b) % i64(a);
   }
@@ -116,25 +119,31 @@ export const rem_s_32: InstructionRun = (r, args, registers) => {
 
 // ADD_64
 export const add_64: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] + registers[reg(args.b)];
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = portable.u64_add(a, b);
   return ok(r);
 };
 
 // SUB
 export const sub: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.b)] - registers[reg(args.a)];
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = portable.u64_sub(b, a);
   return ok(r);
 };
 
 // MUL
 export const mul: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.a)] * registers[reg(args.b)];
+  const a = registers[reg(args.a)];
+  const b = registers[reg(args.b)];
+  registers[reg(args.c)] = portable.u64_mul(a, b);
   return ok(r);
 };
 
 // DIV_U
 export const div_u: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === 0) {
+  if (registers[reg(args.a)] === u64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
   } else {
     registers[reg(args.c)] = registers[reg(args.b)] / registers[reg(args.a)];
@@ -146,9 +155,9 @@ export const div_u: InstructionRun = (r, args, registers) => {
 export const div_s: InstructionRun = (r, args, registers) => {
   const b = i64(registers[reg(args.b)]);
   const a = i64(registers[reg(args.a)]);
-  if (a === 0) {
+  if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
-  } else if (a === -1 && b === i64.MIN_VALUE) {
+  } else if (a === i64(-1) && b === i64.MIN_VALUE) {
     registers[reg(args.c)] = b;
   } else {
     registers[reg(args.c)] = b / a;
@@ -158,7 +167,7 @@ export const div_s: InstructionRun = (r, args, registers) => {
 
 // REM_U
 export const rem_u: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === 0) {
+  if (registers[reg(args.a)] === u64(0)) {
     registers[reg(args.c)] = registers[reg(args.b)];
   } else {
     registers[reg(args.c)] = registers[reg(args.b)] % registers[reg(args.a)];
@@ -170,10 +179,10 @@ export const rem_u: InstructionRun = (r, args, registers) => {
 export const rem_s: InstructionRun = (r, args, registers) => {
   const b = i64(registers[reg(args.b)]);
   const a = i64(registers[reg(args.a)]);
-  if (a === 0) {
+  if (a === i64(0)) {
     registers[reg(args.c)] = b;
-  } else if (a === -1 && b === i64.MIN_VALUE) {
-    registers[reg(args.c)] = 0;
+  } else if (a === i64(-1) && b === i64.MIN_VALUE) {
+    registers[reg(args.c)] = u64(0);
   } else {
     registers[reg(args.c)] = b % a;
   }

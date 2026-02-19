@@ -9,7 +9,7 @@ export const move_reg: InstructionRun = (r, args, registers) => {
 
 // CMOV_IZ_IMM
 export const cmov_iz_imm: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === 0) {
+  if (registers[reg(args.a)] === u64(0)) {
     registers[reg(args.b)] = u32SignExtend(args.c);
   }
   return ok(r);
@@ -17,7 +17,7 @@ export const cmov_iz_imm: InstructionRun = (r, args, registers) => {
 
 // CMOV_NZ_IMM
 export const cmov_nz_imm: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] !== 0) {
+  if (registers[reg(args.a)] !== u64(0)) {
     registers[reg(args.b)] = u32SignExtend(args.c);
   }
   return ok(r);
@@ -25,7 +25,7 @@ export const cmov_nz_imm: InstructionRun = (r, args, registers) => {
 
 // CMOV_IZ
 export const cmov_iz: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === 0) {
+  if (registers[reg(args.a)] === u64(0)) {
     registers[reg(args.c)] = registers[reg(args.b)];
   }
   return ok(r);
@@ -33,7 +33,7 @@ export const cmov_iz: InstructionRun = (r, args, registers) => {
 
 // CMOV_NZ
 export const cmov_nz: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] !== 0) {
+  if (registers[reg(args.a)] !== u64(0)) {
     registers[reg(args.c)] = registers[reg(args.b)];
   }
   return ok(r);

@@ -1,6 +1,7 @@
 import { Args } from "./arguments";
 import { GasCounter, gasCounter } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
+import { portable } from "./portable";
 import { Outcome, OutcomeData, Result } from "./instructions/outcome";
 import { reg } from "./instructions/utils";
 import { RUN } from "./instructions-exe";
@@ -57,7 +58,7 @@ export class Interpreter {
     this.program = program;
     this.registers = registers;
     this.memory = memory;
-    this.gas = gasCounter(0);
+    this.gas = gasCounter(i64(0));
     this.pc = 0;
     this.status = Status.OK;
     this.exitCode = 0;
@@ -131,9 +132,9 @@ export class Interpreter {
 
       // additional gas cost of sbrk
       if (iData === SBRK && this.useSbrkGas) {
-        const alloc = u64(u32(this.registers[reg(args.a)]));
-        const gas = ((alloc + PAGE_SIZE - 1) >> PAGE_SIZE_SHIFT) * 16;
-        if (this.gas.sub(gas)) {
+        const alloc = u64(u32(this.registers[reg(u64(args.a))]));
+        const gas = portable.u64_mul(portable.u64_sub(portable.u64_add(alloc, u64(PAGE_SIZE)), u64(1)) >> u64(PAGE_SIZE_SHIFT), u64(16));
+        if (this.gas.sub(<i64>gas)) {
           this.status = Status.OOG;
           return false;
         }
@@ -240,13 +241,13 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
     return r;
   }
 
-  const index = address / JUMP_ALIGMENT_FACTOR - 1;
+  const index = u32(address / JUMP_ALIGMENT_FACTOR) - 1;
   if (index >= <u32>jumpTable.jumps.length) {
     r.status = DjumpStatus.PANIC;
     return r;
   }
 
-  const newPc: u64 = unchecked(jumpTable.jumps[index]);
+  const newPc: u64 = jumpTable.jumps[index];
   if (newPc >= MAX_U32) {
     r.status = DjumpStatus.PANIC;
     return r;
@@ -257,4 +258,4 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
   return r;
 }
 
-const MAX_U32: u64 = 2 ** 32;
+const MAX_U32: u64 = u64(2 ** 32);

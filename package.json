@@ -33,7 +33,8 @@
 		"qa-fix": "npm run format; npm run lint",
 		"start": "tsx ./bin/index.ts",
     "test": "npm run asbuild:test && tsx ./test/test-as.ts && tsx ./test/test-trace-replay.ts",
-		"tsbuild": "tsc",
+		"tsbuild": "tsc && npm run tsbuild:portable",
+		"tsbuild:portable": "tsc --project portable/tsconfig.json && npx esbuild dist/build/js/portable/index.js --bundle --format=esm --platform=node --outfile=dist/build/js/portable-bundle.js",
 		"test:w3f": "tsx ./test/test-w3f.ts",
 		"test:gas-cost": "tsx ./test/test-gas-cost.ts",
 		"update-version": "tsx ./web/bump-version.ts $GITHUB_SHA",
@@ -110,6 +111,10 @@
 		"./release.wasm": "./dist/build/release.wasm",
 		"./release-mini.wasm": "./dist/build/release-mini.wasm",
 		"./release-stub.wasm": "./dist/build/release-stub.wasm",
-		"./compiler.wasm": "./dist/build/compiler.wasm"
+		"./compiler.wasm": "./dist/build/compiler.wasm",
+		"./js": {
+			"import": "./dist/build/js/portable-bundle.js",
+			"types": "./dist/build/js/portable/index.d.ts"
+		}
 	}
 }

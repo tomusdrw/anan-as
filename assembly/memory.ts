@@ -1,5 +1,6 @@
 import { u8SignExtend, u16SignExtend, u32SignExtend } from "./instructions/utils";
 import { minU32 } from "./math";
+import { portable } from "./portable";
 import {
   Access,
   Arena,
@@ -124,7 +125,8 @@ export class Memory {
   }
 
   free(): void {
-    const pages = this.pages.values();
+    // @ts-ignore: AS returns T[], JS returns iterator - asArray handles both
+    const pages: Page[] = portable.asArray<Page>(this.pages.values());
     for (let i = 0; i < pages.length; i++) {
       this.arena.release(pages[i].raw);
     }
@@ -132,20 +134,20 @@ export class Memory {
   }
 
   sbrk(faultRes: MaybePageFault, amount: u32): u64 {
-    const freeMemoryStart = this.sbrkAddress;
+    const freeMemoryStart = u64(this.sbrkAddress);
     if (amount === 0) {
       faultRes.isFault = false;
       return freeMemoryStart;
     }
 
-    const newSbrk = u64(this.sbrkAddress) + amount;
+    const newSbrk = portable.u64_add(freeMemoryStart, u64(amount));
     if (newSbrk > this.maxHeapPointer) {
       faultRes.isFault = true;
       return freeMemoryStart;
     }
     this.sbrkAddress = u32(newSbrk);
 
-    const pageIdx = i32((newSbrk - 1) >> PAGE_SIZE_SHIFT);
+    const pageIdx = i32(portable.u64_sub(newSbrk, u64(1)) >> u64(PAGE_SIZE_SHIFT));
     if (pageIdx === this.lastAllocatedPage) {
       return freeMemoryStart;
     }
@@ -160,19 +162,19 @@ export class Memory {
   }
 
   getU8(faultRes: MaybePageFault, address: u32): u64 {
-    return u8(this.getBytesReversed(faultRes, Access.Read, address, 1));
+    return u64(u8(this.getBytesReversed(faultRes, Access.Read, address, 1)));
   }
 
   getU16(faultRes: MaybePageFault, address: u32): u64 {
-    return bswap<u16>(u16(this.getBytesReversed(faultRes, Access.Read, address, 2)));
+    return u64(portable.bswap_u16(u16(this.getBytesReversed(faultRes, Access.Read, address, 2))));
   }
 
   getU32(faultRes: MaybePageFault, address: u32): u64 {
-    return bswap<u32>(u32(this.getBytesReversed(faultRes, Access.Read, address, 4)));
+    return u64(portable.bswap_u32(u32(this.getBytesReversed(faultRes, Access.Read, address, 4))));
   }
 
   getU64(faultRes: MaybePageFault, address: u32): u64 {
-    return bswap<u64>(this.getBytesReversed(faultRes, Access.Read, address, 8));
+    return portable.bswap_u64(this.getBytesReversed(faultRes, Access.Read, address, 8));
   }
 
   getI8(faultRes: MaybePageFault, address: u32): u64 {
@@ -212,7 +214,7 @@ export class Memory {
     // first traverse memory and see if we don't page fault
     if (length > 0) {
       let nextAddress = address;
-      const pagesToCheck = i32((u64(length) + u64(PAGE_SIZE - 1)) >> PAGE_SIZE_SHIFT);
+      const pagesToCheck = i32(portable.u64_add(u64(length), u64(PAGE_SIZE - 1)) >> u64(PAGE_SIZE_SHIFT));
       for (let page = 0; page < pagesToCheck; page++) {
         const pageData = this.pageResult;
         this.getPage(fault, pageData, Access.Read, nextAddress);
@@ -382,33 +384,33 @@ export class Memory {
     const firstPageEnd = minU32(PAGE_SIZE, r.firstPageOffset + bytes);
     for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {
       r.firstPageData[i] = u8(bytesLeft);
-      bytesLeft >>= 8;
+      bytesLeft >>= u64(8);
     }
     // write rest to the second page
     for (let i: u32 = 0; i < r.secondPageEnd; i++) {
       r.secondPageData[i] = u8(bytesLeft);
-      bytesLeft >>= 8;
+      bytesLeft >>= u64(8);
     }
   }
 
   private getBytesReversed(faultRes: MaybePageFault, access: Access, address: u32, bytes: u8): u64 {
     this.getChunks(faultRes, this.chunksResult, access, address, bytes);
     if (faultRes.isFault) {
-      return 0;
+      return u64(0);
     }
 
     // result (bytes in reverse order)
-    let r: u64 = 0;
+    let r: u64 = u64(0);
     const firstPageEnd = minU32(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
 
     // read from first page
     for (let i: u32 = this.chunksResult.firstPageOffset; i < firstPageEnd; i++) {
-      r = (r << 8) | this.chunksResult.firstPageData[i];
+      r = (r << u64(8)) | u64(this.chunksResult.firstPageData[i]);
     }
 
     // read from the second page
     for (let i: u32 = 0; i < this.chunksResult.secondPageEnd; i++) {
-      r = (r << 8) | this.chunksResult.secondPageData[i];
+      r = (r << u64(8)) | u64(this.chunksResult.secondPageData[i]);
     }
 
     return r;
