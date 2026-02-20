@@ -66,17 +66,18 @@ export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
 
 // @inline
 export function u8SignExtend(v: u8): i64 {
-  return i64(i32(i16(i8(v))));
+  // u64 wrap ensures unsigned representation in JS BigInt (no-op in AS)
+  return u64(i64(i32(i16(i8(v)))));
 }
 
 // @inline
 export function u16SignExtend(v: u16): i64 {
-  return i64(i32(i16(v)));
+  return u64(i64(i32(i16(v))));
 }
 
 // @inline
 export function u32SignExtend(v: u32): i64 {
-  return i64(i32(v));
+  return u64(i64(i32(v)));
 }
 
 // @inline

@@ -36,6 +36,7 @@
 		"tsbuild": "tsc && npm run tsbuild:portable",
 		"tsbuild:portable": "tsc --project portable/tsconfig.json && npx esbuild dist/build/js/portable/index.js --bundle --format=esm --platform=node --outfile=dist/build/js/portable-bundle.js",
 		"test:w3f": "tsx ./test/test-w3f.ts",
+		"test:w3f-portable": "tsx ./test/test-w3f-portable.ts",
 		"test:gas-cost": "tsx ./test/test-gas-cost.ts",
 		"update-version": "tsx ./web/bump-version.ts $GITHUB_SHA",
 		"web": "npx live-server ./web"
