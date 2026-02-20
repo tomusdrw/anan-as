@@ -1,5 +1,5 @@
-import { NO_OF_REGISTERS } from "../registers";
 import { portable } from "../portable";
+import { NO_OF_REGISTERS } from "../registers";
 
 /**
  * Multiply two unsigned 64-bit numbers and take the upper 64-bits of the result.
@@ -24,9 +24,15 @@ export function mulUpperUnsigned(a: u64, b: u64): u64 {
   const lowHigh = portable.u64_mul(aLow, bHigh);
   const highLow = portable.u64_mul(aHigh, bLow);
   const highHigh = portable.u64_mul(aHigh, bHigh);
-  const carry = portable.u64_add(portable.u64_add(lowLow >> u64(32), lowHigh & u64(0xffff_ffff)), highLow & u64(0xffff_ffff));
+  const carry = portable.u64_add(
+    portable.u64_add(lowLow >> u64(32), lowHigh & u64(0xffff_ffff)),
+    highLow & u64(0xffff_ffff),
+  );
 
-  return portable.u64_add(portable.u64_add(portable.u64_add(highHigh, lowHigh >> u64(32)), highLow >> u64(32)), carry >> u64(32));
+  return portable.u64_add(
+    portable.u64_add(portable.u64_add(highHigh, lowHigh >> u64(32)), highLow >> u64(32)),
+    carry >> u64(32),
+  );
 }
 
 /**

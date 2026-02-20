@@ -1,6 +1,6 @@
+import { portable } from "../portable";
 import { InstructionRun, ok } from "./outcome";
 import { mulUpperSigned, mulUpperSignedUnsigned, mulUpperUnsigned, reg, u32SignExtend } from "./utils";
-import { portable } from "../portable";
 
 // ADD_IMM_32
 export const add_imm_32: InstructionRun = (r, args, registers) => {
@@ -18,7 +18,7 @@ export const mul_imm_32: InstructionRun = (r, args, registers) => {
 
 // NEG_ADD_IMM_32
 export const neg_add_imm_32: InstructionRun = (r, args, registers) => {
-  const sum = portable.u64_sub((u64(args.c) | u64(0x1_0000_0000)), registers[reg(args.a)]);
+  const sum = portable.u64_sub(u64(args.c) | u64(0x1_0000_0000), registers[reg(args.a)]);
   registers[reg(args.b)] = u32SignExtend(u32(sum));
   return ok(r);
 };

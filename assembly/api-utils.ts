@@ -5,7 +5,7 @@ import { Interpreter } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
 import { portable } from "./portable";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
-import { NO_OF_REGISTERS, Registers, newRegisters } from "./registers";
+import { NO_OF_REGISTERS, newRegisters, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
 
 export enum InputKind {

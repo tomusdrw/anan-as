@@ -3,12 +3,16 @@ import * as assert from "node:assert";
 import { ERR, OK, read, run, TestOptions } from "../bin/src/test-json.js";
 
 /** The subset of PVM exports needed by the test runner. */
-// biome-ignore lint/suspicious/noExplicitAny: both WASM and portable builds have different concrete types
 export interface PvmModule {
+  // biome-ignore lint/suspicious/noExplicitAny: both WASM and portable builds have different concrete types
   disassemble: (program: any, kind: any, hasMetadata: any) => string;
+  // biome-ignore lint/suspicious/noExplicitAny: both WASM and portable builds have different concrete types
   HasMetadata: { No: any };
+  // biome-ignore lint/suspicious/noExplicitAny: both WASM and portable builds have different concrete types
   InputKind: { Generic: any };
+  // biome-ignore lint/suspicious/noExplicitAny: both WASM and portable builds have different concrete types
   prepareProgram: (...args: any[]) => any;
+  // biome-ignore lint/suspicious/noExplicitAny: both WASM and portable builds have different concrete types
   runProgram: (...args: any[]) => PvmResult;
 }
 

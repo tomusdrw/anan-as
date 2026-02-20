@@ -6,7 +6,7 @@ import { Interpreter, Status } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
-import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers, newRegisters } from "./registers";
+import { NO_OF_REGISTERS, newRegisters, REG_SIZE_BYTES, Registers } from "./registers";
 import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;

@@ -1,5 +1,5 @@
-import { dJump, InstructionRun, staticJump } from "./outcome";
 import { portable } from "../portable";
+import { dJump, InstructionRun, staticJump } from "./outcome";
 import { reg, u32SignExtend } from "./utils";
 
 // JUMP

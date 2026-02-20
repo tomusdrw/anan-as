@@ -19,12 +19,7 @@ export class portable {
 
   static bswap_u32(v: u32): u32 {
     if (ASC_TARGET === 0) {
-      return u32(
-        ((v & 0xff) << 24) |
-        ((v & 0xff00) << 8) |
-        ((v >> 8) & 0xff00) |
-        ((v >> 24) & 0xff),
-      );
+      return u32(((v & 0xff) << 24) | ((v & 0xff00) << 8) | ((v >> 8) & 0xff00) | ((v >> 24) & 0xff));
     }
     return bswap<u32>(v);
   }
@@ -87,7 +82,7 @@ export class portable {
     if (ASC_TARGET === 0) {
       if (v === 0) return 32;
       // @ts-ignore: Math.clz32 exists in ES2015+
-      return <u32>(31 - Math.clz32(v & (-v)));
+      return <u32>(31 - Math.clz32(v & -v));
     }
     return ctz<u32>(v);
   }

@@ -1,12 +1,12 @@
 import { Args } from "./arguments";
 import { GasCounter, gasCounter } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
-import { portable } from "./portable";
 import { Outcome, OutcomeData, Result } from "./instructions/outcome";
 import { reg } from "./instructions/utils";
 import { RUN } from "./instructions-exe";
 import { Memory, MemoryBuilder } from "./memory";
 import { PAGE_SIZE, PAGE_SIZE_SHIFT, RESERVED_MEMORY } from "./memory-page";
+import { portable } from "./portable";
 import { BasicBlocks, decodeArguments, JumpTable, Program, ProgramCounter } from "./program";
 import { Registers } from "./registers";
 
@@ -133,7 +133,10 @@ export class Interpreter {
       // additional gas cost of sbrk
       if (iData === SBRK && this.useSbrkGas) {
         const alloc = u64(u32(this.registers[reg(u64(args.a))]));
-        const gas = portable.u64_mul(portable.u64_sub(portable.u64_add(alloc, u64(PAGE_SIZE)), u64(1)) >> u64(PAGE_SIZE_SHIFT), u64(16));
+        const gas = portable.u64_mul(
+          portable.u64_sub(portable.u64_add(alloc, u64(PAGE_SIZE)), u64(1)) >> u64(PAGE_SIZE_SHIFT),
+          u64(16),
+        );
         if (this.gas.sub(<i64>gas)) {
           this.status = Status.OOG;
           return false;

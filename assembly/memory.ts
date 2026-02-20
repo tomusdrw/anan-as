@@ -1,6 +1,5 @@
 import { u8SignExtend, u16SignExtend, u32SignExtend } from "./instructions/utils";
 import { minU32 } from "./math";
-import { portable } from "./portable";
 import {
   Access,
   Arena,
@@ -12,6 +11,7 @@ import {
   RESERVED_MEMORY,
   RESERVED_PAGES,
 } from "./memory-page";
+import { portable } from "./portable";
 
 // @unmanaged
 export class MaybePageFault {
@@ -155,6 +155,7 @@ export class Memory {
       return 0;
     }
     // Trigger lazy allocation if the backing buffer has not been created yet.
+    // @ts-ignore: dataStart is an AS-specific property on Uint8Array
     return page.raw.data.dataStart;
   }
 

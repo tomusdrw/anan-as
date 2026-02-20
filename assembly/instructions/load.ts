@@ -1,6 +1,6 @@
 import { MaybePageFault } from "../memory";
-import { InstructionRun, ok, okOrFault } from "./outcome";
 import { portable } from "../portable";
+import { InstructionRun, ok, okOrFault } from "./outcome";
 import { reg, u32SignExtend } from "./utils";
 
 const faultRes: MaybePageFault = new MaybePageFault();
