@@ -82,7 +82,7 @@ export const shlo_l_imm_alt: InstructionRun = (r, args, registers) => {
 // SHLO_R_IMM_ALT
 export const shlo_r_imm_alt: InstructionRun = (r, args, registers) => {
   const shift = u32(registers[reg(args.a)] % u64(MAX_SHIFT_64));
-  registers[reg(args.b)] = u32SignExtend(args.c) >> i64(shift);
+  registers[reg(args.b)] = u64(u32SignExtend(args.c)) >> u64(shift);
   return ok(r);
 };
 
