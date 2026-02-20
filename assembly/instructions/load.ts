@@ -123,7 +123,7 @@ export const load_ind_i16: InstructionRun = (r, args, registers, memory) => {
 // LOAD_IND_U32
 export const load_ind_u32: InstructionRun = (r, args, registers, memory) => {
   const address = u32(portable.u64_add(registers[reg(args.a)], u32SignExtend(args.c)));
-  const result = memory.getU32(faultRes, u32(address));
+  const result = memory.getU32(faultRes, address);
   if (!faultRes.isFault) {
     registers[reg(args.b)] = result;
   }
@@ -133,7 +133,7 @@ export const load_ind_u32: InstructionRun = (r, args, registers, memory) => {
 // LOAD_IND_I32
 export const load_ind_i32: InstructionRun = (r, args, registers, memory) => {
   const address = u32(portable.u64_add(registers[reg(args.a)], u32SignExtend(args.c)));
-  const result = memory.getI32(faultRes, u32(address));
+  const result = memory.getI32(faultRes, address);
   if (!faultRes.isFault) {
     registers[reg(args.b)] = result;
   }

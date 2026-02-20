@@ -54,7 +54,7 @@ export const add_32: InstructionRun = (r, args, registers) => {
 // SUB_32
 export const sub_32: InstructionRun = (r, args, registers) => {
   const a = registers[reg(args.b)];
-  const b = u64(2 ** 32 - u32(registers[reg(args.a)]));
+  const b = u64(0x1_0000_0000 - u32(registers[reg(args.a)]));
   registers[reg(args.c)] = u32SignExtend(u32(portable.u64_add(a, b)));
   return ok(r);
 };
