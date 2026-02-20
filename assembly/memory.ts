@@ -124,6 +124,40 @@ export class Memory {
     return this.pages.get(index).raw.data;
   }
 
+  /**
+   * Returns the WASM linear memory pointer (byte offset) for the backing buffer of the page at `pageIndex`.
+   *
+   * Returns `0` if the page does not exist or is not readable (page/access fault).
+   *
+   * This enables efficient memory reading on the JS side without extra WASM allocations:
+   * ```ts
+   * let pagesRead = 0;
+   * for (let address = start; address < end; address += PAGE_SIZE) {
+   *   const page = address >> PAGE_SIZE_SHIFT;
+   *   const ptr = getPagePointer(page);
+   *   if (ptr === 0) {
+   *     throw new Error(`Page fault at ${page << PAGE_SIZE_SHIFT}`);
+   *   }
+   *   destination.set(
+   *     new Uint8Array(wasm.instance.exports.memory.buffer, ptr, Math.min(end - address, PAGE_SIZE)),
+   *     pagesRead << PAGE_SIZE_SHIFT,
+   *   );
+   *   pagesRead += 1;
+   * }
+   * ```
+   */
+  getPagePointer(pageIndex: u32): usize {
+    if (!this.pages.has(pageIndex)) {
+      return 0;
+    }
+    const page = this.pages.get(pageIndex);
+    if (!page.can(Access.Read)) {
+      return 0;
+    }
+    // Trigger lazy allocation if the backing buffer has not been created yet.
+    return page.raw.data.dataStart;
+  }
+
   free(): void {
     // @ts-ignore: AS returns T[], JS returns iterator - asArray handles both
     const pages: Page[] = portable.asArray<Page>(this.pages.values());
