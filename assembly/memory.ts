@@ -414,7 +414,7 @@ export class Memory {
       return;
     }
 
-    let bytesLeft = value;
+    let bytesLeft = u64(value);
     // write to first page
     const firstPageEnd = minU32(PAGE_SIZE, r.firstPageOffset + bytes);
     for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {

@@ -30,7 +30,7 @@ export class portable {
       const hi = u32(v >> u64(32));
       const sLo = portable.bswap_u32(lo);
       const sHi = portable.bswap_u32(hi);
-      return (u64(sLo) << u64(32)) | u64(sHi);
+      return u64((u64(sLo) << u64(32)) | u64(sHi));
     }
     return bswap<u64>(v);
   }
@@ -103,7 +103,7 @@ export class portable {
   static rotr_u32(v: u32, shift: u32): u32 {
     if (ASC_TARGET === 0) {
       shift &= 31;
-      return (v >>> shift) | (v << (32 - shift));
+      return u32((v >>> shift) | (v << (32 - shift)));
     }
     return rotr<u32>(v, shift);
   }
@@ -111,7 +111,7 @@ export class portable {
   static rotr_u64(v: u64, shift: u64): u64 {
     if (ASC_TARGET === 0) {
       shift &= u64(63);
-      return (v >> shift) | (v << (u64(64) - shift));
+      return u64((v >> shift) | (v << (u64(64) - shift)));
     }
     return rotr<u64>(v, shift);
   }
@@ -121,7 +121,7 @@ export class portable {
   static rotl_u32(v: u32, shift: u32): u32 {
     if (ASC_TARGET === 0) {
       shift &= 31;
-      return (v << shift) | (v >>> (32 - shift));
+      return u32((v << shift) | (v >>> (32 - shift)));
     }
     return rotl<u32>(v, shift);
   }
@@ -129,7 +129,7 @@ export class portable {
   static rotl_u64(v: u64, shift: u64): u64 {
     if (ASC_TARGET === 0) {
       shift &= u64(63);
-      return (v << shift) | (v >> (u64(64) - shift));
+      return u64((v << shift) | (v >> (u64(64) - shift)));
     }
     return rotl<u64>(v, shift);
   }

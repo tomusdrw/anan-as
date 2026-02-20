@@ -167,5 +167,7 @@ function decodeU32(data: u8[], offset: u32): u32 {
   num |= u32(data[offset + 1]) << 8;
   num |= u32(data[offset + 2]) << 16;
   num |= u32(data[offset + 3]) << 24;
+  // Same as decodeI32: ensure unsigned in portable JS.
+  if (ASC_TARGET === 0) return num >>> 0;
   return num;
 }

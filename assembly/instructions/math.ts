@@ -84,9 +84,9 @@ export const div_s_32: InstructionRun = (r, args, registers) => {
   if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
   } else if (a === i64(-1) && b === i64(i32.MIN_VALUE)) {
-    registers[reg(args.c)] = b;
+    registers[reg(args.c)] = u64(b);
   } else {
-    registers[reg(args.c)] = b / a;
+    registers[reg(args.c)] = u64(b / a);
   }
   return ok(r);
 };
@@ -108,11 +108,11 @@ export const rem_s_32: InstructionRun = (r, args, registers) => {
   const b = i32(registers[reg(args.b)]);
   const a = i32(registers[reg(args.a)]);
   if (a === 0) {
-    registers[reg(args.c)] = i64(b);
+    registers[reg(args.c)] = u64(i64(b));
   } else if (a === -1 && b === i32.MIN_VALUE) {
     registers[reg(args.c)] = u64(0);
   } else {
-    registers[reg(args.c)] = i64(b) % i64(a);
+    registers[reg(args.c)] = u64(i64(b) % i64(a));
   }
   return ok(r);
 };
@@ -158,9 +158,9 @@ export const div_s: InstructionRun = (r, args, registers) => {
   if (a === i64(0)) {
     registers[reg(args.c)] = u64.MAX_VALUE;
   } else if (a === i64(-1) && b === i64.MIN_VALUE) {
-    registers[reg(args.c)] = b;
+    registers[reg(args.c)] = u64(b);
   } else {
-    registers[reg(args.c)] = b / a;
+    registers[reg(args.c)] = u64(b / a);
   }
   return ok(r);
 };
@@ -180,11 +180,11 @@ export const rem_s: InstructionRun = (r, args, registers) => {
   const b = i64(registers[reg(args.b)]);
   const a = i64(registers[reg(args.a)]);
   if (a === i64(0)) {
-    registers[reg(args.c)] = b;
+    registers[reg(args.c)] = u64(b);
   } else if (a === i64(-1) && b === i64.MIN_VALUE) {
     registers[reg(args.c)] = u64(0);
   } else {
-    registers[reg(args.c)] = b % a;
+    registers[reg(args.c)] = u64(b % a);
   }
   return ok(r);
 };
@@ -211,7 +211,7 @@ export const mul_upper_s_u: InstructionRun = (r, args, registers) => {
 export const max: InstructionRun = (r, args, registers) => {
   const a = i64(registers[reg(args.a)]);
   const b = i64(registers[reg(args.b)]);
-  registers[reg(args.c)] = a < b ? b : a;
+  registers[reg(args.c)] = u64(a < b ? b : a);
   return ok(r);
 };
 
@@ -227,7 +227,7 @@ export const max_u: InstructionRun = (r, args, registers) => {
 export const min: InstructionRun = (r, args, registers) => {
   const a = i64(registers[reg(args.a)]);
   const b = i64(registers[reg(args.b)]);
-  registers[reg(args.c)] = a > b ? b : a;
+  registers[reg(args.c)] = u64(a > b ? b : a);
   return ok(r);
 };
 

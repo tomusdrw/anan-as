@@ -116,6 +116,13 @@ function processW3f(pvm: PvmModule, data: PvmTest, options: TestOptions, _filePa
   );
   result.gas = typeof result.gas === "bigint" ? result.gas : BigInt(result.gas);
 
+  // Normalize memory chunks to plain objects for comparison.
+  // The portable build returns class instances; WASM returns plain objects.
+  result.memory = result.memory.map((chunk: Chunk) => ({
+    address: chunk.address,
+    data: Array.from(chunk.data),
+  }));
+
   // silent mode - just put our vals into expected (comparison done externally)
   if (options.isSilent) {
     data["expected-pc"] = result.pc;

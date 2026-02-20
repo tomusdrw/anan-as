@@ -29,8 +29,10 @@ g.i16 = (value: any): any => {
 
 // --- i32 cast ---
 const i32Fn = (value: any): any => {
-  const n = typeof value === "bigint" ? Number(value) : value;
-  return n | 0;
+  if (typeof value === "bigint") {
+    return Number(BigInt.asIntN(32, value));
+  }
+  return value | 0;
 };
 i32Fn.MIN_VALUE = -2147483648;
 i32Fn.MAX_VALUE = 2147483647;

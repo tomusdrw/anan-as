@@ -10,7 +10,7 @@ export const set_lt_u_imm: InstructionRun = (r, args, registers) => {
 
 // SET_LT_S_IMM
 export const set_lt_s_imm: InstructionRun = (r, args, registers) => {
-  const cond = i64(registers[reg(args.a)]) < u32SignExtend(args.c);
+  const cond = i64(registers[reg(args.a)]) < i64(u32SignExtend(args.c));
   registers[reg(args.b)] = cond ? u64(1) : u64(0);
   return ok(r);
 };
@@ -24,7 +24,7 @@ export const set_gt_u_imm: InstructionRun = (r, args, registers) => {
 
 // SET_GT_S_IMM
 export const set_gt_s_imm: InstructionRun = (r, args, registers) => {
-  const cond = i64(registers[reg(args.a)]) > u32SignExtend(args.c);
+  const cond = i64(registers[reg(args.a)]) > i64(u32SignExtend(args.c));
   registers[reg(args.b)] = cond ? u64(1) : u64(0);
   return ok(r);
 };
