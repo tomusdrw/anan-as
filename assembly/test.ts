@@ -33,6 +33,14 @@ export class Assert {
       this.errors.push(`Got: '${actualDisplay}', expected: '${expectDisplay}' @ ${msg}`);
     }
   }
+
+  isNotEqual<T>(actual: T, unexpected: T, msg: string = ""): void {
+    if (actual === unexpected) {
+      this.isOkay = false;
+      const actualDisplay = isInteger(actual) ? `${actual} (0x${actual.toString(16)})` : `${actual}`;
+      this.errors.push(`Expected value to differ from: '${actualDisplay}' @ ${msg}`);
+    }
+  }
 }
 
 export function test(name: string, ptr: (assert: Assert) => Assert): Test {

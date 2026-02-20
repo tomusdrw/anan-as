@@ -153,7 +153,8 @@ export function pvmSetRegisters(pvmId: u32, registers: u64[]): void {
 /**
  * Read a continuous chunk of memory from given PVM instance.
  *
- * @deprecated see getMemory for details
+ * @deprecated Use `pvmGetPagePointer` instead to read memory directly from WASM linear memory
+ * on the JS side with no additional WASM-side allocations.
  */
 export function pvmReadMemory(pvmId: u32, address: u32, length: u32): Uint8Array | null {
   if (pvms.has(pvmId)) {
@@ -165,6 +166,37 @@ export function pvmReadMemory(pvmId: u32, address: u32, length: u32): Uint8Array
     }
   }
   return null;
+}
+
+/**
+ * Returns the WASM linear memory pointer (byte offset) for the backing buffer of the page at `page`
+ * in the given PVM instance.
+ *
+ * Returns `0` if the PVM does not exist, the page does not exist, or the page is not readable.
+ *
+ * Use this instead of `pvmReadMemory` to read memory efficiently from the JS side:
+ * ```ts
+ * let pagesRead = 0;
+ * for (let address = start; address < end; address += PAGE_SIZE) {
+ *   const page = address >> PAGE_SIZE_SHIFT;
+ *   const ptr = pvmGetPagePointer(pvmId, page);
+ *   if (ptr === 0) {
+ *     throw new Error(`Page fault at ${page << PAGE_SIZE_SHIFT}`);
+ *   }
+ *   destination.set(
+ *     new Uint8Array(wasm.instance.exports.memory.buffer, ptr, Math.min(end - address, PAGE_SIZE)),
+ *     pagesRead << PAGE_SIZE_SHIFT,
+ *   );
+ *   pagesRead += 1;
+ * }
+ * ```
+ */
+export function pvmGetPagePointer(pvmId: u32, page: u32): usize {
+  if (pvms.has(pvmId)) {
+    const int = pvms.get(pvmId);
+    return int.memory.getPagePointer(page);
+  }
+  return 0;
 }
 
 /** Write a chunk of memory to given PVM instance. */
