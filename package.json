@@ -1,7 +1,7 @@
 {
 	"name": "@fluffylabs/anan-as",
 	"description": "AssemblyScript PVM interpreter.",
-	"version": "1.1.6",
+	"version": "1.2.0",
 	"main": "./dist/bin/index.js",
 	"bin": {
 		"anan-as": "./dist/bin/index.js"
@@ -43,14 +43,15 @@
 	"keywords": [],
 	"author": "Fluffy Labs",
 	"license": "MPL-2.0",
+	"engines": {
+		"node": ">=18.3.0"
+	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.11",
 		"@typeberry/lib": "^0.5.1",
-		"@types/minimist": "^1.2.5",
 		"@types/node": "^25.0.0",
 		"assemblyscript": "^0.28.8",
 		"json-bigint-patch": "^0.0.8",
-		"minimist": "^1.2.8",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3"
 	},

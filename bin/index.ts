@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync } from "node:fs";
-import minimist, { ParsedArgs } from "minimist";
+import { parseArgs } from "node:util";
 import {
   disassemble,
   HasMetadata,
@@ -69,18 +69,21 @@ function main() {
 }
 
 function handleDisassemble(args: string[]) {
-  const parsed = minimist(args, {
-    boolean: ["spi", "metadata", "help"],
-    alias: { h: "help" },
-    default: { metadata: true },
+  const { values, positionals: files } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      spi: { type: "boolean", default: false },
+      "no-metadata": { type: "boolean", default: false },
+      help: { type: "boolean", short: "h", default: false },
+    },
   });
 
-  if (parsed.help) {
+  if (values.help) {
     console.log(HELP_TEXT);
     return;
   }
 
-  const files = parsed._;
   if (files.length === 0) {
     console.error("Error: No file provided for disassemble command.");
     console.error("Usage: anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>");
@@ -109,8 +112,8 @@ function handleDisassemble(args: string[]) {
     process.exit(1);
   }
 
-  const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
-  const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
+  const kind = values.spi ? InputKind.SPI : InputKind.Generic;
+  const hasMetadata = values["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
 
   const f = readFileSync(file);
   const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
@@ -119,20 +122,25 @@ function handleDisassemble(args: string[]) {
 }
 
 function handleRun(args: string[]) {
-  const parsed = minimist(args, {
-    boolean: ["spi", "logs", "metadata", "help", "log-host-call"],
-    /** Prevents parsing hex values as numbers. */
-    string: ["pc", "gas", "_"],
-    alias: { h: "help" },
-    default: { metadata: true, logs: true, "log-host-call": true },
+  const { values, positionals: files } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      spi: { type: "boolean", default: false },
+      "no-logs": { type: "boolean", default: false },
+      "no-metadata": { type: "boolean", default: false },
+      "no-log-host-call": { type: "boolean", default: false },
+      help: { type: "boolean", short: "h", default: false },
+      pc: { type: "string" },
+      gas: { type: "string" },
+    },
   });
 
-  if (parsed.help) {
+  if (values.help) {
     console.log(HELP_TEXT);
     return;
   }
 
-  const files = parsed._;
   if (files.length === 0) {
     console.error("Error: No file provided for run command.");
     console.error(
@@ -141,7 +149,7 @@ function handleRun(args: string[]) {
     process.exit(1);
   }
 
-  const kind = parsed.spi ? InputKind.SPI : InputKind.Generic;
+  const kind = values.spi ? InputKind.SPI : InputKind.Generic;
 
   let programFile: string;
   let spiArgsStr: string | undefined;
@@ -170,13 +178,13 @@ function handleRun(args: string[]) {
   // Validate SPI args file if provided
   const spiArgs = parseSpiArgs(spiArgsStr);
 
-  const logs = parsed.logs;
-  const logHostCall = parsed["log-host-call"];
-  const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
+  const logs = !values["no-logs"];
+  const logHostCall = !values["no-log-host-call"];
+  const hasMetadata = values["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
 
   // Parse and validate PC and gas options
-  const initialPc = parsePc(parsed);
-  const initialGas = parseGas(parsed);
+  const initialPc = parsePc(values.pc);
+  const initialGas = parseGas(values.gas);
 
   const programCode = Array.from(readFileSync(programFile));
   const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
@@ -226,18 +234,23 @@ function handleRun(args: string[]) {
 }
 
 function handleReplayTrace(args: string[]) {
-  const parsed = minimist(args, {
-    boolean: ["metadata", "verify", "logs", "help", "log-host-call"],
-    alias: { h: "help" },
-    default: { metadata: true, logs: true, verify: true, "log-host-call": true },
+  const { values, positionals: files } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      "no-metadata": { type: "boolean", default: false },
+      "no-verify": { type: "boolean", default: false },
+      "no-logs": { type: "boolean", default: false },
+      "no-log-host-call": { type: "boolean", default: false },
+      help: { type: "boolean", short: "h", default: false },
+    },
   });
 
-  if (parsed.help) {
+  if (values.help) {
     console.log(HELP_TEXT);
     return;
   }
 
-  const files = parsed._;
   if (files.length === 0) {
     console.error("Error: No trace file provided for replay-trace command.");
     console.error("Usage: anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] <trace.log>");
@@ -250,10 +263,10 @@ function handleReplayTrace(args: string[]) {
   }
 
   const file = files[0];
-  const hasMetadata = parsed.metadata ? HasMetadata.Yes : HasMetadata.No;
-  const verify = parsed.verify;
-  const logs = parsed.logs;
-  const logHostCall = parsed["log-host-call"];
+  const hasMetadata = values["no-metadata"] ? HasMetadata.No : HasMetadata.Yes;
+  const verify = !values["no-verify"];
+  const logs = !values["no-logs"];
+  const logHostCall = !values["no-log-host-call"];
 
   try {
     const summary = replayTraceFile(file, {
@@ -273,18 +286,11 @@ function handleReplayTrace(args: string[]) {
   }
 }
 
-function parseGas(parsed: ParsedArgs) {
-  if (parsed.gas === undefined) {
+function parseGas(gasStr?: string): bigint {
+  if (gasStr === undefined) {
     return BigInt(10_000);
   }
 
-  // Ensure it's a string/number, not boolean
-  if (typeof parsed.gas === "boolean") {
-    console.error("Error: --gas requires a value.");
-    process.exit(1);
-  }
-
-  const gasStr = String(parsed.gas);
   // Reject floats and non-integer strings
   if (gasStr.includes(".") || !/^-?\d+$/.test(gasStr)) {
     console.error("Error: --gas must be a valid integer.");
@@ -320,18 +326,11 @@ function parseSpiArgs(spiArgsStr?: string): number[] {
   }
 }
 
-function parsePc(parsed: ParsedArgs) {
-  if (parsed.pc === undefined) {
+function parsePc(pcStr?: string): number {
+  if (pcStr === undefined) {
     return 0;
   }
 
-  // Ensure it's a string/number, not boolean
-  if (typeof parsed.pc === "boolean") {
-    console.error("Error: --pc requires a value.");
-    process.exit(1);
-  }
-
-  const pcStr = String(parsed.pc);
   // Reject floats and non-integer strings
   if (pcStr.includes(".") || !/^-?\d+$/.test(pcStr)) {
     console.error("Error: --pc must be a valid integer.");
