@@ -1,3 +1,4 @@
+import { portable } from "../portable";
 import { InstructionRun, ok } from "./outcome";
 import { reg, u32SignExtend } from "./utils";
 
@@ -52,18 +53,18 @@ export const rot_r_32: InstructionRun = (r, args, regs) => {
 export namespace math {
   // @inline
   export function rot_r(v: u64, shift: u64): u64 {
-    return rotr<u64>(v, shift);
+    return portable.rotr_u64(v, shift);
   }
   // @inline
   export function rot_r_32(v: u32, shift: u32): u32 {
-    return rotr<u32>(v, shift);
+    return portable.rotr_u32(v, shift);
   }
   // @inline
   export function rot_l(v: u64, shift: u64): u64 {
-    return rotl<u64>(v, shift);
+    return portable.rotl_u64(v, shift);
   }
   // @inline
   export function rot_l_32(v: u32, shift: u32): u32 {
-    return rotl<u32>(v, shift);
+    return portable.rotl_u32(v, shift);
   }
 }

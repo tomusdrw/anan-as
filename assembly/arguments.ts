@@ -53,7 +53,7 @@ export class Args {
 type ArgsDecoder = (args: Args, code: u8[], offset: u32, end: u32) => Args;
 
 function twoImm(args: Args, code: u8[], offset: u32, end: u32): Args {
-  const low = lowNibble(unchecked(code[offset]));
+  const low = lowNibble(code[offset]);
   const split = minI32(4, low) + 1;
   const first = decodeI32(code, offset + 1, offset + split);
   const second = decodeI32(code, offset + split, end);
@@ -155,7 +155,7 @@ function decodeI32(input: u8[], start: u32, end: u32): u32 {
   for (let i: u32 = 0; i < len; i++) {
     num |= u32(input[start + i]) << (i * 8);
   }
-  const msb = unchecked(input[start + len - 1]) & 0x80;
+  const msb = input[start + len - 1] & 0x80;
   if (len < 4 && msb > 0) {
     num |= 0xffff_ffff << (len * 8);
   }
@@ -167,5 +167,7 @@ function decodeU32(data: u8[], offset: u32): u32 {
   num |= u32(data[offset + 1]) << 8;
   num |= u32(data[offset + 2]) << 16;
   num |= u32(data[offset + 3]) << 24;
+  // Ensure unsigned representation in portable JS.
+  if (ASC_TARGET === 0) return num >>> 0;
   return num;
 }

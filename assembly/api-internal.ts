@@ -4,6 +4,7 @@ import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { MaybePageFault, Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
+import { portable } from "./portable";
 import { decodeArguments, Program, resolveArguments } from "./program";
 
 export function getAssembly(p: Program): string {
@@ -25,7 +26,7 @@ export function getAssembly(p: Program): string {
 
     v += "\n";
     v += `${i}: `;
-    v += changetype<string>(iData.namePtr);
+    v += iData.name;
     v += `(${instruction})`;
 
     const skipBytes = p.mask.skipBytesToNextInstruction(i);
@@ -144,8 +145,8 @@ function readResult(int: Interpreter): u8[] {
   }
 
   // JAM return convention
-  const ptr_start = u32(int.registers[7] & 0xffff_ffff);
-  const ptr_end = u32(int.registers[8] & 0xffff_ffff);
+  const ptr_start = u32(int.registers[7] & u64(0xffff_ffff));
+  const ptr_end = u32(int.registers[8] & u64(0xffff_ffff));
 
   // invalid output result
   if (ptr_start >= ptr_end) {
@@ -176,7 +177,8 @@ function readResult(int: Interpreter): u8[] {
 
 function getOutputChunks(memory: Memory): InitialChunk[] {
   const chunks: InitialChunk[] = [];
-  const pages = memory.pages.keys();
+  // @ts-ignore: AS returns T[], JS returns iterator - asArray handles both
+  const pages: u32[] = portable.asArray<u32>(memory.pages.keys());
   let currentChunk: InitialChunk | null = null;
   for (let i = 0; i < pages.length; i++) {
     const pageIdx = pages[i];

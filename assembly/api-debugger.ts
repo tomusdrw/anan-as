@@ -6,7 +6,7 @@ import { Interpreter, Status } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE } from "./memory-page";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
-import { NO_OF_REGISTERS, REG_SIZE_BYTES, Registers } from "./registers";
+import { NO_OF_REGISTERS, newRegisters, REG_SIZE_BYTES, Registers } from "./registers";
 import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;
@@ -30,7 +30,7 @@ export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
   const p = deblob(code);
-  const registers: Registers = new StaticArray(NO_OF_REGISTERS);
+  const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
   int.gas.set(initialGas);
@@ -53,7 +53,7 @@ export function resetGenericWithMemory(
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
   const p = deblob(code);
-  const registers: Registers = new StaticArray(NO_OF_REGISTERS);
+  const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
 
   const builder = new MemoryBuilder();
@@ -115,7 +115,7 @@ export function getExitArg(): u32 {
 
 export function getGasLeft(): i64 {
   if (interpreter === null) {
-    return 0;
+    return i64(0);
   }
   const int = <Interpreter>interpreter;
   return int.gas.get();
@@ -139,8 +139,8 @@ export function getRegisters(): Uint8Array {
     let val = int.registers[i];
     for (let j = 0; j < REG_SIZE_BYTES; j++) {
       const index = i * REG_SIZE_BYTES + j;
-      flat[index] = <u8>(val & 0xff);
-      val = val >> 8;
+      flat[index] = <u8>(val & u64(0xff));
+      val = val >> u64(8);
     }
   }
 
@@ -249,10 +249,10 @@ function fillRegisters(registers: Registers, flat: u8[]): void {
   }
 
   for (let i = 0; i < registers.length; i++) {
-    let num: u64 = 0;
+    let num: u64 = u64(0);
     for (let j: u8 = 0; j < <u8>REG_SIZE_BYTES; j++) {
       const index = i * REG_SIZE_BYTES + j;
-      num |= (<u64>flat[index]) << (j * 8);
+      num |= (<u64>flat[index]) << u64(j * 8);
     }
     registers[i] = num;
   }

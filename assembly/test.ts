@@ -28,8 +28,8 @@ export class Assert {
   isEqual<T>(actual: T, expected: T, msg: string = ""): void {
     if (actual !== expected) {
       this.isOkay = false;
-      const actualDisplay = isInteger(actual) ? `${actual} (0x${actual.toString(16)})` : `${actual}`;
-      const expectDisplay = isInteger(expected) ? `${expected} (0x${expected.toString(16)})` : `${expected}`;
+      const actualDisplay = isInteger(actual) ? `${actual} (0x${i64(actual).toString(16)})` : `${actual}`;
+      const expectDisplay = isInteger(expected) ? `${expected} (0x${i64(expected).toString(16)})` : `${expected}`;
       this.errors.push(`Got: '${actualDisplay}', expected: '${expectDisplay}' @ ${msg}`);
     }
   }
@@ -37,7 +37,7 @@ export class Assert {
   isNotEqual<T>(actual: T, unexpected: T, msg: string = ""): void {
     if (actual === unexpected) {
       this.isOkay = false;
-      const actualDisplay = isInteger(actual) ? `${actual} (0x${actual.toString(16)})` : `${actual}`;
+      const actualDisplay = isInteger(actual) ? `${actual} (0x${i64(actual).toString(16)})` : `${actual}`;
       this.errors.push(`Expected value to differ from: '${actualDisplay}' @ ${msg}`);
     }
   }

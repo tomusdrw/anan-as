@@ -57,7 +57,7 @@ export const branch_gt_u_imm: InstructionRun = (r, args, registers) => {
 
 // BRANCH_LT_S_IMM
 export const branch_lt_s_imm: InstructionRun = (r, args, registers) => {
-  if (i64(registers[reg(args.a)]) < u32SignExtend(args.b)) {
+  if (i64(registers[reg(args.a)]) < i64(u32SignExtend(args.b))) {
     return staticJump(r, args.c);
   }
   return ok(r);
@@ -65,7 +65,7 @@ export const branch_lt_s_imm: InstructionRun = (r, args, registers) => {
 
 // BRANCH_LE_S_IMM
 export const branch_le_s_imm: InstructionRun = (r, args, registers) => {
-  if (i64(registers[reg(args.a)]) <= u32SignExtend(args.b)) {
+  if (i64(registers[reg(args.a)]) <= i64(u32SignExtend(args.b))) {
     return staticJump(r, args.c);
   }
   return ok(r);
@@ -73,7 +73,7 @@ export const branch_le_s_imm: InstructionRun = (r, args, registers) => {
 
 // BRANCH_GE_S_IMM
 export const branch_ge_s_imm: InstructionRun = (r, args, registers) => {
-  if (i64(registers[reg(args.a)]) >= u32SignExtend(args.b)) {
+  if (i64(registers[reg(args.a)]) >= i64(u32SignExtend(args.b))) {
     return staticJump(r, args.c);
   }
   return ok(r);
@@ -81,7 +81,7 @@ export const branch_ge_s_imm: InstructionRun = (r, args, registers) => {
 
 // BRANCH_GT_S_IMM
 export const branch_gt_s_imm: InstructionRun = (r, args, registers) => {
-  if (i64(registers[reg(args.a)]) > u32SignExtend(args.b)) {
+  if (i64(registers[reg(args.a)]) > i64(u32SignExtend(args.b))) {
     return staticJump(r, args.c);
   }
   return ok(r);

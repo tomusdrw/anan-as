@@ -1,9 +1,10 @@
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
+import { portable } from "./portable";
 import { Program } from "./program";
 
 export class BlockGasCost {
   pc: u32 = 0;
-  gas: u64 = 0;
+  gas: u64 = u64(0);
 }
 
 export function computeGasCosts(p: Program): Map<u32, BlockGasCost> {
@@ -29,7 +30,7 @@ export function computeGasCosts(p: Program): Map<u32, BlockGasCost> {
 
     if (currentBlock !== null) {
       // add gas for current instruction
-      currentBlock.gas += iData.gas;
+      currentBlock.gas = portable.u64_add(currentBlock.gas, iData.gas);
     }
 
     // move forward

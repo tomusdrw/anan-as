@@ -2,7 +2,7 @@ import { Decoder } from "./codec";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, PAGE_SIZE_SHIFT, SEGMENT_SIZE, SEGMENT_SIZE_SHIFT } from "./memory-page";
 import { deblob, Program } from "./program";
-import { NO_OF_REGISTERS, Registers } from "./registers";
+import { newRegisters, Registers } from "./registers";
 
 /** `Z_I`: https://graypaper.fluffylabs.dev/#/ab2cdbd/2daf002daf00?v=0.7.2 */
 export const MAX_ARGS_LEN: u32 = 2 ** 24;
@@ -67,7 +67,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array, preallocateMemoryP
   const memory = builder.build(heapZerosStart + heapZerosLength, stackStart);
 
   // build registers
-  const registers: Registers = new StaticArray(NO_OF_REGISTERS);
+  const registers: Registers = newRegisters();
   registers[0] = <u64>0xffff_0000;
   registers[1] = <u64>STACK_SEGMENT_END;
   registers[7] = <u64>ARGS_SEGMENT_START;
