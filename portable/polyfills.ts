@@ -124,6 +124,9 @@ if (!DataViewProto.getUint64) {
 // unchecked - identity
 g.unchecked = (v: any): any => v;
 
+// inline - no-op decorator (AS-only optimization hint)
+g.inline = () => {};  // no-op; in AS this is @inline decorator
+
 // changetype - identity
 g.changetype = (v: any): any => v;
 

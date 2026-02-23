@@ -103,7 +103,8 @@ export class Mask {
       return false;
     }
 
-    return this.bytesToSkip[u32(index)] === 0;
+    // @ts-ignore: unchecked is an AS-only API for skipping bounds checks
+    return ASC_TARGET === 0 ? this.bytesToSkip[u32(index)] === 0 : unchecked(this.bytesToSkip[u32(index)]) === 0;
   }
 
   /**
@@ -116,7 +117,8 @@ export class Mask {
    */
   skipBytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
-      return this.bytesToSkip[i + 1];
+      // @ts-ignore: unchecked is an AS-only API for skipping bounds checks
+      return ASC_TARGET === 0 ? this.bytesToSkip[i + 1] : unchecked(this.bytesToSkip[i + 1]);
     }
 
     return 0;
@@ -176,7 +178,10 @@ export class BasicBlocks {
 
   isStart(newPc: u32): boolean {
     if (newPc < <u32>this.isStartOrEnd.length) {
-      return (this.isStartOrEnd[newPc] & BasicBlock.START) > 0;
+      // @ts-ignore: unchecked is an AS-only API for skipping bounds checks
+      return ASC_TARGET === 0
+        ? (this.isStartOrEnd[newPc] & BasicBlock.START) > 0
+        : (unchecked(this.isStartOrEnd[newPc]) & BasicBlock.START) > 0;
     }
     return false;
   }

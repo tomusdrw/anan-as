@@ -31,6 +31,7 @@ declare function unreachable(): any;
 declare function changetype<T>(value: any): T;
 declare function unchecked<T>(value: T): T;
 declare function assert<T>(isTrueish: T, message?: string): T;
+declare function inline(...args: any[]): any;
 
 // AS target constant
 declare const ASC_TARGET: i32;

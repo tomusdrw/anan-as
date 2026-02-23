@@ -250,7 +250,8 @@ function dJump(r: DjumpResult, jumpTable: JumpTable, address: u32): DjumpResult 
     return r;
   }
 
-  const newPc: u64 = jumpTable.jumps[index];
+  // @ts-ignore: unchecked is an AS-only API for skipping bounds checks
+  const newPc: u64 = ASC_TARGET === 0 ? jumpTable.jumps[index] : unchecked(jumpTable.jumps[index]);
   if (newPc >= MAX_U32) {
     r.status = DjumpStatus.PANIC;
     return r;
