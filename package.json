@@ -39,7 +39,11 @@
 		"test:w3f-portable": "tsx ./test/test-w3f-portable.ts",
 		"test:gas-cost": "tsx ./test/test-gas-cost.ts",
 		"update-version": "tsx ./web/bump-version.ts $GITHUB_SHA",
-		"web": "npx live-server ./web"
+		"web": "npx live-server ./web",
+		"bench": "tsx bench/run.ts --traces ./bench/traces --iterations 5 --warmup 1",
+		"bench:ci": "tsx bench/run.ts --traces ./bench/traces --iterations 5 --warmup 1 --output ./bench/results.json",
+		"bench:baseline": "tsx bench/run.ts --traces ./bench/traces --iterations 5 --warmup 1 --output ./bench/baseline.json",
+		"bench:compare": "tsx bench/compare.ts"
 	},
 	"type": "module",
 	"keywords": [],

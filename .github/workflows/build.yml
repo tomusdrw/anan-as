@@ -45,3 +45,42 @@ jobs:
     - run: npm run qa
     - run: npm run build
     - run: npm test --if-present
+
+  benchmark:
+    runs-on: ubuntu-latest
+    # Only run benchmarks on PRs, not on main branch pushes
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Get baseline branch
+        run: |
+          # Get the base branch (main) to compare against
+          echo "BASE_BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+      - run: npm ci
+      - run: npm run build
+        # Checkout base branch for baseline
+      - name: Checkout base branch for baseline
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: ./baseline
+            # Run benchmarks on baseline
+      - name: Run baseline benchmark
+        run: |
+          cd ./baseline
+          npm run bench:baseline
+          cp ./bench/baseline.json ../baseline.json
+          # Run benchmarks on current PR
+      - name: Run PR benchmark
+        run: |
+          npm run bench:ci
+          cp ./bench/results.json ../results.json
+          # Compare results
+      - name: Compare benchmarks
+        run: |
+          npm run bench:compare ../baseline.json ../results.json -- --threshold 5
