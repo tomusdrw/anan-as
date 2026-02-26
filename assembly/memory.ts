@@ -24,7 +24,7 @@ export class MaybePageFault {
 }
 
 const EMPTY_UINT8ARRAY = new Uint8Array(0);
-const EMPTY_PAGE = new Page(Access.None, new RawPage(-1, null));
+const EMPTY_PAGE = new Page(Access.None, new RawPage(-1, EMPTY_UINT8ARRAY));
 
 class Chunks {
   firstPageData: Uint8Array = EMPTY_UINT8ARRAY;
@@ -40,6 +40,50 @@ class PageResult {
 
 const MEMORY_SIZE = 0x1_0000_0000;
 const MAX_MEMORY_ADDRESS: u32 = 0xffff_ffff;
+
+// Direct-mapped page cache for fast lookups.
+// Cache size must be a power of 2. 256 entries covers most working sets.
+const PAGE_CACHE_SHIFT: u32 = 8;
+const PAGE_CACHE_SIZE: u32 = 1 << PAGE_CACHE_SHIFT; // 256
+const PAGE_CACHE_MASK: u32 = PAGE_CACHE_SIZE - 1;
+
+class PageCache {
+  // Parallel arrays for cache: tags store the page index, entries store the page.
+  // A tag of 0xFFFFFFFF means empty (no valid page).
+  private tags: StaticArray<u32> = new StaticArray<u32>(PAGE_CACHE_SIZE);
+  private entries: StaticArray<Page> = new StaticArray<Page>(PAGE_CACHE_SIZE);
+
+  constructor() {
+    const empty = EMPTY_PAGE;
+    for (let i: u32 = 0; i < PAGE_CACHE_SIZE; i++) {
+      this.tags[i] = 0xFFFFFFFF;
+      this.entries[i] = empty;
+    }
+  }
+
+  @inline
+  lookup(pageIdx: u32): Page | null {
+    const slot = pageIdx & PAGE_CACHE_MASK;
+    if (unchecked(this.tags[slot]) === pageIdx) {
+      return unchecked(this.entries[slot]);
+    }
+    return null;
+  }
+
+  @inline
+  insert(pageIdx: u32, page: Page): void {
+    const slot = pageIdx & PAGE_CACHE_MASK;
+    unchecked(this.tags[slot] = pageIdx);
+    unchecked(this.entries[slot] = page);
+  }
+
+  clear(): void {
+    for (let i: u32 = 0; i < PAGE_CACHE_SIZE; i++) {
+      this.tags[i] = 0xFFFFFFFF;
+      this.entries[i] = EMPTY_PAGE;
+    }
+  }
+}
 
 export class MemoryBuilder {
   private readonly pages: Map<PageIndex, Page> = new Map();
@@ -102,6 +146,7 @@ export class Memory {
   private pageResult: PageResult = new PageResult();
   private chunksResult: Chunks = new Chunks();
   private maxHeapPointer: u64;
+  private cache: PageCache = new PageCache();
 
   constructor(
     private readonly arena: Arena,
@@ -115,13 +160,25 @@ export class Memory {
     }
     this.lastAllocatedPage = pages.has(sbrkPage) ? sbrkPage : sbrkPage - 1;
     this.maxHeapPointer = u64(maxHeapPointer);
+    // Pre-populate cache with all existing pages
+    const keys = pages.keys();
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      this.cache.insert(key, pages.get(key));
+    }
   }
 
   pageDump(index: PageIndex): Uint8Array | null {
+    const cached = this.cache.lookup(index);
+    if (cached !== null) {
+      return cached.raw.data;
+    }
     if (!this.pages.has(index)) {
       return null;
     }
-    return this.pages.get(index).raw.data;
+    const page = this.pages.get(index);
+    this.cache.insert(index, page);
+    return page.raw.data;
   }
 
   /**
@@ -147,10 +204,14 @@ export class Memory {
    * ```
    */
   getPagePointer(pageIndex: u32): usize {
-    if (!this.pages.has(pageIndex)) {
-      return 0;
+    let page = this.cache.lookup(pageIndex);
+    if (page === null) {
+      if (!this.pages.has(pageIndex)) {
+        return 0;
+      }
+      page = this.pages.get(pageIndex);
+      this.cache.insert(pageIndex, page);
     }
-    const page = this.pages.get(pageIndex);
     if (!page.can(Access.Read)) {
       return 0;
     }
@@ -166,6 +227,7 @@ export class Memory {
       this.arena.release(pages[i].raw);
     }
     this.pages.clear();
+    this.cache.clear();
   }
 
   sbrk(faultRes: MaybePageFault, amount: u32): u64 {
@@ -188,8 +250,10 @@ export class Memory {
     }
 
     for (let i = this.lastAllocatedPage + 1; i <= pageIdx; i++) {
-      const page = this.arena.acquire();
-      this.pages.set(i, new Page(Access.Write, page));
+      const rawPage = this.arena.acquire();
+      const page = new Page(Access.Write, rawPage);
+      this.pages.set(i, page);
+      this.cache.insert(i, page);
     }
 
     this.lastAllocatedPage = pageIdx;
@@ -327,19 +391,38 @@ export class Memory {
 
   private getPage(faultRes: MaybePageFault, pageData: PageResult, access: Access, address: u32): void {
     const pageIdx = u32(address >> PAGE_SIZE_SHIFT);
-    const relAddress = address % PAGE_SIZE;
-    const pageStart = pageIdx << PAGE_SIZE_SHIFT;
+    const relAddress = address & (PAGE_SIZE - 1);
 
+    // Fast path: check cache first
+    const cached = this.cache.lookup(pageIdx);
+    if (cached !== null) {
+      if (!cached.can(access)) {
+        fault(faultRes, pageIdx << PAGE_SIZE_SHIFT);
+        faultRes.isAccess = true;
+        pageData.page = EMPTY_PAGE;
+        pageData.relativeAddress = relAddress;
+        return;
+      }
+      faultRes.isFault = false;
+      pageData.page = cached;
+      pageData.relativeAddress = relAddress;
+      return;
+    }
+
+    // Slow path: check Map
     if (!this.pages.has(pageIdx)) {
-      fault(faultRes, pageStart);
+      fault(faultRes, pageIdx << PAGE_SIZE_SHIFT);
       pageData.page = EMPTY_PAGE;
       pageData.relativeAddress = relAddress;
       return;
     }
 
     const page = this.pages.get(pageIdx);
+    // Insert into cache for next time
+    this.cache.insert(pageIdx, page);
+
     if (!page.can(access)) {
-      fault(faultRes, pageStart);
+      fault(faultRes, pageIdx << PAGE_SIZE_SHIFT);
       faultRes.isAccess = true;
       pageData.page = EMPTY_PAGE;
       pageData.relativeAddress = relAddress;
@@ -387,12 +470,17 @@ export class Memory {
 
     const secondPageIdx = u32((address + u32(bytes)) % MEMORY_SIZE) >> PAGE_SIZE_SHIFT;
     const secondPageStart = secondPageIdx << PAGE_SIZE_SHIFT;
-    if (!this.pages.has(secondPageIdx)) {
-      fault(faultRes, secondPageStart);
-      return;
+
+    // Try cache first for second page
+    let secondPage = this.cache.lookup(secondPageIdx);
+    if (secondPage === null) {
+      if (!this.pages.has(secondPageIdx)) {
+        fault(faultRes, secondPageStart);
+        return;
+      }
+      secondPage = this.pages.get(secondPageIdx);
+      this.cache.insert(secondPageIdx, secondPage);
     }
-    // fetch the second page and check access
-    const secondPage = this.pages.get(secondPageIdx);
     if (!secondPage.can(access)) {
       fault(faultRes, secondPageStart);
       faultRes.isAccess = true;

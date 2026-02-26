@@ -241,14 +241,21 @@ export class Program {
   }
 }
 
+// Pre-allocated buffer for the rare case when code is shorter than needed.
+// Max REQUIRED_BYTES is 9 (OneRegOneExtImm). We allocate 16 for safety.
+const EXTENDED_BUF: u8[] = new Array<u8>(16);
+
 export function decodeArguments(args: Args, kind: Arguments, code: u8[], offset: i32, lim: u32): Args {
   if (code.length < offset + REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
-    const extended = new Array<u8>(REQUIRED_BYTES[kind]);
-    for (let i = offset; i < code.length; i++) {
-      extended[i - offset] = code[i];
+    const reqBytes = REQUIRED_BYTES[kind];
+    for (let i = 0; i < reqBytes; i++) {
+      EXTENDED_BUF[i] = 0;
     }
-    return DECODERS[kind](args, extended, 0, lim);
+    for (let i = offset; i < code.length; i++) {
+      EXTENDED_BUF[i - offset] = code[i];
+    }
+    return DECODERS[kind](args, EXTENDED_BUF, 0, lim);
   }
   return DECODERS[kind](args, code, offset, offset + lim);
 }

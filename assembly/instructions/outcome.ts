@@ -45,9 +45,9 @@ export function dJump(r: OutcomeData, address: u32): OutcomeData {
   return r;
 }
 
+@inline
 export function ok(r: OutcomeData): OutcomeData {
-  r.outcome = Outcome.Ok;
-  r.dJump = 0;
+  // outcome is already pre-set to Ok by the interpreter loop
   return r;
 }
 
@@ -62,6 +62,7 @@ export function hostCall(r: OutcomeData, id: u32): OutcomeData {
   return r;
 }
 
+@inline
 export function okOrFault(r: OutcomeData, pageFault: MaybePageFault): OutcomeData {
   if (pageFault.isFault) {
     r.outcome = Outcome.Result;

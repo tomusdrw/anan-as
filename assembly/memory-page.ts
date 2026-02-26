@@ -15,8 +15,6 @@ export const SEGMENT_SIZE_SHIFT: u32 = 16;
 export const RESERVED_MEMORY: u32 = 2 ** 16;
 export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE; // 16
 
-/** Amount of memory to allocate eagerly */
-export const ALLOCATE_EAGERLY: u32 = 2 ** 21; // 2MB
 
 export enum Access {
   None = 0,
@@ -30,6 +28,7 @@ export class Page {
     public readonly raw: RawPage,
   ) {}
 
+  @inline
   can(access: Access): boolean {
     return this.access === Access.Write || this.access === access;
   }
@@ -38,14 +37,12 @@ export class Page {
 export class RawPage {
   constructor(
     public readonly id: ArenaId,
-    public page: Uint8Array | null,
+    public page: Uint8Array,
   ) {}
 
+  @inline
   get data(): Uint8Array {
-    if (this.page === null) {
-      this.page = new Uint8Array(PAGE_SIZE).fill(0);
-    }
-    return this.page as Uint8Array;
+    return this.page;
   }
 }
 
@@ -75,8 +72,7 @@ export class Arena {
       console.log("Warning: Run out of pages! Allocating.");
     }
 
-    // actually allocate for some time, but later do it lazily
-    const data = allocatedMemory < ALLOCATE_EAGERLY ? new Uint8Array(PAGE_SIZE) : null;
+    const data = new Uint8Array(PAGE_SIZE);
     this.extraPageIndex += 1;
     return new RawPage(this.extraPageIndex, data);
   }

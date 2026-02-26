@@ -112,8 +112,8 @@ export class Interpreter {
         return false;
       }
 
-      const instruction = code[pc];
-      const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
+      const instruction = unchecked(code[pc]);
+      const iData = <i32>instruction < INSTRUCTIONS.length ? unchecked(INSTRUCTIONS[instruction]) : MISSING_INSTRUCTION;
 
       // check gas (might be done for each block instead).
       if (this.gas.sub(iData.gas)) {
@@ -143,11 +143,26 @@ export class Interpreter {
         }
       }
 
-      const exe = RUN[instruction];
+      const exe = unchecked(RUN[instruction]);
       const outcome = exe(outcomeRes, args, this.registers, this.memory);
 
-      // TODO [ToDr] Spaghetti
+      // Fast path: Ok is the most common outcome (~70%+ of instructions)
+      if (outcome.outcome === Outcome.Ok) {
+        this.pc += 1 + skipBytes;
+        continue;
+      }
+
       switch (outcome.outcome) {
+        case Outcome.StaticJump: {
+          const branchResult = branch(this.branchRes, program.basicBlocks, pc, outcome.staticJump);
+          if (!branchResult.isOkay) {
+            this.status = Status.PANIC;
+            return false;
+          }
+
+          this.pc = branchResult.newPc;
+          continue;
+        }
         case Outcome.DynamicJump: {
           const res = dJump(this.djumpRes, program.jumpTable, outcome.dJump);
           if (res.status === DjumpStatus.HALT) {
@@ -163,16 +178,6 @@ export class Interpreter {
             this.status = Status.PANIC;
             return false;
           }
-          this.pc = branchResult.newPc;
-          continue;
-        }
-        case Outcome.StaticJump: {
-          const branchResult = branch(this.branchRes, program.basicBlocks, pc, outcome.staticJump);
-          if (!branchResult.isOkay) {
-            this.status = Status.PANIC;
-            return false;
-          }
-
           this.pc = branchResult.newPc;
           continue;
         }
@@ -206,11 +211,6 @@ export class Interpreter {
           }
 
           throw new Error("Unknown result");
-        }
-        case Outcome.Ok: {
-          // by default move to next instruction.
-          this.pc += 1 + skipBytes;
-          continue;
         }
       }
     }
