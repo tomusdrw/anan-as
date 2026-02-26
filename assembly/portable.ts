@@ -8,6 +8,44 @@ export class portable {
     return v;
   }
 
+  // @ts-ignore: @inline is an AS-only decorator
+  @inline
+  static arrayAt<T>(v: T[], i: u32): T {
+    if (ASC_TARGET === 0) {
+      return v[i];
+    }
+    return unchecked(v[i]);
+  }
+
+  // @ts-ignore: @inline is an AS-only decorator
+  @inline
+  static staticArrayAt<T>(v: StaticArray<T>, i: u32): T {
+    if (ASC_TARGET === 0) {
+      return v[i];
+    }
+    return unchecked(v[i]);
+  }
+
+  // @ts-ignore: @inline is an AS-only decorator
+  @inline
+  static asU32(v: u32): u32 {
+    if (ASC_TARGET === 0) {
+      return v >>> 0;
+    }
+    return v;
+  }
+
+  // @ts-ignore: @inline is an AS-only decorator
+  @inline
+  static uint8ArrayView(data: ArrayBuffer, offset: i32, length: i32): Uint8Array {
+    if (ASC_TARGET === 0) {
+      // @ts-ignore: JS runtime supports Uint8Array(buffer, offset, length)
+      return new Uint8Array(data, offset, length);
+    }
+    // @ts-ignore: Uint8Array.wrap is an AS-only API
+    return Uint8Array.wrap(data, offset, length);
+  }
+
   // --- bswap ---
 
   // @ts-ignore: @inline is an AS-only decorator

@@ -1,3 +1,5 @@
+import { portable } from "./portable";
+
 export type PageIndex = u32;
 export type ArenaId = u32;
 
@@ -58,13 +60,7 @@ export class Arena {
     this.extraPageIndex = pageCount;
     const data = new ArrayBuffer(this.arenaBytes);
     for (let i = 0; i < <i32>pageCount; i++) {
-      if (ASC_TARGET === 0) {
-        // @ts-ignore: JS runtime supports Uint8Array(buffer, offset, length)
-        this.free.unshift(new RawPage(i, new Uint8Array(data, i * PAGE_SIZE, PAGE_SIZE)));
-      } else {
-        // @ts-ignore: Uint8Array.wrap is an AS-only API
-        this.free.unshift(new RawPage(i, Uint8Array.wrap(data, i * PAGE_SIZE, PAGE_SIZE)));
-      }
+      this.free.unshift(new RawPage(i, portable.uint8ArrayView(data, i * PAGE_SIZE, PAGE_SIZE)));
     }
   }
 
