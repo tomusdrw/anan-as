@@ -25,7 +25,7 @@ export class VmRunOptions {
 
 export class VmInput {
   pc: u32 = 0;
-  gas: i64 = 0;
+  gas: i64 = i64(0);
 
   constructor(
     public readonly program: Program,
@@ -39,7 +39,7 @@ export class VmPause {
   exitCode: u32 = 0;
   pc: u32 = 0;
   nextPc: u32 = 0;
-  gas: i64 = 0;
+  gas: i64 = i64(0);
   registers: u64[] = [];
 }
 
@@ -47,7 +47,7 @@ export class VmOutput {
   status: Status = Status.OK;
   exitCode: u32 = 0;
   pc: u32 = 0;
-  gas: i64 = 0;
+  gas: i64 = i64(0);
   result: u8[] = [];
   registers: u64[] = [];
   memory: InitialChunk[] = [];

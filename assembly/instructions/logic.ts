@@ -45,12 +45,12 @@ export const and_inv: InstructionRun = (r, args, registers) => {
 
 // OR_INV
 export const or_inv: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = registers[reg(args.b)] | ~registers[reg(args.a)];
+  registers[reg(args.c)] = u64(registers[reg(args.b)] | ~registers[reg(args.a)]);
   return ok(r);
 };
 
 // XNOR
 export const xnor: InstructionRun = (r, args, registers) => {
-  registers[reg(args.c)] = ~(registers[reg(args.b)] ^ registers[reg(args.a)]);
+  registers[reg(args.c)] = u64(~(registers[reg(args.b)] ^ registers[reg(args.a)]));
   return ok(r);
 };

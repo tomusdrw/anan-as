@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Running pre-push checks..."
+
+echo "==> QA (biome ci)"
+npm run qa
+
+echo "==> Build"
+npm run build
+
+echo "==> Tests"
+npm test
+
+echo "All pre-push checks passed."

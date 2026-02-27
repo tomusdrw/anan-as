@@ -1,19 +1,18 @@
 import { Arguments } from "./arguments";
 import { Gas } from "./gas";
 
-@unmanaged
 export class Instruction {
-  namePtr: usize = 0;
+  name: string = "";
   kind: Arguments = Arguments.Zero;
-  gas: Gas = 0;
+  gas: Gas = i64(0);
   isTerminating: boolean = false;
 }
 
 function instruction(name: string, kind: Arguments, gas: Gas, isTerminating: boolean = false): Instruction {
   const i = new Instruction();
-  i.namePtr = changetype<usize>(name);
+  i.name = name;
   i.kind = kind;
-  i.gas = gas;
+  i.gas = i64(gas);
   i.isTerminating = isTerminating;
   return i;
 }

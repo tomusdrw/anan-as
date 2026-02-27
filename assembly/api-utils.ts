@@ -3,8 +3,9 @@ import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause, VmRunOptions } f
 import { BlockGasCost, computeGasCosts } from "./gas-costs";
 import { Interpreter } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
+import { portable } from "./portable";
 import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
-import { NO_OF_REGISTERS, Registers } from "./registers";
+import { NO_OF_REGISTERS, newRegisters, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
 
 export enum InputKind {
@@ -20,7 +21,8 @@ export enum HasMetadata {
 export function getGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
   const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0);
 
-  return computeGasCosts(program.program).values();
+  // @ts-ignore: AS returns T[], JS returns iterator - asArray handles both
+  return portable.asArray<BlockGasCost>(computeGasCosts(program.program).values());
 }
 
 export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata): string {
@@ -59,7 +61,9 @@ export function prepareProgram(
 
   if (hasMetadata === HasMetadata.Yes) {
     const data = extractCodeAndMetadata(code);
+    // @ts-ignore: TS 5.9 Uint8Array generic parameter mismatch
     code = data.code;
+    // @ts-ignore: TS 5.9 Uint8Array generic parameter mismatch
     metadata = data.metadata;
   }
 
@@ -69,7 +73,7 @@ export function prepareProgram(
     const builder = new MemoryBuilder(preallocateMemoryPages);
     const memory = buildMemory(builder, initialPageMap, initialMemory);
 
-    const registers: Registers = new StaticArray(NO_OF_REGISTERS);
+    const registers: Registers = newRegisters();
     const safeLen = initialRegisters.length < NO_OF_REGISTERS ? initialRegisters.length : NO_OF_REGISTERS;
     for (let r = 0; r < safeLen; r++) {
       registers[r] = initialRegisters[r];
@@ -100,7 +104,7 @@ export function runProgram(
   dumpMemory: boolean = false,
 ): VmOutput {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
-  vmInput.gas = initialGas;
+  vmInput.gas = i64(initialGas);
   vmInput.pc = programCounter;
 
   const vmOptions = new VmRunOptions();

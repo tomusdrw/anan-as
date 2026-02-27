@@ -46,7 +46,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
   const spiArgs = Array.from(extractSpiArgs(start, initialMemWrites));
 
   const preparedProgram = useSpi
-    ? prepareProgram(InputKind.SPI, hasMetadata, programInput, [], [], [], spiArgs, 0)
+    ? prepareProgram(InputKind.SPI, hasMetadata, programInput, [], [], [], spiArgs, 128)
     : prepareProgram(
         InputKind.Generic,
         hasMetadata,
@@ -55,7 +55,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         buildInitialPages(initialMemWrites),
         buildInitialChunks(initialMemWrites),
         [],
-        0,
+        128,
       );
 
   const id = pvmStart(preparedProgram, true);

@@ -2,6 +2,7 @@ import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
 import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { reg, u32SignExtend } from "./instructions/utils";
+import { portable } from "./portable";
 import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
@@ -52,13 +53,13 @@ export function deblob(program: Uint8Array): Program {
   // the length of the code (in bytes).
   const codeLength = decoder.varU32();
 
-  const jumpTableLengthInBytes = jumpTableLength * jumpTableItemLength;
+  const jumpTableLengthInBytes = i32(jumpTableLength * jumpTableItemLength);
   const rawJumpTable = decoder.bytes(jumpTableLengthInBytes);
 
   // NOTE [ToDr] we copy the code here, because indexing a raw
   // assembly script array is faster than going through `Uint8Array` API.
   const rawCode = lowerBytes(decoder.bytes(codeLength));
-  const rawMask = decoder.bytes((codeLength + 7) / 8);
+  const rawMask = decoder.bytes(i32((codeLength + 7) / 8));
 
   const mask = new Mask(rawMask, codeLength);
   const jumpTable = new JumpTable(jumpTableItemLength, rawJumpTable);
@@ -98,11 +99,11 @@ export class Mask {
   }
 
   isInstruction(index: ProgramCounter): boolean {
-    if (index >= <u64>this.bytesToSkip.length) {
+    if (index >= u32(this.bytesToSkip.length)) {
       return false;
     }
 
-    return unchecked(this.bytesToSkip[u32(index)]) === 0;
+    return portable.staticArrayAt(this.bytesToSkip, u32(index)) === 0;
   }
 
   /**
@@ -115,7 +116,7 @@ export class Mask {
    */
   skipBytesToNextInstruction(i: u32): u32 {
     if (i + 1 < <u32>this.bytesToSkip.length) {
-      return unchecked(this.bytesToSkip[i + 1]);
+      return portable.staticArrayAt(this.bytesToSkip, i + 1);
     }
 
     return 0;
@@ -175,7 +176,7 @@ export class BasicBlocks {
 
   isStart(newPc: u32): boolean {
     if (newPc < <u32>this.isStartOrEnd.length) {
-      return (unchecked(this.isStartOrEnd[newPc]) & BasicBlock.START) > 0;
+      return (portable.staticArrayAt(this.isStartOrEnd, newPc) & BasicBlock.START) > 0;
     }
     return false;
   }
@@ -200,19 +201,19 @@ export class JumpTable {
   readonly jumps: StaticArray<u64>;
 
   constructor(itemBytes: u8, data: Uint8Array) {
-    const jumps = new StaticArray<u64>(itemBytes > 0 ? data.length / itemBytes : 0);
+    const jumps = new StaticArray<u64>(itemBytes > 0 ? i32(data.length / itemBytes) : 0);
 
     for (let i = 0; i < data.length; i += itemBytes) {
-      let num: u64 = 0;
+      let num: u64 = u64(0);
       for (let j: i32 = itemBytes - 1; j >= 0; j--) {
-        let nextNum: u64 = num << 8;
+        let nextNum: u64 = num << u64(8);
         let isOverflow = nextNum < num;
-        nextNum = nextNum + u64(data[i + j]);
+        nextNum = portable.u64_add(nextNum, u64(data[i + j]));
         isOverflow = isOverflow || nextNum < num;
         // handle overflow
         num = isOverflow ? u64.MAX_VALUE : nextNum;
       }
-      jumps[i / itemBytes] = num;
+      jumps[i32(i / itemBytes)] = num;
     }
 
     this.jumps = jumps;
@@ -253,10 +254,10 @@ export function decodeArguments(args: Args, kind: Arguments, code: u8[], offset:
 }
 
 class ResolvedArguments {
-  a: i64 = 0;
-  b: i64 = 0;
-  c: i64 = 0;
-  d: i64 = 0;
+  a: i64 = i64(0);
+  b: i64 = i64(0);
+  c: i64 = i64(0);
+  d: i64 = i64(0);
   decoded: Args = new Args();
 }
 
@@ -290,47 +291,47 @@ export function resolveArguments(
       resolved.a = u32SignExtend(args.a);
       return resolved;
     case Arguments.OneRegOneImm:
-      resolved.a = registers[reg(args.a)];
+      resolved.a = registers[reg(u64(args.a))];
       resolved.b = u32SignExtend(args.b);
       return resolved;
     case Arguments.OneRegOneExtImm:
-      resolved.a = registers[reg(args.a)];
-      resolved.b = (u64(args.a) << 32) + u64(args.b);
+      resolved.a = registers[reg(u64(args.a))];
+      resolved.b = portable.u64_add(u64(args.a) << u64(32), u64(args.b));
       return resolved;
     case Arguments.OneRegTwoImm:
-      resolved.a = registers[reg(args.a)];
+      resolved.a = registers[reg(u64(args.a))];
       resolved.b = u32SignExtend(args.b);
       resolved.c = u32SignExtend(args.c);
       return resolved;
     case Arguments.OneRegOneImmOneOff:
-      resolved.a = registers[reg(args.a)];
+      resolved.a = registers[reg(u64(args.a))];
       resolved.b = u32SignExtend(args.b);
       resolved.c = u32SignExtend(args.c);
       return resolved;
     case Arguments.TwoReg:
-      resolved.a = registers[reg(args.a)];
-      resolved.b = registers[reg(args.b)];
+      resolved.a = registers[reg(u64(args.a))];
+      resolved.b = registers[reg(u64(args.b))];
       return resolved;
     case Arguments.TwoRegOneImm:
-      resolved.a = registers[reg(args.a)];
-      resolved.b = registers[reg(args.b)];
+      resolved.a = registers[reg(u64(args.a))];
+      resolved.b = registers[reg(u64(args.b))];
       resolved.c = u32SignExtend(args.c);
       return resolved;
     case Arguments.TwoRegOneOff:
-      resolved.a = registers[reg(args.a)];
-      resolved.b = registers[reg(args.b)];
+      resolved.a = registers[reg(u64(args.a))];
+      resolved.b = registers[reg(u64(args.b))];
       resolved.c = u32SignExtend(args.c);
       return resolved;
     case Arguments.TwoRegTwoImm:
-      resolved.a = registers[reg(args.a)];
-      resolved.b = registers[reg(args.b)];
+      resolved.a = registers[reg(u64(args.a))];
+      resolved.b = registers[reg(u64(args.b))];
       resolved.c = u32SignExtend(args.c);
       resolved.d = u32SignExtend(args.d);
       return resolved;
     case Arguments.ThreeReg:
-      resolved.a = registers[reg(args.a)];
-      resolved.b = registers[reg(args.b)];
-      resolved.c = registers[reg(args.c)];
+      resolved.a = registers[reg(u64(args.a))];
+      resolved.b = registers[reg(u64(args.b))];
+      resolved.c = registers[reg(u64(args.c))];
       return resolved;
     default:
       throw new Error(`Unhandled arguments kind: ${kind}`);
