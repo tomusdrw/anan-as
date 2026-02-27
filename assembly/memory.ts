@@ -56,7 +56,7 @@ class PageCache {
   constructor() {
     const empty = EMPTY_PAGE;
     for (let i: u32 = 0; i < PAGE_CACHE_SIZE; i++) {
-      this.tags[i] = 0xFFFFFFFF;
+      this.tags[i] = 0xffffffff;
       this.entries[i] = empty;
     }
   }
@@ -73,13 +73,15 @@ class PageCache {
   @inline
   insert(pageIdx: u32, page: Page): void {
     const slot = pageIdx & PAGE_CACHE_MASK;
-    unchecked(this.tags[slot] = pageIdx);
-    unchecked(this.entries[slot] = page);
+    // biome-ignore lint/suspicious/noAssignInExpressions: intentional AS pattern
+    unchecked((this.tags[slot] = pageIdx));
+    // biome-ignore lint/suspicious/noAssignInExpressions: intentional AS pattern
+    unchecked((this.entries[slot] = page));
   }
 
   clear(): void {
     for (let i: u32 = 0; i < PAGE_CACHE_SIZE; i++) {
-      this.tags[i] = 0xFFFFFFFF;
+      this.tags[i] = 0xffffffff;
       this.entries[i] = EMPTY_PAGE;
     }
   }
@@ -161,8 +163,11 @@ export class Memory {
     this.lastAllocatedPage = pages.has(sbrkPage) ? sbrkPage : sbrkPage - 1;
     this.maxHeapPointer = u64(maxHeapPointer);
     // Pre-populate cache with all existing pages
+    // @ts-ignore: AS Map iterator has array-like behavior
     const keys = pages.keys();
+    // @ts-ignore: AS Map iterator has array-like behavior
     for (let i = 0; i < keys.length; i++) {
+      // @ts-ignore: AS Map iterator has array-like behavior
       const key = keys[i];
       this.cache.insert(key, pages.get(key));
     }

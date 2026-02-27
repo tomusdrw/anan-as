@@ -15,7 +15,6 @@ export const SEGMENT_SIZE_SHIFT: u32 = 16;
 export const RESERVED_MEMORY: u32 = 2 ** 16;
 export const RESERVED_PAGES: u32 = RESERVED_MEMORY / PAGE_SIZE; // 16
 
-
 export enum Access {
   None = 0,
   Read = 1,
