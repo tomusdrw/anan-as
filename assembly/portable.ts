@@ -1,3 +1,6 @@
+// Runtime binding for TS decorator emit in portable JS builds.
+const inline = (_target: i32 = 0, _propertyKey: i32 = 0, descriptor: i32 = 0): i32 => descriptor;
+
 export class portable {
   // @ts-ignore: @inline is an AS-only decorator
   @inline
@@ -110,7 +113,7 @@ export class portable {
     }
 
     g.unchecked = (v: any): any => v;
-    g.inline = () => {};
+    g.inline = inline;
     g.changetype = (v: any): any => v;
   }
 
