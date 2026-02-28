@@ -48,6 +48,7 @@ export class Interpreter {
   public exitCode: u32;
   public nextPc: u32;
   public useSbrkGas: boolean;
+  public useBlockGas: boolean;
 
   private djumpRes: DjumpResult = new DjumpResult();
   private argsRes: Args = new Args();
@@ -64,6 +65,7 @@ export class Interpreter {
     this.exitCode = 0;
     this.nextPc = 0;
     this.useSbrkGas = false;
+    this.useBlockGas = false;
   }
 
   nextSteps(nSteps: u32 = 1): boolean {
@@ -93,6 +95,8 @@ export class Interpreter {
     const mask = program.mask;
     const argsRes = this.argsRes;
     const outcomeRes = this.outcomeRes;
+    const useBlockGas = this.useBlockGas;
+    const blockGasCosts = program.blockGasCosts;
 
     for (let i: u32 = 0; i < nSteps; i++) {
       // reset some stuff at start
@@ -115,10 +119,20 @@ export class Interpreter {
       const instruction = unchecked(code[pc]);
       const iData = <i32>instruction < INSTRUCTIONS.length ? unchecked(INSTRUCTIONS[instruction]) : MISSING_INSTRUCTION;
 
-      // check gas (might be done for each block instead).
-      if (this.gas.sub(iData.gas)) {
-        this.status = Status.OOG;
-        return false;
+      // check gas: per-block or per-instruction
+      if (useBlockGas) {
+        const blockGas = portable.staticArrayAt(blockGasCosts, pc);
+        if (blockGas > 0) {
+          if (this.gas.sub(blockGas)) {
+            this.status = Status.OOG;
+            return false;
+          }
+        }
+      } else {
+        if (this.gas.sub(iData.gas)) {
+          this.status = Status.OOG;
+          return false;
+        }
       }
 
       if (iData === MISSING_INSTRUCTION) {

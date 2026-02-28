@@ -32,6 +32,7 @@ type ReplayOptions = {
   verify: boolean;
   logHostCall?: boolean;
   tracer?: Tracer;
+  useBlockGas?: boolean;
 };
 
 export function replayTraceFile(filePath: string, options: ReplayOptions): TraceSummary {
@@ -58,7 +59,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         128,
       );
 
-  const id = pvmStart(preparedProgram, true);
+  const id = pvmStart(preparedProgram, true, options.useBlockGas ?? false);
   const initialEcalliCount = ecalliEntries.length;
   const tracer = options.tracer ?? new ConsoleTracer();
 

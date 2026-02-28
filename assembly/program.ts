@@ -229,12 +229,55 @@ export class JumpTable {
 }
 
 export class Program {
+  /**
+   * Pre-computed gas cost per basic block, indexed by PC.
+   * At block-start PCs, stores the total gas cost for the entire block; 0 elsewhere.
+   */
+  public readonly blockGasCosts: StaticArray<u64>;
+
   constructor(
     public readonly code: u8[],
     public readonly mask: Mask,
     public readonly jumpTable: JumpTable,
     public readonly basicBlocks: BasicBlocks,
-  ) {}
+  ) {
+    const len = code.length;
+    const blockGasCosts = new StaticArray<u64>(len);
+
+    // Two-pass approach: first accumulate gas per block, then store at block-start PCs
+    let blockStartPc: i32 = -1;
+    let blockGas: u64 = u64(0);
+
+    for (let i = 0; i < len; i++) {
+      if (!mask.isInstruction(i)) {
+        continue;
+      }
+
+      const instruction = code[i];
+      const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
+
+      if (basicBlocks.isStart(i)) {
+        // Store previous block's gas
+        if (blockStartPc >= 0) {
+          blockGasCosts[blockStartPc] = blockGas;
+        }
+        blockStartPc = i;
+        blockGas = iData.gas;
+      } else {
+        blockGas = portable.u64_add(blockGas, iData.gas);
+      }
+
+      // Skip argument bytes
+      i += mask.skipBytesToNextInstruction(i);
+    }
+
+    // Store the final block's gas
+    if (blockStartPc >= 0) {
+      blockGasCosts[blockStartPc] = blockGas;
+    }
+
+    this.blockGasCosts = blockGasCosts;
+  }
 
   toString(): string {
     return `Program { code: ${this.code}, mask: ${this.mask}, jumpTable: ${this.jumpTable}, basicBlocks: ${this.basicBlocks} }`;

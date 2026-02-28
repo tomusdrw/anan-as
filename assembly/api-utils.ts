@@ -103,6 +103,7 @@ export function runProgram(
   logs: boolean = false,
   useSbrkGas: boolean = false,
   dumpMemory: boolean = false,
+  useBlockGas: boolean = false,
 ): VmOutput {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
   vmInput.gas = i64(initialGas);
@@ -111,6 +112,7 @@ export function runProgram(
   const vmOptions = new VmRunOptions();
   vmOptions.logs = logs;
   vmOptions.useSbrkGas = useSbrkGas;
+  vmOptions.useBlockGas = useBlockGas;
   vmOptions.dumpMemory = dumpMemory;
 
   return vmRunOnce(vmInput, vmOptions);
@@ -126,11 +128,11 @@ const pvms = new Map<u32, Interpreter>();
  *
  * NOTE: the PVM MUST be de-allocated using `pvmDestroy`.
  */
-export function pvmStart(program: StandardProgram, useSbrkGas: boolean = false): u32 {
+export function pvmStart(program: StandardProgram, useSbrkGas: boolean = false, useBlockGas: boolean = false): u32 {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
 
   nextPvmId += 1;
-  pvms.set(nextPvmId, vmInit(vmInput, useSbrkGas));
+  pvms.set(nextPvmId, vmInit(vmInput, useSbrkGas, useBlockGas));
   return nextPvmId;
 }
 

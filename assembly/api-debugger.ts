@@ -11,13 +11,21 @@ import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;
 
-export function resetJAM(program: u8[], pc: u32, initialGas: Gas, args: u8[], hasMetadata: boolean = false): void {
+export function resetJAM(
+  program: u8[],
+  pc: u32,
+  initialGas: Gas,
+  args: u8[],
+  hasMetadata: boolean = false,
+  useBlockGas: boolean = false,
+): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
   const p = decodeSpi(code, liftBytes(args), 128);
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
   int.gas.set(initialGas);
+  int.useBlockGas = useBlockGas;
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -26,7 +34,13 @@ export function resetJAM(program: u8[], pc: u32, initialGas: Gas, args: u8[], ha
   interpreter = int;
 }
 
-export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas, hasMetadata: boolean = false): void {
+export function resetGeneric(
+  program: u8[],
+  flatRegisters: u8[],
+  initialGas: Gas,
+  hasMetadata: boolean = false,
+  useBlockGas: boolean = false,
+): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
   const p = deblob(code);
@@ -34,6 +48,7 @@ export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
   int.gas.set(initialGas);
+  int.useBlockGas = useBlockGas;
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -49,6 +64,7 @@ export function resetGenericWithMemory(
   chunks: Uint8Array,
   initialGas: Gas,
   hasMetadata: boolean = false,
+  useBlockGas: boolean = false,
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
@@ -61,6 +77,7 @@ export function resetGenericWithMemory(
 
   const int = new Interpreter(p, registers, memory);
   int.gas.set(initialGas);
+  int.useBlockGas = useBlockGas;
 
   interpreter = int;
 }

@@ -28,6 +28,7 @@ const { values } = parseArgs({
     iterations: { type: "string", default: "5" },
     warmup: { type: "string", default: "1" },
     output: { type: "string", default: "" },
+    "block-gas": { type: "boolean", default: false },
     help: { type: "boolean", short: "h", default: false },
   },
 });
@@ -116,6 +117,9 @@ function benchRun(name: string, fn: () => void): BenchResult {
   const max = Math.max(...samples);
   const p95 = percentile(samples, 95);
 
+  return { name, medianMs: med, minMs: min, maxMs: max, p95Ms: p95, samples };
+}
+
 function formatResult(r: BenchResult): string {
   return `  ${r.name.padEnd(40)} median=${r.medianMs.toFixed(1)}ms  min=${r.minMs.toFixed(1)}ms  max=${r.maxMs.toFixed(1)}ms  p95=${r.p95Ms.toFixed(1)}ms`;
 }
@@ -145,6 +149,7 @@ function benchTraces(dir: string): BenchResult[] {
         hasMetadata: HasMetadata.Yes,
         verify: false,
         tracer: new NoOpTracer(),
+        useBlockGas: values["block-gas"],
       });
     });
 
@@ -216,7 +221,7 @@ function benchW3f(dir: string): BenchResult | null {
         [],
         16,
       );
-      runProgram(exe, gas, pc, false, false, false);
+      runProgram(exe, gas, pc, false, false, false, values["block-gas"]);
     }
   });
 
