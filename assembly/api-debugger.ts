@@ -25,7 +25,9 @@ export function resetJAM(
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
   int.gas.set(initialGas);
-  int.useBlockGas = useBlockGas;
+  if (useBlockGas) {
+    int.gasCosts = int.program.getBlockGasCosts();
+  }
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -48,7 +50,9 @@ export function resetGeneric(
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
   int.gas.set(initialGas);
-  int.useBlockGas = useBlockGas;
+  if (useBlockGas) {
+    int.gasCosts = int.program.getBlockGasCosts();
+  }
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -77,7 +81,9 @@ export function resetGenericWithMemory(
 
   const int = new Interpreter(p, registers, memory);
   int.gas.set(initialGas);
-  int.useBlockGas = useBlockGas;
+  if (useBlockGas) {
+    int.gasCosts = int.program.getBlockGasCosts();
+  }
 
   interpreter = int;
 }

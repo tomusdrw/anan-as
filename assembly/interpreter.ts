@@ -48,7 +48,8 @@ export class Interpreter {
   public exitCode: u32;
   public nextPc: u32;
   public useSbrkGas: boolean;
-  public useBlockGas: boolean;
+  /** Gas costs table used for per-instruction gas deduction. */
+  public gasCosts: StaticArray<u64>;
 
   private djumpRes: DjumpResult = new DjumpResult();
   private argsRes: Args = new Args();
@@ -65,7 +66,7 @@ export class Interpreter {
     this.exitCode = 0;
     this.nextPc = 0;
     this.useSbrkGas = false;
-    this.useBlockGas = false;
+    this.gasCosts = program.gasCosts;
   }
 
   nextSteps(nSteps: u32 = 1): boolean {
@@ -95,8 +96,7 @@ export class Interpreter {
     const mask = program.mask;
     const argsRes = this.argsRes;
     const outcomeRes = this.outcomeRes;
-    const useBlockGas = this.useBlockGas;
-    const blockGasCosts = program.blockGasCosts;
+    const gasCosts = this.gasCosts;
 
     for (let i: u32 = 0; i < nSteps; i++) {
       // reset some stuff at start
@@ -119,20 +119,11 @@ export class Interpreter {
       const instruction = unchecked(code[pc]);
       const iData = <i32>instruction < INSTRUCTIONS.length ? unchecked(INSTRUCTIONS[instruction]) : MISSING_INSTRUCTION;
 
-      // check gas: per-block or per-instruction
-      if (useBlockGas) {
-        const blockGas = portable.staticArrayAt(blockGasCosts, pc);
-        if (blockGas > 0) {
-          if (this.gas.sub(blockGas)) {
-            this.status = Status.OOG;
-            return false;
-          }
-        }
-      } else {
-        if (this.gas.sub(iData.gas)) {
-          this.status = Status.OOG;
-          return false;
-        }
+      // check gas via pre-computed cost table (per-instruction or per-block)
+      const gasCost = portable.staticArrayAt(gasCosts, pc);
+      if (gasCost > 0 && this.gas.sub(gasCost)) {
+        this.status = Status.OOG;
+        return false;
       }
 
       if (iData === MISSING_INSTRUCTION) {
@@ -231,6 +222,7 @@ export class Interpreter {
 
     return true;
   }
+
 }
 
 function branch(r: BranchResult, basicBlocks: BasicBlocks, pc: u32, offset: i32): BranchResult {

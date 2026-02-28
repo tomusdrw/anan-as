@@ -230,10 +230,17 @@ export class JumpTable {
 
 export class Program {
   /**
+   * Pre-computed gas cost per instruction, indexed by PC.
+   * Each instruction PC has its individual gas cost; 0 for non-instruction bytes.
+   */
+  public readonly gasCosts: StaticArray<u64>;
+
+  /**
    * Pre-computed gas cost per basic block, indexed by PC.
    * At block-start PCs, stores the total gas cost for the entire block; 0 elsewhere.
+   * Lazily computed on first access via `getBlockGasCosts()`.
    */
-  public readonly blockGasCosts: StaticArray<u64>;
+  private _blockGasCosts: StaticArray<u64> | null = null;
 
   constructor(
     public readonly code: u8[],
@@ -242,9 +249,33 @@ export class Program {
     public readonly basicBlocks: BasicBlocks,
   ) {
     const len = code.length;
+    const gasCosts = new StaticArray<u64>(len);
+
+    for (let i = 0; i < len; i++) {
+      if (!mask.isInstruction(i)) {
+        continue;
+      }
+      const instruction = code[i];
+      const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
+      gasCosts[i] = iData.gas;
+      i += mask.skipBytesToNextInstruction(i);
+    }
+
+    this.gasCosts = gasCosts;
+  }
+
+  /** Lazily compute and return block-aggregated gas costs. */
+  getBlockGasCosts(): StaticArray<u64> {
+    if (this._blockGasCosts !== null) {
+      return this._blockGasCosts!;
+    }
+
+    const code = this.code;
+    const mask = this.mask;
+    const basicBlocks = this.basicBlocks;
+    const len = code.length;
     const blockGasCosts = new StaticArray<u64>(len);
 
-    // Two-pass approach: first accumulate gas per block, then store at block-start PCs
     let blockStartPc: i32 = -1;
     let blockGas: u64 = u64(0);
 
@@ -257,7 +288,6 @@ export class Program {
       const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
 
       if (basicBlocks.isStart(i)) {
-        // Store previous block's gas
         if (blockStartPc >= 0) {
           blockGasCosts[blockStartPc] = blockGas;
         }
@@ -267,16 +297,15 @@ export class Program {
         blockGas = portable.u64_add(blockGas, iData.gas);
       }
 
-      // Skip argument bytes
       i += mask.skipBytesToNextInstruction(i);
     }
 
-    // Store the final block's gas
     if (blockStartPc >= 0) {
       blockGasCosts[blockStartPc] = blockGas;
     }
 
-    this.blockGasCosts = blockGasCosts;
+    this._blockGasCosts = blockGasCosts;
+    return blockGasCosts;
   }
 
   toString(): string {

@@ -74,7 +74,9 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
 export function vmInit(input: VmInput, useSbrkGas: boolean = false, useBlockGas: boolean = false): Interpreter {
   const int = new Interpreter(input.program, input.registers, input.memory);
   int.useSbrkGas = useSbrkGas;
-  int.useBlockGas = useBlockGas;
+  if (useBlockGas) {
+    int.gasCosts = input.program.getBlockGasCosts();
+  }
   int.nextPc = input.pc;
   int.gas.set(input.gas);
   return int;
