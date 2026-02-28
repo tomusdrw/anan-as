@@ -32,6 +32,7 @@ type ReplayOptions = {
   verify: boolean;
   logHostCall?: boolean;
   tracer?: Tracer;
+  useBlockGas?: boolean;
 };
 
 export function replayTraceFile(filePath: string, options: ReplayOptions): TraceSummary {
@@ -46,7 +47,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
   const spiArgs = Array.from(extractSpiArgs(start, initialMemWrites));
 
   const preallocateMemoryPages = 128;
-  const useBlockGas = false;
+  const useBlockGas = options.useBlockGas ?? false;
   const preparedProgram = useSpi
     ? prepareProgram(InputKind.SPI, hasMetadata, programInput, [], [], [], spiArgs, preallocateMemoryPages, useBlockGas)
     : prepareProgram(

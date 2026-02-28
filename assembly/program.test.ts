@@ -92,7 +92,7 @@ export const TESTS: Test[] = [
     );
     assert.isEqual(
       program.gasCosts.toString(),
-      "GasCosts[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+      "GasCosts[0 -> 1, 3 -> 1, 6 -> 1, 8 -> 1, 9 -> 1, 12 -> 1, 15 -> 1, 17 -> 1, 20 -> 1, 22 -> 1, 24 -> 1, 26 -> 1, 28 -> 1, 30 -> 1, 31 -> 1, ]",
     );
     return assert;
   }),
@@ -115,7 +115,7 @@ export const TESTS: Test[] = [
     );
     assert.isEqual(
       program.gasCosts.toString(),
-      "GasCosts[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+      "GasCosts[0 -> 3, 8 -> 1, 9 -> 2, 15 -> 4, 24 -> 4, 31 -> 1, ]",
     );
     return assert;
   }),
