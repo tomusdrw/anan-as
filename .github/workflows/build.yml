@@ -13,38 +13,38 @@ jobs:
   jamtestvectors:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build
-    - name: Checkout JAM test vectors
-      uses: actions/checkout@v4
-      with:
-        repository: FluffyLabs/jamtestvectors
-        path: "./jamtestvectors"
-        ref: ba76542dbf7a0c72d414a87ad2e30ce4da380448 # New test vectors.
-    - name: Run W3F tests (WASM)
-      run: npm run test:w3f ./jamtestvectors/pvm/programs/*.json
-    - name: Run W3F tests (portable JS)
-      run: npm run test:w3f-portable ./jamtestvectors/pvm/programs/*.json
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - name: Checkout JAM test vectors
+        uses: actions/checkout@v4
+        with:
+          repository: FluffyLabs/jamtestvectors
+          path: "./jamtestvectors"
+          ref: ba76542dbf7a0c72d414a87ad2e30ce4da380448 # New test vectors.
+      - name: Run W3F tests (WASM)
+        run: npm run test:w3f ./jamtestvectors/pvm/programs/*.json
+      - name: Run W3F tests (portable JS)
+        run: npm run test:w3f-portable ./jamtestvectors/pvm/programs/*.json
 
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run qa
-    - run: npm run build
-    - run: npm test --if-present
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run qa
+      - run: npm run build
+      - run: npm test --if-present
 
   benchmark:
     runs-on: ubuntu-latest
