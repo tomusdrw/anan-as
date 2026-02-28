@@ -238,7 +238,7 @@ function main() {
   };
 
   // Trace benchmarks
-  const traceDirs = [values.traces, "../anan-as2/bench/traces", "./bench/traces"].filter(Boolean) as string[];
+  const traceDirs = [values.traces, "./bench/traces"].filter(Boolean);
 
   let traceDir: string | null = null;
   for (const d of traceDirs) {
@@ -259,7 +259,7 @@ function main() {
   }
 
   // W3F benchmarks
-  const w3fDirs = [values.w3f, "./test/gas-cost-tests"].filter(Boolean) as string[];
+  const w3fDirs = [values.w3f, "./test/gas-cost-tests"].filter(Boolean);
 
   let w3fDir: string | null = null;
   for (const d of w3fDirs) {
