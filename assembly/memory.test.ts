@@ -225,8 +225,8 @@ export const TESTS: Test[] = [
     return assert;
   }),
   test("sbrk maxHeapPointer prevents heap from growing into stack region", (assert) => {
-    const heapStart: u32 = RESERVED_MEMORY;
     const stackStart: u32 = 0xfe000000;
+    const heapStart: u32 = stackStart - 300;
     const mem = new MemoryBuilder().build(heapStart, stackStart);
     const fault = new MaybePageFault();
     const maxHeapSize: u32 = stackStart - heapStart;

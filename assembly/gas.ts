@@ -1,43 +1,29 @@
 /** Gas type. */
-export type Gas = i64;
+export type Gas = u64;
 
-/** Create a new gas counter instance depending on the gas value. */
-export function gasCounter(gas: i64): GasCounter {
-  return new GasCounterU64(gas);
+/** Create a new gas counter instance. */
+export function gasCounter(gas: Gas): GasCounter {
+  return new GasCounter(gas);
 }
 
-/** An abstraction over gas counter.
- *
- * It can be optimized to use numbers instead of bigint in case of small gas.
- */
-export interface GasCounter {
-  /** Return remaining gas. */
-  get(): Gas;
-
-  /** Overwite remaining gas. Prefer sub method instead. */
-  set(g: Gas): void;
-
-  /** Returns true if there was an underflow. */
-  sub(g: Gas): boolean;
-}
-
-class GasCounterU64 implements GasCounter {
+export class GasCounter {
   constructor(private gas: Gas) {}
 
   set(g: Gas): void {
-    this.gas = i64(g);
+    this.gas = g;
   }
 
   get(): Gas {
     return this.gas;
   }
 
+  @inline
   sub(g: Gas): boolean {
-    this.gas = this.gas - i64(g);
-    if (this.gas < i64(0)) {
-      this.gas = i64(0);
+    if (g > this.gas) {
+      this.gas = u64(0);
       return true;
     }
+    this.gas = this.gas - g;
     return false;
   }
 }

@@ -1,5 +1,6 @@
 import { buildMemory, getAssembly, vmDestroy, vmExecute, vmInit, vmRunOnce } from "./api-internal";
 import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause, VmRunOptions } from "./api-types";
+import { Gas } from "./gas";
 import { BlockGasCost, computeGasCosts } from "./gas-costs";
 import { Interpreter } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
@@ -228,7 +229,7 @@ export function pvmWriteMemory(pvmId: u32, address: u32, data: Uint8Array): bool
 }
 
 /** Resume execution of paused VM. */
-export function pvmResume(pvmId: u32, gas: i64, pc: u32, logs: boolean = false): VmPause | null {
+export function pvmResume(pvmId: u32, gas: Gas, pc: u32, logs: boolean = false): VmPause | null {
   if (pvms.has(pvmId)) {
     const int = pvms.get(pvmId);
     int.nextPc = pc;

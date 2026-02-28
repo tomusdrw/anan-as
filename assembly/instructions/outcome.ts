@@ -18,7 +18,6 @@ export enum Outcome {
   Result = 3,
 }
 
-// @unmanaged
 export class OutcomeData {
   outcome: Outcome = Outcome.Ok;
   staticJump: i32 = 0;
@@ -46,8 +45,7 @@ export function dJump(r: OutcomeData, address: u32): OutcomeData {
 }
 
 export function ok(r: OutcomeData): OutcomeData {
-  r.outcome = Outcome.Ok;
-  r.dJump = 0;
+  // outcome is already pre-set to Ok by the interpreter loop
   return r;
 }
 

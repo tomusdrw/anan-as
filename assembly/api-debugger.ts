@@ -121,7 +121,7 @@ export function getGasLeft(): i64 {
   return int.gas.get();
 }
 
-export function setGasLeft(gas: i64): void {
+export function setGasLeft(gas: Gas): void {
   if (interpreter !== null) {
     const int = <Interpreter>interpreter;
     int.gas.set(gas);
