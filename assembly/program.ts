@@ -1,5 +1,6 @@
 import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
 import { Decoder } from "./codec";
+import { Gas } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { reg, u32SignExtend } from "./instructions/utils";
 import { portable } from "./portable";
@@ -42,7 +43,7 @@ export function lowerBytes(data: Uint8Array): u8[] {
 }
 
 /** https://graypaper.fluffylabs.dev/#/cc517d7/234f01234f01?v=0.6.5 */
-export function deblob(program: Uint8Array): Program {
+export function deblob(program: Uint8Array, useBlockGas: boolean): Program {
   const decoder = new Decoder(program);
 
   // number of items in the jump table
@@ -64,8 +65,9 @@ export function deblob(program: Uint8Array): Program {
   const mask = new Mask(rawMask, codeLength);
   const jumpTable = new JumpTable(jumpTableItemLength, rawJumpTable);
   const basicBlocks = new BasicBlocks(rawCode, mask);
+  const gasCosts = new GasCosts(rawCode, mask, basicBlocks, useBlockGas);
 
-  return new Program(rawCode, mask, jumpTable, basicBlocks);
+  return new Program(rawCode, mask, jumpTable, basicBlocks, gasCosts);
 }
 
 /**
@@ -126,6 +128,59 @@ export class Mask {
     let v = "Mask[";
     for (let i = 0; i < this.bytesToSkip.length; i += 1) {
       v += `${this.bytesToSkip[i]}, `;
+    }
+    return `${v}]`;
+  }
+}
+
+export class GasCosts {
+  readonly costs: StaticArray<Gas>;
+
+  constructor(code: u8[], mask: Mask, blocks: BasicBlocks, useBlockGasCost: boolean) {
+    const len = code.length;
+    const costs = new StaticArray<Gas>(len);
+    for (let n: i32 = 0; n < len; n += 1) {
+      const isInstructionInMask = mask.isInstruction(n);
+      if (!isInstructionInMask) {
+        continue;
+      }
+
+      const skipArgs = mask.skipBytesToNextInstruction(n);
+      const iData = code[n] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[n]];
+      costs[n] = iData.gas;
+      n += skipArgs;
+    }
+
+    // sum up costs per block
+    if (useBlockGasCost) {
+      let previousStart: u32 = 0;
+      let previousSum: u64 = 0;
+      for (let n: i32 = 0; n < len; n += 1) {
+        const current = costs[n];
+        costs[n] = 0;
+        if (blocks.isStart(n)) {
+          costs[previousStart] = previousSum;
+          previousSum = current;
+          previousStart = n;
+        } else {
+          previousSum = portable.u64_add(previousSum, current);
+        }
+
+        n += mask.skipBytesToNextInstruction(n);
+      }
+      // final assignment
+      costs[previousStart] = previousSum;
+    }
+
+    this.costs = costs;
+  }
+
+  toString(): string {
+    let v = "GasCosts[";
+    for (let i = 0; i < this.costs.length; i += 1) {
+      if (this.costs[i] !== 0) {
+        v += `${i} -> ${this.costs[i]}, `;
+      }
     }
     return `${v}]`;
   }
@@ -229,87 +284,16 @@ export class JumpTable {
 }
 
 export class Program {
-  /**
-   * Pre-computed gas cost per instruction, indexed by PC.
-   * Each instruction PC has its individual gas cost; 0 for non-instruction bytes.
-   */
-  public readonly gasCosts: StaticArray<u64>;
-
-  /**
-   * Pre-computed gas cost per basic block, indexed by PC.
-   * At block-start PCs, stores the total gas cost for the entire block; 0 elsewhere.
-   * Lazily computed on first access via `getBlockGasCosts()`.
-   */
-  private _blockGasCosts: StaticArray<u64> | null = null;
-
   constructor(
     public readonly code: u8[],
     public readonly mask: Mask,
     public readonly jumpTable: JumpTable,
     public readonly basicBlocks: BasicBlocks,
-  ) {
-    const len = code.length;
-    const gasCosts = new StaticArray<u64>(len);
-
-    for (let i = 0; i < len; i++) {
-      if (!mask.isInstruction(i)) {
-        continue;
-      }
-      const instruction = code[i];
-      const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
-      gasCosts[i] = iData.gas;
-      i += mask.skipBytesToNextInstruction(i);
-    }
-
-    this.gasCosts = gasCosts;
-  }
-
-  /** Lazily compute and return block-aggregated gas costs. */
-  getBlockGasCosts(): StaticArray<u64> {
-    if (this._blockGasCosts !== null) {
-      return this._blockGasCosts!;
-    }
-
-    const code = this.code;
-    const mask = this.mask;
-    const basicBlocks = this.basicBlocks;
-    const len = code.length;
-    const blockGasCosts = new StaticArray<u64>(len);
-
-    let blockStartPc: i32 = -1;
-    let blockGas: u64 = u64(0);
-
-    for (let i = 0; i < len; i++) {
-      if (!mask.isInstruction(i)) {
-        continue;
-      }
-
-      const instruction = code[i];
-      const iData = <i32>instruction < INSTRUCTIONS.length ? INSTRUCTIONS[instruction] : MISSING_INSTRUCTION;
-
-      if (basicBlocks.isStart(i)) {
-        if (blockStartPc >= 0) {
-          blockGasCosts[blockStartPc] = blockGas;
-        }
-        blockStartPc = i;
-        blockGas = iData.gas;
-      } else {
-        blockGas = portable.u64_add(blockGas, iData.gas);
-      }
-
-      i += mask.skipBytesToNextInstruction(i);
-    }
-
-    if (blockStartPc >= 0) {
-      blockGasCosts[blockStartPc] = blockGas;
-    }
-
-    this._blockGasCosts = blockGasCosts;
-    return blockGasCosts;
-  }
+    public readonly gasCosts: GasCosts,
+  ) {}
 
   toString(): string {
-    return `Program { code: ${this.code}, mask: ${this.mask}, jumpTable: ${this.jumpTable}, basicBlocks: ${this.basicBlocks} }`;
+    return `Program { code: ${this.code}, mask: ${this.mask}, jumpTable: ${this.jumpTable}, basicBlocks: ${this.basicBlocks}, gasCosts: ${this.gasCosts} }`;
   }
 }
 

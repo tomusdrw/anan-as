@@ -19,8 +19,6 @@ function instruction(name: string, kind: Arguments, gas: Gas, isTerminating: boo
 
 export const MISSING_INSTRUCTION = instruction("INVALID", Arguments.Zero, 1, false);
 
-export const SBRK = instruction("SBRK", Arguments.TwoReg, 1);
-
 export const INSTRUCTIONS: Instruction[] = [
   /* 000 */ instruction("TRAP", Arguments.Zero, 1, true),
   /* 001 */ instruction("FALLTHROUGH", Arguments.Zero, 1, true),
@@ -133,7 +131,7 @@ export const INSTRUCTIONS: Instruction[] = [
   MISSING_INSTRUCTION,
 
   /* 100 */ instruction("MOVE_REG", Arguments.TwoReg, 1),
-  /* 101 */ SBRK,
+  /* 101 */ instruction("SBRK", Arguments.TwoReg, 1),
   /* 102 */ instruction("COUNT_SET_BITS_64", Arguments.TwoReg, 1),
   /* 103 */ instruction("COUNT_SET_BITS_32", Arguments.TwoReg, 1),
   /* 104 */ instruction("LEADING_ZERO_BITS_64", Arguments.TwoReg, 1),

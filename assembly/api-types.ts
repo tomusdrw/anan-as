@@ -18,8 +18,6 @@ export class InitialChunk {
 }
 
 export class VmRunOptions {
-  useSbrkGas: boolean = false;
-  useBlockGas: boolean = false;
   logs: boolean = false;
   dumpMemory: boolean = false;
 }

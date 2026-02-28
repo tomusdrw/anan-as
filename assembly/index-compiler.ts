@@ -81,6 +81,7 @@ export function main(argsPtr: u32, argsLen: u32): void {
 
   // Parse SPI program and prepare memory layout
   const preallocateMemoryPages: u32 = 0;
+  const useBlockGas = true;
   const program = prepareProgram(
     InputKind.SPI,
     HasMetadata.Yes,
@@ -90,10 +91,11 @@ export function main(argsPtr: u32, argsLen: u32): void {
     [],
     innerArgs,
     preallocateMemoryPages,
+    useBlockGas,
   );
 
   // Run the program
-  const result = runProgram(program, gas, pc, false, false, false);
+  const result = runProgram(program, gas, pc, false, false);
 
   // Calculate exact result size: 1 (status) + 4 (exitCode) + 8 (gas) + 4 (pc) + ? (result data)
   const dataLen: u32 = <u32>result.result.length;

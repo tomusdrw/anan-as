@@ -21,13 +21,10 @@ export function resetJAM(
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = decodeSpi(code, liftBytes(args), 128);
+  const p = decodeSpi(code, liftBytes(args), 128, useBlockGas);
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
   int.gas.set(initialGas);
-  if (useBlockGas) {
-    int.gasCosts = int.program.getBlockGasCosts();
-  }
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -45,14 +42,11 @@ export function resetGeneric(
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = deblob(code);
+  const p = deblob(code, useBlockGas);
   const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
   int.gas.set(initialGas);
-  if (useBlockGas) {
-    int.gasCosts = int.program.getBlockGasCosts();
-  }
 
   if (interpreter !== null) {
     (<Interpreter>interpreter).memory.free();
@@ -72,7 +66,7 @@ export function resetGenericWithMemory(
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = deblob(code);
+  const p = deblob(code, useBlockGas);
   const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
 
@@ -81,9 +75,6 @@ export function resetGenericWithMemory(
 
   const int = new Interpreter(p, registers, memory);
   int.gas.set(initialGas);
-  if (useBlockGas) {
-    int.gasCosts = int.program.getBlockGasCosts();
-  }
 
   interpreter = int;
 }

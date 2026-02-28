@@ -75,7 +75,7 @@ export const TESTS: Test[] = [
       0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100,
       135, 51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
     ]);
-    const program = deblob(raw);
+    const program = deblob(raw, false);
     const assert = new Assert();
     assert.isEqual(
       program.mask.toString(),
@@ -85,6 +85,37 @@ export const TESTS: Test[] = [
     assert.isEqual(
       program.basicBlocks.toString(),
       "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+    );
+    assert.isEqual(
+      program.basicBlocks.toString(),
+      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+    );
+    assert.isEqual(
+      program.gasCosts.toString(),
+      "GasCosts[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+    );
+    return assert;
+  }),
+
+  test("should deblob with block gas costs", () => {
+    const raw = u8arr([
+      0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100,
+      135, 51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
+    ]);
+    const program = deblob(raw, true);
+    const assert = new Assert();
+    assert.isEqual(
+      program.mask.toString(),
+      "Mask[0, 2, 1, 0, 2, 1, 0, 1, 0, 0, 2, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, ]",
+    );
+    assert.isEqual(program.jumpTable.toString(), "JumpTable[]");
+    assert.isEqual(
+      program.basicBlocks.toString(),
+      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+    );
+    assert.isEqual(
+      program.gasCosts.toString(),
+      "GasCosts[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
     );
     return assert;
   }),

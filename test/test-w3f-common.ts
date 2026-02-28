@@ -62,7 +62,6 @@ export function runW3fTests(pvm: PvmModule) {
   const options: TestOptions = {
     isDebug: false,
     isSilent: false,
-    useSbrkGas: false,
   };
 
   run<PvmTest>((data, opts, filePath) => processW3f(pvm, data, opts, filePath), options);
@@ -106,7 +105,7 @@ function processW3f(pvm: PvmModule, data: PvmTest, options: TestOptions, _filePa
     [],
     16,
   );
-  const result = pvm.runProgram(exe, input.gas, input.pc, options.isDebug, options.useSbrkGas, true);
+  const result = pvm.runProgram(exe, input.gas, input.pc, options.isDebug, true);
   const status = statusAsString(result.status);
 
   // Normalize registers to plain unsigned BigInt array for comparison.

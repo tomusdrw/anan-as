@@ -71,12 +71,8 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
 }
 
 /** Initialize new VM for execution. */
-export function vmInit(input: VmInput, useSbrkGas: boolean = false, useBlockGas: boolean = false): Interpreter {
+export function vmInit(input: VmInput): Interpreter {
   const int = new Interpreter(input.program, input.registers, input.memory);
-  int.useSbrkGas = useSbrkGas;
-  if (useBlockGas) {
-    int.gasCosts = input.program.getBlockGasCosts();
-  }
   int.nextPc = input.pc;
   int.gas.set(input.gas);
   return int;
@@ -84,7 +80,7 @@ export function vmInit(input: VmInput, useSbrkGas: boolean = false, useBlockGas:
 
 /** Initialize & run & destroy a VM in a single go. */
 export function vmRunOnce(input: VmInput, options: VmRunOptions): VmOutput {
-  const int = vmInit(input, options.useSbrkGas, options.useBlockGas);
+  const int = vmInit(input);
   vmExecute(int, options.logs);
   return vmDestroy(int, options.dumpMemory);
 }
