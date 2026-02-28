@@ -76,7 +76,7 @@ jobs:
           npm ci
           npm run build
           npm run bench:baseline
-          cp ./bench/baseline.json ../baseline.json
+          cp ./bench/baseline.json ../../baseline.json
       # Run benchmarks on current PR
       - name: Run PR benchmark
         run: |
