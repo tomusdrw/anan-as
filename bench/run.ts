@@ -9,15 +9,15 @@
  *   tsx bench/run.ts [--traces <dir>] [--w3f <dir>] [--iterations <n>] [--warmup <n>]
  */
 
-import { readdirSync, existsSync, writeFileSync, readFileSync } from "node:fs";
-import { join, basename, resolve } from "node:path";
-import { parseArgs } from "node:util";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
+import { parseArgs } from "node:util";
 import "json-bigint-patch";
 
 import { replayTraceFile } from "../bin/src/trace-replay.js";
-import { HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
 import { NoOpTracer } from "../bin/src/tracer.js";
+import { HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
 
 // ---- CLI ----
 
@@ -46,8 +46,8 @@ Options:
   process.exit(0);
 }
 
-const ITERATIONS = parseInt(values.iterations!, 10);
-const WARMUP = parseInt(values.warmup!, 10);
+const ITERATIONS = parseInt(values.iterations ?? "5", 10);
+const WARMUP = parseInt(values.warmup ?? "1", 10);
 
 // Validate iterations and warmup
 if (!Number.isInteger(ITERATIONS) || ITERATIONS < 1) {
@@ -55,7 +55,9 @@ if (!Number.isInteger(ITERATIONS) || ITERATIONS < 1) {
   process.exit(1);
 }
 if (!Number.isInteger(WARMUP) || WARMUP < 0 || WARMUP >= ITERATIONS) {
-  console.error(`Error: Invalid warmup value: ${values.warmup}. Must be an integer >= 0 and < iterations (${ITERATIONS}).`);
+  console.error(
+    `Error: Invalid warmup value: ${values.warmup}. Must be an integer >= 0 and < iterations (${ITERATIONS}).`,
+  );
   process.exit(1);
 }
 // ---- Types ----
@@ -211,16 +213,7 @@ function benchW3f(dir: string): BenchResult | null {
       const gas = BigInt(data["initial-gas"] || 10000);
       const pc = data["initial-pc"] || 0;
 
-      const exe = prepareProgram(
-        InputKind.Generic,
-        HasMetadata.No,
-        data.program,
-        registers,
-        pageMap,
-        memory,
-        [],
-        16,
-      );
+      const exe = prepareProgram(InputKind.Generic, HasMetadata.No, data.program, registers, pageMap, memory, [], 16);
       runProgram(exe, gas, pc, false, false, false, values["block-gas"]);
     }
   });
@@ -245,15 +238,11 @@ function main() {
   };
 
   // Trace benchmarks
-  const traceDirs = [
-    values.traces,
-    "../anan-as2/bench/traces",
-    "./bench/traces",
-  ].filter(Boolean);
+  const traceDirs = [values.traces, "../anan-as2/bench/traces", "./bench/traces"].filter(Boolean) as string[];
 
   let traceDir: string | null = null;
   for (const d of traceDirs) {
-    const resolved = resolve(d!);
+    const resolved = resolve(d);
     if (existsSync(resolved)) {
       traceDir = resolved;
       break;
@@ -263,26 +252,18 @@ function main() {
   if (traceDir) {
     console.log(`Trace replays (${traceDir}):`);
     suiteResult.traces = benchTraces(traceDir);
-    suiteResult.summary.totalTraceMedianMs = suiteResult.traces.reduce(
-      (sum, r) => sum + r.medianMs,
-      0,
-    );
-    console.log(
-      `\n  TOTAL trace median: ${suiteResult.summary.totalTraceMedianMs.toFixed(1)}ms\n`,
-    );
+    suiteResult.summary.totalTraceMedianMs = suiteResult.traces.reduce((sum, r) => sum + r.medianMs, 0);
+    console.log(`\n  TOTAL trace median: ${suiteResult.summary.totalTraceMedianMs.toFixed(1)}ms\n`);
   } else {
     console.log("No trace directory found. Skipping trace benchmarks.");
   }
 
   // W3F benchmarks
-  const w3fDirs = [
-    values.w3f,
-    "./test/gas-cost-tests",
-  ].filter(Boolean);
+  const w3fDirs = [values.w3f, "./test/gas-cost-tests"].filter(Boolean) as string[];
 
   let w3fDir: string | null = null;
   for (const d of w3fDirs) {
-    const resolved = resolve(d!);
+    const resolved = resolve(d);
     if (existsSync(resolved)) {
       w3fDir = resolved;
       break;

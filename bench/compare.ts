@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
  * Benchmark Comparison Tool
- * 
+ *
  * Compares two benchmark result JSON files and reports regressions/improvements.
- * 
+ *
  * Usage:
  *   tsx bench/compare.ts <baseline.json> <results.json> [--threshold <percent>]
- * 
+ *
  * Options:
  *   --threshold <n>   Regression threshold as percentage (default: 5%)
  *   --verbose         Show detailed per-trace comparison
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -36,7 +36,7 @@ Options:
 }
 
 const [baselinePath, resultsPath] = positionals;
-const threshold = parseFloat(values.threshold!);
+const threshold = parseFloat(values.threshold ?? "5");
 
 // Validate threshold
 if (!Number.isFinite(threshold) || threshold < 0) {
@@ -81,12 +81,8 @@ const baselineSuite = baseline as SuiteResult;
 const resultsSuite = results as SuiteResult;
 
 // Build maps for easy lookup
-const baselineTraces = new Map(
-  baselineSuite.traces.map((t) => [t.name, t])
-);
-const resultsTraces = new Map(
-  resultsSuite.traces.map((t) => [t.name, t])
-);
+const baselineTraces = new Map(baselineSuite.traces.map((t) => [t.name, t]));
+const resultsTraces = new Map(resultsSuite.traces.map((t) => [t.name, t]));
 
 interface Comparison {
   name: string;
@@ -98,8 +94,8 @@ interface Comparison {
 }
 
 const comparisons: Comparison[] = [];
-let regressions: Comparison[] = [];
-let improvements: Comparison[] = [];
+const regressions: Comparison[] = [];
+const improvements: Comparison[] = [];
 
 // Compare traces
 for (const [name, baselineTrace] of baselineTraces) {
@@ -110,11 +106,11 @@ for (const [name, baselineTrace] of baselineTraces) {
   }
 
   const diffMs = currentTrace.medianMs - baselineTrace.medianMs;
-  
+
   // Guard against division by zero
   let diffPercent: number;
   if (baselineTrace.medianMs === 0) {
-    diffPercent = diffMs === 0 ? 0 : (diffMs > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+    diffPercent = diffMs === 0 ? 0 : diffMs > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
   } else {
     diffPercent = (diffMs / baselineTrace.medianMs) * 100;
   }
@@ -163,40 +159,33 @@ console.log(`Threshold: ${threshold}%\n`);
 
 console.log("--- Summary ---\n");
 console.log(
-  `Total trace time: ${baselineSuite.summary.totalTraceMedianMs.toFixed(1)}ms -> ${resultsSuite.summary.totalTraceMedianMs.toFixed(1)}ms`
+  `Total trace time: ${baselineSuite.summary.totalTraceMedianMs.toFixed(1)}ms -> ${resultsSuite.summary.totalTraceMedianMs.toFixed(1)}ms`,
 );
-const totalDiff =
-  resultsSuite.summary.totalTraceMedianMs -
-  baselineSuite.summary.totalTraceMedianMs;
+const totalDiff = resultsSuite.summary.totalTraceMedianMs - baselineSuite.summary.totalTraceMedianMs;
 
 // Guard against division by zero
 let totalDiffPercent: number;
 if (baselineSuite.summary.totalTraceMedianMs === 0) {
-  totalDiffPercent = totalDiff === 0 ? 0 : (totalDiff > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+  totalDiffPercent = totalDiff === 0 ? 0 : totalDiff > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
 } else {
   totalDiffPercent = (totalDiff / baselineSuite.summary.totalTraceMedianMs) * 100;
 }
-console.log(
-  `Difference:     ${totalDiff >= 0 ? "+" : ""}${totalDiff.toFixed(1)}ms (${totalDiffPercent.toFixed(2)}%)`
-);
+console.log(`Difference:     ${totalDiff >= 0 ? "+" : ""}${totalDiff.toFixed(1)}ms (${totalDiffPercent.toFixed(2)}%)`);
 
 if (baselineSuite.w3f && resultsSuite.w3f) {
-  const w3fDiff =
-    resultsSuite.w3f.medianMs - baselineSuite.w3f.medianMs;
-  
+  const w3fDiff = resultsSuite.w3f.medianMs - baselineSuite.w3f.medianMs;
+
   // Guard against division by zero
   let w3fDiffPercent: number;
   if (baselineSuite.w3f.medianMs === 0) {
-    w3fDiffPercent = w3fDiff === 0 ? 0 : (w3fDiff > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+    w3fDiffPercent = w3fDiff === 0 ? 0 : w3fDiff > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
   } else {
     w3fDiffPercent = (w3fDiff / baselineSuite.w3f.medianMs) * 100;
   }
   console.log(
-    `\nW3F suite:      ${baselineSuite.w3f.medianMs.toFixed(1)}ms -> ${resultsSuite.w3f.medianMs.toFixed(1)}ms`
+    `\nW3F suite:      ${baselineSuite.w3f.medianMs.toFixed(1)}ms -> ${resultsSuite.w3f.medianMs.toFixed(1)}ms`,
   );
-  console.log(
-    `Difference:     ${w3fDiff >= 0 ? "+" : ""}${w3fDiff.toFixed(1)}ms (${w3fDiffPercent.toFixed(2)}%)`
-  );
+  console.log(`Difference:     ${w3fDiff >= 0 ? "+" : ""}${w3fDiff.toFixed(1)}ms (${w3fDiffPercent.toFixed(2)}%)`);
 }
 
 console.log(`\nRegressions: ${regressions.length}`);
@@ -205,18 +194,14 @@ console.log(`Improvements: ${improvements.length}`);
 if (regressions.length > 0) {
   console.log("\n--- Regressions (worst first) ---\n");
   for (const r of regressions) {
-    console.log(
-      `  ${r.name.padEnd(40)} ${r.currentMs.toFixed(1).padStart(8)}ms  (+${r.diffPercent.toFixed(1)}%)`
-    );
+    console.log(`  ${r.name.padEnd(40)} ${r.currentMs.toFixed(1).padStart(8)}ms  (+${r.diffPercent.toFixed(1)}%)`);
   }
 }
 
 if (improvements.length > 0) {
   console.log("\n--- Improvements ---\n");
   for (const i of improvements) {
-    console.log(
-      `  ${i.name.padEnd(40)} ${i.currentMs.toFixed(1).padStart(8)}ms  (${i.diffPercent.toFixed(1)}%)`
-    );
+    console.log(`  ${i.name.padEnd(40)} ${i.currentMs.toFixed(1).padStart(8)}ms  (${i.diffPercent.toFixed(1)}%)`);
   }
 }
 
@@ -227,7 +212,7 @@ if (values.verbose && comparisons.length > 0) {
     const sign = c.diffMs >= 0 ? "+" : "";
     const marker = c.status === "regression" ? "⚠️" : c.status === "improvement" ? "✓" : " ";
     console.log(
-      `  ${marker} ${c.name.padEnd(40)} ${c.baselineMs.toFixed(1).padStart(7)}ms -> ${c.currentMs.toFixed(1).padStart(7)}ms  (${sign}${c.diffPercent.toFixed(1)}%)`
+      `  ${marker} ${c.name.padEnd(40)} ${c.baselineMs.toFixed(1).padStart(7)}ms -> ${c.currentMs.toFixed(1).padStart(7)}ms  (${sign}${c.diffPercent.toFixed(1)}%)`,
     );
   }
 }

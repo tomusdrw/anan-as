@@ -43,7 +43,7 @@
     }
   },
   "files": {
-    "includes": ["**/assembly/**/*", "**/bin/**/*", "**/test/**/*", "!dist", "!web/build"]
+    "includes": ["**/assembly/**/*", "**/bin/**/*", "**/test/**/*", "**/bench/**/*", "!dist", "!web/build"]
   },
   "overrides": [
     {
