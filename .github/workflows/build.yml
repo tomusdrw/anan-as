@@ -87,9 +87,9 @@ jobs:
       # Compare results and post PR comment
       - name: Compare benchmarks
         run: |
-          npm run bench:compare ../baseline.json ../results.json -- --threshold 100 --markdown ../bench-comment.md
+          npm run bench:compare ../baseline.json ../results.json -- --threshold 100 --markdown ./bench-comment.md
       - name: Post benchmark comment
-        if: always() && hashFiles('../bench-comment.md') != ''
+        if: always() && hashFiles('bench-comment.md') != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -99,4 +99,4 @@ jobs:
           if [ -n "$COMMENT_ID" ]; then
             gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X DELETE
           fi
-          gh pr comment ${{ github.event.pull_request.number }} --body-file ../bench-comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file ./bench-comment.md
