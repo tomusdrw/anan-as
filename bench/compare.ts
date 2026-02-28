@@ -12,7 +12,7 @@
  *   --verbose         Show detailed per-trace comparison
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -20,6 +20,7 @@ const { values, positionals } = parseArgs({
   options: {
     threshold: { type: "string", short: "t", default: "5" },
     verbose: { type: "boolean", short: "v", default: false },
+    markdown: { type: "string", short: "m", default: "" },
     help: { type: "boolean", short: "h", default: false },
   },
   allowPositionals: true,
@@ -217,6 +218,22 @@ if (values.verbose && comparisons.length > 0) {
   }
 }
 
+// Write markdown report
+if (values.markdown) {
+  const md = formatMarkdown(
+    baselineSuite,
+    resultsSuite,
+    comparisons,
+    regressions,
+    improvements,
+    totalDiff,
+    totalDiffPercent,
+    threshold,
+  );
+  writeFileSync(resolve(values.markdown), md);
+  console.log(`\nMarkdown report written to ${values.markdown}`);
+}
+
 // Exit code
 if (regressions.length > 0) {
   console.log("\n❌ FAILED: Regressions detected above threshold\n");
@@ -227,4 +244,74 @@ if (regressions.length > 0) {
 } else {
   console.log("\n✅ PASSED: No regressions or improvements beyond threshold\n");
   process.exit(0);
+}
+
+function formatMarkdown(
+  base: SuiteResult,
+  current: SuiteResult,
+  all: Comparison[],
+  regs: Comparison[],
+  imps: Comparison[],
+  totalDiffMs: number,
+  totalDiffPct: number,
+  thresh: number,
+): string {
+  const sign = (n: number) => (n >= 0 ? "+" : "");
+  const status =
+    regs.length > 0
+      ? `### :warning: ${regs.length} regression(s) detected (>${thresh}% threshold)`
+      : imps.length > 0
+        ? "### :white_check_mark: No regressions (improvements detected)"
+        : "### :white_check_mark: No significant changes";
+
+  let md = "## Benchmark Results\n\n";
+  md += `${status}\n\n`;
+
+  // Summary table
+  md += "| Metric | Baseline | Current | Change |\n";
+  md += "|--------|----------|---------|--------|\n";
+  md += `| **Trace total** | ${base.summary.totalTraceMedianMs.toFixed(1)}ms | ${current.summary.totalTraceMedianMs.toFixed(1)}ms | ${sign(totalDiffMs)}${totalDiffMs.toFixed(1)}ms (${sign(totalDiffPct)}${totalDiffPct.toFixed(1)}%) |\n`;
+
+  if (base.w3f && current.w3f) {
+    const w3fDiff = current.w3f.medianMs - base.w3f.medianMs;
+    const w3fPct = base.w3f.medianMs === 0 ? 0 : (w3fDiff / base.w3f.medianMs) * 100;
+    md += `| **W3F suite** | ${base.w3f.medianMs.toFixed(1)}ms | ${current.w3f.medianMs.toFixed(1)}ms | ${sign(w3fDiff)}${w3fDiff.toFixed(1)}ms (${sign(w3fPct)}${w3fPct.toFixed(1)}%) |\n`;
+  }
+
+  // Regressions
+  if (regs.length > 0) {
+    md += "\n<details><summary>Regressions (worst first)</summary>\n\n";
+    md += "| Trace | Baseline | Current | Change |\n";
+    md += "|-------|----------|---------|--------|\n";
+    for (const r of regs) {
+      md += `| ${r.name} | ${r.baselineMs.toFixed(1)}ms | ${r.currentMs.toFixed(1)}ms | +${r.diffPercent.toFixed(1)}% |\n`;
+    }
+    md += "\n</details>\n";
+  }
+
+  // Improvements
+  if (imps.length > 0) {
+    md += "\n<details><summary>Improvements</summary>\n\n";
+    md += "| Trace | Baseline | Current | Change |\n";
+    md += "|-------|----------|---------|--------|\n";
+    for (const i of imps) {
+      md += `| ${i.name} | ${i.baselineMs.toFixed(1)}ms | ${i.currentMs.toFixed(1)}ms | ${i.diffPercent.toFixed(1)}% |\n`;
+    }
+    md += "\n</details>\n";
+  }
+
+  // All traces
+  if (all.length > 0) {
+    const sorted = [...all].sort((a, b) => Math.abs(b.diffPercent) - Math.abs(a.diffPercent));
+    md += "\n<details><summary>All traces</summary>\n\n";
+    md += "| Trace | Baseline | Current | Change |\n";
+    md += "|-------|----------|---------|--------|\n";
+    for (const c of sorted) {
+      const icon = c.status === "regression" ? ":warning:" : c.status === "improvement" ? ":white_check_mark:" : "";
+      md += `| ${icon} ${c.name} | ${c.baselineMs.toFixed(1)}ms | ${c.currentMs.toFixed(1)}ms | ${sign(c.diffPercent)}${c.diffPercent.toFixed(1)}% |\n`;
+    }
+    md += "\n</details>\n";
+  }
+
+  return md;
 }

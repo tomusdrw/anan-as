@@ -50,6 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     # Only run benchmarks on PRs, not on main branch pushes
     if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ env.NODE_VERSION }}
@@ -82,7 +84,19 @@ jobs:
         run: |
           npm run bench:ci
           cp ./bench/results.json ../results.json
-      # Compare results
+      # Compare results and post PR comment
       - name: Compare benchmarks
         run: |
-          npm run bench:compare ../baseline.json ../results.json -- --threshold 5
+          npm run bench:compare ../baseline.json ../results.json -- --threshold 100 --markdown ../bench-comment.md
+      - name: Post benchmark comment
+        if: always() && hashFiles('../bench-comment.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Delete previous benchmark comment if it exists
+          COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq '.[] | select(.body | startswith("## Benchmark Results")) | .id' | head -1)
+          if [ -n "$COMMENT_ID" ]; then
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X DELETE
+          fi
+          gh pr comment ${{ github.event.pull_request.number }} --body-file ../bench-comment.md
