@@ -176,6 +176,7 @@ if (baselineSuite.summary.totalTraceMedianMs === 0) {
 } else {
   totalDiffPercent = (totalDiff / baselineSuite.summary.totalTraceMedianMs) * 100;
 }
+console.log(
   `Difference:     ${totalDiff >= 0 ? "+" : ""}${totalDiff.toFixed(1)}ms (${totalDiffPercent.toFixed(2)}%)`
 );
 
@@ -190,6 +191,7 @@ if (baselineSuite.w3f && resultsSuite.w3f) {
   } else {
     w3fDiffPercent = (w3fDiff / baselineSuite.w3f.medianMs) * 100;
   }
+  console.log(
     `\nW3F suite:      ${baselineSuite.w3f.medianMs.toFixed(1)}ms -> ${resultsSuite.w3f.medianMs.toFixed(1)}ms`
   );
   console.log(
