@@ -151,7 +151,6 @@ function benchTraces(dir: string): BenchResult[] {
         hasMetadata: HasMetadata.Yes,
         verify: false,
         tracer: new NoOpTracer(),
-        useBlockGas: values["block-gas"],
       });
     });
 
@@ -214,7 +213,7 @@ function benchW3f(dir: string): BenchResult | null {
       const pc = data["initial-pc"] || 0;
 
       const exe = prepareProgram(InputKind.Generic, HasMetadata.No, data.program, registers, pageMap, memory, [], 16);
-      runProgram(exe, gas, pc, false, false, false, values["block-gas"]);
+      runProgram(exe, gas, pc, false, false, false);
     }
   });
 
