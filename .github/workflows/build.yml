@@ -75,8 +75,12 @@ jobs:
           cd ./baseline
           npm ci
           npm run build
-          npm run bench:baseline
-          cp ./bench/baseline.json ../baseline.json
+          if npm run bench:baseline 2>/dev/null; then
+            cp ./bench/baseline.json ../baseline.json
+          else
+            echo "bench:baseline script not found on base branch, skipping comparison"
+            echo '{}' > ../baseline.json
+          fi
       # Run benchmarks on current PR
       - name: Run PR benchmark
         run: |

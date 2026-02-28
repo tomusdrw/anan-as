@@ -24,9 +24,6 @@ export class GasCounter {
       return true;
     }
     this.gas = this.gas - g;
-    if (this.gas === u64(0)) {
-      return true;
-    }
     return false;
   }
 }
