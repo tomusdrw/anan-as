@@ -63,24 +63,26 @@ jobs:
           echo "BASE_BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
       - run: npm ci
       - run: npm run build
-        # Checkout base branch for baseline
+      # Checkout base branch for baseline
       - name: Checkout base branch for baseline
         uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
           path: ./baseline
-            # Run benchmarks on baseline
+      # Run benchmarks on baseline
       - name: Run baseline benchmark
         run: |
           cd ./baseline
+          npm ci
+          npm run build
           npm run bench:baseline
           cp ./bench/baseline.json ../baseline.json
-          # Run benchmarks on current PR
+      # Run benchmarks on current PR
       - name: Run PR benchmark
         run: |
           npm run bench:ci
           cp ./bench/results.json ../results.json
-          # Compare results
+      # Compare results
       - name: Compare benchmarks
         run: |
           npm run bench:compare ../baseline.json ../results.json -- --threshold 5

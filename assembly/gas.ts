@@ -1,8 +1,8 @@
 /** Gas type. */
-export type Gas = i64;
+export type Gas = u64;
 
 /** Create a new gas counter instance. */
-export function gasCounter(gas: i64): GasCounter {
+export function gasCounter(gas: Gas): GasCounter {
   return new GasCounter(gas);
 }
 
@@ -10,7 +10,7 @@ export class GasCounter {
   constructor(private gas: Gas) {}
 
   set(g: Gas): void {
-    this.gas = i64(g);
+    this.gas = g;
   }
 
   get(): Gas {
@@ -19,9 +19,12 @@ export class GasCounter {
 
   @inline
   sub(g: Gas): boolean {
-    this.gas = this.gas - i64(g);
-    if (this.gas < i64(0)) {
-      this.gas = i64(0);
+    if (g > this.gas) {
+      this.gas = u64(0);
+      return true;
+    }
+    this.gas = this.gas - g;
+    if (this.gas === u64(0)) {
       return true;
     }
     return false;

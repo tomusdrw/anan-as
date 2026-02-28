@@ -48,6 +48,15 @@ Options:
 const ITERATIONS = parseInt(values.iterations!, 10);
 const WARMUP = parseInt(values.warmup!, 10);
 
+// Validate iterations and warmup
+if (!Number.isInteger(ITERATIONS) || ITERATIONS < 1) {
+  console.error(`Error: Invalid iterations value: ${values.iterations}. Must be an integer >= 1.`);
+  process.exit(1);
+}
+if (!Number.isInteger(WARMUP) || WARMUP < 0 || WARMUP >= ITERATIONS) {
+  console.error(`Error: Invalid warmup value: ${values.warmup}. Must be an integer >= 0 and < iterations (${ITERATIONS}).`);
+  process.exit(1);
+}
 // ---- Types ----
 
 type BenchResult = {
@@ -97,13 +106,15 @@ function benchRun(name: string, fn: () => void): BenchResult {
     samples.push(elapsed);
   }
 
+  // Guard against empty samples
+  if (samples.length === 0) {
+    throw new Error(`No samples collected for benchmark: ${name}`);
+  }
+
   const med = median(samples);
   const min = Math.min(...samples);
   const max = Math.max(...samples);
   const p95 = percentile(samples, 95);
-
-  return { name, medianMs: med, minMs: min, maxMs: max, p95Ms: p95, samples };
-}
 
 function formatResult(r: BenchResult): string {
   return `  ${r.name.padEnd(40)} median=${r.medianMs.toFixed(1)}ms  min=${r.minMs.toFixed(1)}ms  max=${r.maxMs.toFixed(1)}ms  p95=${r.p95Ms.toFixed(1)}ms`;

@@ -38,6 +38,11 @@ Options:
 const [baselinePath, resultsPath] = positionals;
 const threshold = parseFloat(values.threshold!);
 
+// Validate threshold
+if (!Number.isFinite(threshold) || threshold < 0) {
+  console.error(`Error: Invalid threshold value: ${values.threshold}. Must be a non-negative number.`);
+  process.exit(1);
+}
 const baselineFile = resolve(baselinePath);
 const resultsFile = resolve(resultsPath);
 
@@ -105,8 +110,14 @@ for (const [name, baselineTrace] of baselineTraces) {
   }
 
   const diffMs = currentTrace.medianMs - baselineTrace.medianMs;
-  const diffPercent = (diffMs / baselineTrace.medianMs) * 100;
-
+  
+  // Guard against division by zero
+  let diffPercent: number;
+  if (baselineTrace.medianMs === 0) {
+    diffPercent = diffMs === 0 ? 0 : (diffMs > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+  } else {
+    diffPercent = (diffMs / baselineTrace.medianMs) * 100;
+  }
   let status: "improvement" | "regression" | "neutral" = "neutral";
   if (diffPercent > threshold) {
     status = "regression";
@@ -157,16 +168,28 @@ console.log(
 const totalDiff =
   resultsSuite.summary.totalTraceMedianMs -
   baselineSuite.summary.totalTraceMedianMs;
-const totalDiffPercent = (totalDiff / baselineSuite.summary.totalTraceMedianMs) * 100;
-console.log(
+
+// Guard against division by zero
+let totalDiffPercent: number;
+if (baselineSuite.summary.totalTraceMedianMs === 0) {
+  totalDiffPercent = totalDiff === 0 ? 0 : (totalDiff > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+} else {
+  totalDiffPercent = (totalDiff / baselineSuite.summary.totalTraceMedianMs) * 100;
+}
   `Difference:     ${totalDiff >= 0 ? "+" : ""}${totalDiff.toFixed(1)}ms (${totalDiffPercent.toFixed(2)}%)`
 );
 
 if (baselineSuite.w3f && resultsSuite.w3f) {
   const w3fDiff =
     resultsSuite.w3f.medianMs - baselineSuite.w3f.medianMs;
-  const w3fDiffPercent = (w3fDiff / baselineSuite.w3f.medianMs) * 100;
-  console.log(
+  
+  // Guard against division by zero
+  let w3fDiffPercent: number;
+  if (baselineSuite.w3f.medianMs === 0) {
+    w3fDiffPercent = w3fDiff === 0 ? 0 : (w3fDiff > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+  } else {
+    w3fDiffPercent = (w3fDiff / baselineSuite.w3f.medianMs) * 100;
+  }
     `\nW3F suite:      ${baselineSuite.w3f.medianMs.toFixed(1)}ms -> ${resultsSuite.w3f.medianMs.toFixed(1)}ms`
   );
   console.log(

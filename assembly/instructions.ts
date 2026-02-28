@@ -4,7 +4,7 @@ import { Gas } from "./gas";
 export class Instruction {
   name: string = "";
   kind: Arguments = Arguments.Zero;
-  gas: Gas = i64(0);
+  gas: Gas = u64(0);
   isTerminating: boolean = false;
 }
 
@@ -12,7 +12,7 @@ function instruction(name: string, kind: Arguments, gas: Gas, isTerminating: boo
   const i = new Instruction();
   i.name = name;
   i.kind = kind;
-  i.gas = i64(gas);
+  i.gas = u64(gas);
   i.isTerminating = isTerminating;
   return i;
 }
