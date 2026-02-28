@@ -216,7 +216,7 @@ function benchW3f(dir: string): BenchResult | null {
         [],
         16,
       );
-      runProgram(exe, gas, pc, false, false, true);
+      runProgram(exe, gas, pc, false, false, false);
     }
   });
 
