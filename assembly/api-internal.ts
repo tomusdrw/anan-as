@@ -1,11 +1,14 @@
 import { InitialChunk, InitialPage, VmInput, VmOutput, VmRunOptions } from "./api-types";
 import { Args, RELEVANT_ARGS } from "./arguments";
+import { FastInterpreter } from "./fast-interpreter";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Interpreter, Status } from "./interpreter";
 import { MaybePageFault, Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, RESERVED_MEMORY } from "./memory-page";
 import { portable } from "./portable";
-import { decodeArguments, Program, resolveArguments } from "./program";
+import { decodeArguments, PrecompiledProgram, Program, resolveArguments } from "./program";
+import { Pvm } from "./pvm";
+import { Registers } from "./registers";
 
 export function getAssembly(p: Program): string {
   const len = p.code.length;
@@ -71,10 +74,16 @@ export function buildMemory(builder: MemoryBuilder, pages: InitialPage[], chunks
 }
 
 /** Initialize new VM for execution. */
-export function vmInit(input: VmInput): Interpreter {
+export function vmInit(input: VmInput): Pvm {
   const int = new Interpreter(input.program, input.registers, input.memory);
   int.nextPc = input.pc;
   int.gas.set(input.gas);
+  return int;
+}
+
+/** Initialize new FastInterpreter VM from a PrecompiledProgram. */
+export function vmInitFast(precompiled: PrecompiledProgram, registers: Registers, memory: Memory): Pvm {
+  const int = new FastInterpreter(precompiled, registers, memory);
   return int;
 }
 
@@ -85,25 +94,30 @@ export function vmRunOnce(input: VmInput, options: VmRunOptions): VmOutput {
   return vmDestroy(int, options.dumpMemory);
 }
 
-export function vmExecute(int: Interpreter, logs: boolean = false): void {
+export function vmExecute(int: Pvm, logs: boolean = false): void {
+  // Fast path: run all steps at once when logging is disabled
+  if (!logs) {
+    while (int.nextSteps(u32.MAX_VALUE)) {}
+    return;
+  }
+
   let isOk = true;
   const argsRes = new Args();
 
   for (;;) {
     if (!isOk) {
-      if (logs)
-        console.log(`REGISTERS (final) = [${int.registers.map((x: u64) => `${x} (0x${x.toString(16)})`).join(", ")}]`);
-      if (logs) console.log(`Finished with status: ${int.status}`);
-      if (logs) console.log(`Exit code: ${int.exitCode}`);
+      console.log(`REGISTERS (final) = [${int.registers.map((x: u64) => `${x} (0x${x.toString(16)})`).join(", ")}]`);
+      console.log(`Finished with status: ${int.status}`);
+      console.log(`Exit code: ${int.exitCode}`);
       break;
     }
 
-    if (logs) console.log(`PC = ${int.pc}`);
-    if (logs) console.log(`GAS = ${int.gas.get()}`);
-    if (logs) console.log(`STATUS = ${int.status}`);
-    if (logs) console.log(`REGISTERS = [${int.registers.map((x: u64) => `${x} (0x${x.toString(16)})`).join(", ")}]`);
+    console.log(`PC = ${int.pc}`);
+    console.log(`GAS = ${int.gas.get()}`);
+    console.log(`STATUS = ${int.status}`);
+    console.log(`REGISTERS = [${int.registers.map((x: u64) => `${x} (0x${x.toString(16)})`).join(", ")}]`);
 
-    if (logs && int.pc < u32(int.program.code.length)) {
+    if (int.pc < u32(int.program.code.length)) {
       const instruction = int.program.code[int.pc];
       const iData = instruction >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[instruction];
       const skipBytes = int.program.mask.skipBytesToNextInstruction(int.pc);
@@ -117,12 +131,12 @@ export function vmExecute(int: Interpreter, logs: boolean = false): void {
       }
     }
 
-    isOk = int.nextSteps();
+    isOk = int.nextSteps(1);
   }
 }
 
 /** Destroy a running VM and consume the output. */
-export function vmDestroy(int: Interpreter, dumpMemory: boolean = false): VmOutput {
+export function vmDestroy(int: Pvm, dumpMemory: boolean = false): VmOutput {
   const output = new VmOutput();
   output.status = int.status;
   output.registers = int.registers.slice(0);
@@ -138,7 +152,7 @@ export function vmDestroy(int: Interpreter, dumpMemory: boolean = false): VmOutp
   return output;
 }
 
-function readResult(int: Interpreter): u8[] {
+function readResult(int: Pvm): u8[] {
   if (int.status !== Status.HALT) {
     return [];
   }

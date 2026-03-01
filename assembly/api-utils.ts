@@ -1,9 +1,9 @@
-import { buildMemory, getAssembly, vmDestroy, vmExecute, vmInit, vmRunOnce } from "./api-internal";
+import { buildMemory, getAssembly, vmDestroy, vmExecute, vmInit, vmInitFast, vmRunOnce } from "./api-internal";
 import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause, VmRunOptions } from "./api-types";
 import { Gas } from "./gas";
-import { Interpreter } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
-import { deblob, extractCodeAndMetadata, liftBytes, ProgramCounter } from "./program";
+import { deblob, deblobFast, extractCodeAndMetadata, liftBytes, ProgramCounter } from "./program";
+import { Pvm } from "./pvm";
 import { NO_OF_REGISTERS, newRegisters, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
 
@@ -70,6 +70,8 @@ export function prepareProgram(
   preallocateMemoryPages: u32,
   /** Compute gas per-block instead of per-instruction. */
   useBlockGas: boolean,
+  /** Use FastInterpreter with pre-compiled instruction tape. */
+  useFast: boolean = false,
 ): StandardProgram {
   let code = liftBytes(program);
   let metadata = new Uint8Array(0);
@@ -84,6 +86,7 @@ export function prepareProgram(
 
   if (kind === InputKind.Generic) {
     const program = deblob(code, useBlockGas);
+    const precompiled = useFast ? deblobFast(code, useBlockGas) : null;
 
     const builder = new MemoryBuilder(preallocateMemoryPages);
     const memory = buildMemory(builder, initialPageMap, initialMemory);
@@ -96,12 +99,13 @@ export function prepareProgram(
 
     const exe: StandardProgram = new StandardProgram(program, memory, registers);
     exe.metadata = metadata;
+    exe.precompiled = precompiled;
 
     return exe;
   }
 
   if (kind === InputKind.SPI) {
-    const exe = decodeSpi(code, liftBytes(args), preallocateMemoryPages);
+    const exe = decodeSpi(code, liftBytes(args), preallocateMemoryPages, useBlockGas, useFast);
     exe.metadata = metadata;
     return exe;
   }
@@ -131,7 +135,7 @@ export function runProgram(
 /** Next available pvm id. */
 let nextPvmId: u32 = 0;
 /** Currently allocated pvms. */
-const pvms = new Map<u32, Interpreter>();
+const pvms = new Map<u32, Pvm>();
 
 /**
  * Allocate new PVM instance to execute given program.
@@ -142,7 +146,12 @@ export function pvmStart(program: StandardProgram): u32 {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
 
   nextPvmId += 1;
-  pvms.set(nextPvmId, vmInit(vmInput));
+  const precompiled = program.precompiled;
+  if (precompiled !== null) {
+    pvms.set(nextPvmId, vmInitFast(precompiled, program.registers, program.memory));
+  } else {
+    pvms.set(nextPvmId, vmInit(vmInput));
+  }
   return nextPvmId;
 }
 

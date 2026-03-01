@@ -1,7 +1,7 @@
 import { Decoder } from "./codec";
 import { Memory, MemoryBuilder } from "./memory";
 import { Access, PAGE_SIZE, PAGE_SIZE_SHIFT, SEGMENT_SIZE, SEGMENT_SIZE_SHIFT } from "./memory-page";
-import { deblob, Program } from "./program";
+import { deblob, deblobFast, PrecompiledProgram, Program } from "./program";
 import { newRegisters, Registers } from "./registers";
 
 /** `Z_I`: https://graypaper.fluffylabs.dev/#/ab2cdbd/2daf002daf00?v=0.7.2 */
@@ -17,6 +17,7 @@ export function decodeSpi(
   args: Uint8Array,
   preallocateMemoryPages: u32 = 0,
   useBlockGas: boolean = false,
+  useFast: boolean = false,
 ): StandardProgram {
   const argsLength = <u32>args.length;
   if (argsLength > MAX_ARGS_LEN) {
@@ -38,6 +39,7 @@ export function decodeSpi(
   decoder.finish();
 
   const program = deblob(code, useBlockGas);
+  const precompiled = useFast ? deblobFast(code, useBlockGas) : null;
 
   // building memory
   const builder = new MemoryBuilder(preallocateMemoryPages);
@@ -78,7 +80,9 @@ export function decodeSpi(
   registers[7] = <u64>ARGS_SEGMENT_START;
   registers[8] = <u64>argsLength;
 
-  return new StandardProgram(program, memory, registers);
+  const exe = new StandardProgram(program, memory, registers);
+  exe.precompiled = precompiled;
+  return exe;
 }
 
 function alignToPageSize(size: u32): u32 {
@@ -96,6 +100,7 @@ function alignToSegmentSize(size: u32): u32 {
  */
 export class StandardProgram {
   metadata: Uint8Array = new Uint8Array(0);
+  precompiled: PrecompiledProgram | null = null;
 
   constructor(
     public readonly program: Program,

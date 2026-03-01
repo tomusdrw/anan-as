@@ -300,6 +300,153 @@ export class Program {
   }
 }
 
+// Flags for PrecompiledProgram tape metadata
+export const FLAG_MISSING: u8 = 1;
+
+export class PrecompiledProgram {
+  constructor(
+    readonly tape: StaticArray<u32>,
+    readonly pcToIndex: StaticArray<u32>,
+    readonly blockTapeIndex: StaticArray<u32>,
+    readonly jumpTable: JumpTable,
+    readonly code: Code,
+    readonly mask: Mask,
+  ) {}
+}
+
+/**
+ * Build a PrecompiledProgram from raw blob bytes in a fused pass.
+ *
+ * Tape layout (6 x u32 = 24 bytes per instruction):
+ *   Slot 0 (meta):   opcode:8 | flags:2 | skipBytes:6 | gasCost:16
+ *   Slot 1:          originalPc
+ *   Slot 2-5:        args.a, args.b, args.c, args.d
+ */
+export function deblobFast(program: Uint8Array, useBlockGas: boolean): PrecompiledProgram {
+  const decoder = new Decoder(program);
+
+  const jumpTableLength = decoder.varU32();
+  const jumpTableItemLength = decoder.u8();
+  const codeLength = decoder.varU32();
+
+  const jumpTableLengthInBytes = i32(jumpTableLength * jumpTableItemLength);
+  const rawJumpTable = decoder.bytes(jumpTableLengthInBytes);
+  const rawCode = lowerBytes(decoder.bytes(codeLength));
+  const rawMask = decoder.bytes(i32((codeLength + 7) / 8));
+
+  const mask = new Mask(rawMask, codeLength);
+  const jumpTable = new JumpTable(jumpTableItemLength, rawJumpTable);
+
+  // pcToIndex: stores tapeIdx+1 (0 = sentinel for non-instruction PCs)
+  const len = i32(codeLength);
+  const pcToIndex = new StaticArray<u32>(len);
+
+  // First pass: count instructions to allocate tape
+  let instructionCount: u32 = 0;
+  for (let n: i32 = 0; n < len; n += 1) {
+    if (mask.isInstruction(n)) {
+      instructionCount += 1;
+      n += mask.skipBytesToNextInstruction(n);
+    }
+  }
+
+  const tape = new StaticArray<u32>(i32(instructionCount * 6));
+  const argsRes = new Args();
+
+  // Track basic block starts inline (first PC is always a block start)
+  const isBlockStart = new StaticArray<u8>(len);
+  if (len > 0) {
+    isBlockStart[0] = 1;
+  }
+
+  // Fused pass: decode instructions, build tape, mark block starts
+  let tapeIdx: u32 = 0;
+  for (let n: i32 = 0; n < len; n += 1) {
+    if (!mask.isInstruction(n)) {
+      continue;
+    }
+
+    const skipBytes = mask.skipBytesToNextInstruction(n);
+    const opcode = rawCode[n];
+    const iData = opcode >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : unchecked(INSTRUCTIONS[opcode]);
+
+    // Flags
+    let flags: u8 = 0;
+    if (iData === MISSING_INSTRUCTION) {
+      flags |= FLAG_MISSING;
+    }
+
+    // Mark block starts for terminating instructions
+    if (iData.isTerminating) {
+      const newBlockStart = n + 1 + i32(skipBytes);
+      if (newBlockStart < len) {
+        isBlockStart[newBlockStart] = 1;
+      }
+    }
+
+    // Decode arguments
+    const args = decodeArguments(argsRes, iData.kind, rawCode, n + 1, skipBytes);
+
+    // Meta: opcode:8 | flags:2 | skipBytes:6 | gasCost:16
+    const meta: u32 = u32(opcode) | (u32(flags) << 8) | (skipBytes << 10) | (iData.gas << 16);
+
+    const idx = i32(tapeIdx);
+    tape[idx] = meta;
+    tape[idx + 1] = u32(n);
+    tape[idx + 2] = args.a;
+    tape[idx + 3] = args.b;
+    tape[idx + 4] = args.c;
+    tape[idx + 5] = args.d;
+
+    pcToIndex[n] = tapeIdx + 1; // +1 so 0 remains sentinel
+    tapeIdx += 6;
+    n += i32(skipBytes);
+  }
+
+  // Apply block gas: sum up gas costs per block, store on first instruction
+  // Gas is in bits 16-31 of the meta u32.
+  if (useBlockGas) {
+    let blockStartTapeIdx: u32 = 0;
+    let blockGasSum: u32 = 0;
+
+    for (let i: u32 = 0; i < tapeIdx; i += 6) {
+      const meta = tape[i32(i)];
+      const currentGas = meta >> 16;
+      const originalPc = tape[i32(i) + 1];
+
+      if (isBlockStart[originalPc] && i > 0) {
+        // Finalize previous block: set gas sum on block start instruction
+        const prevMeta = tape[i32(blockStartTapeIdx)];
+        tape[i32(blockStartTapeIdx)] = (prevMeta & 0x0000ffff) | (blockGasSum << 16);
+        blockStartTapeIdx = i;
+        blockGasSum = currentGas;
+      } else if (isBlockStart[originalPc]) {
+        blockStartTapeIdx = i;
+        blockGasSum = currentGas;
+      } else {
+        // Non-block-start: zero out gas, accumulate
+        tape[i32(i)] = meta & 0x0000ffff; // clear gas bits
+        blockGasSum += currentGas;
+      }
+    }
+    // Finalize last block
+    if (tapeIdx > 0) {
+      const prevMeta = tape[i32(blockStartTapeIdx)];
+      tape[i32(blockStartTapeIdx)] = (prevMeta & 0x0000ffff) | (blockGasSum << 16);
+    }
+  }
+
+  // Build blockTapeIndex: stores tapeIdx+1 for block start PCs (0 = not a block start)
+  const blockTapeIndex = new StaticArray<u32>(len);
+  for (let n: i32 = 0; n < len; n += 1) {
+    if (isBlockStart[n] && pcToIndex[n] > 0) {
+      blockTapeIndex[n] = pcToIndex[n];
+    }
+  }
+
+  return new PrecompiledProgram(tape, pcToIndex, blockTapeIndex, jumpTable, rawCode, mask);
+}
+
 // Pre-allocated buffer for the rare case when code is shorter than needed.
 // Max REQUIRED_BYTES is 9 (OneRegOneExtImm). We allocate 16 for safety.
 const EXTENDED_BUF: Code = new StaticArray<u8>(16);

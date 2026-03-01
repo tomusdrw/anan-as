@@ -29,6 +29,7 @@ const { values } = parseArgs({
     warmup: { type: "string", default: "1" },
     output: { type: "string", default: "" },
     "block-gas": { type: "boolean", default: false },
+    fast: { type: "boolean", default: false },
     help: { type: "boolean", short: "h", default: false },
   },
 });
@@ -42,6 +43,7 @@ Options:
   --iterations <n>    Number of timed iterations (default: 5)
   --warmup <n>        Number of warmup iterations (default: 1)
   --output <file>     Write JSON results to file
+  --fast              Use FastInterpreter
   -h, --help          Show this help`);
   process.exit(0);
 }
@@ -152,6 +154,7 @@ function benchTraces(dir: string): BenchResult[] {
         verify: false,
         tracer: new NoOpTracer(),
         useBlockGas: values["block-gas"],
+        useFast: values.fast,
       });
     });
 
@@ -223,6 +226,7 @@ function benchW3f(dir: string): BenchResult | null {
         [],
         16,
         values["block-gas"],
+        values.fast,
       );
       runProgram(exe, gas, pc, false, false);
     }

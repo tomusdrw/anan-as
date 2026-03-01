@@ -33,6 +33,7 @@ type ReplayOptions = {
   logHostCall?: boolean;
   tracer?: Tracer;
   useBlockGas?: boolean;
+  useFast?: boolean;
 };
 
 export function replayTraceFile(filePath: string, options: ReplayOptions): TraceSummary {
@@ -48,8 +49,20 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
 
   const preallocateMemoryPages = 128;
   const useBlockGas = options.useBlockGas ?? false;
+  const useFast = options.useFast ?? false;
   const preparedProgram = useSpi
-    ? prepareProgram(InputKind.SPI, hasMetadata, programInput, [], [], [], spiArgs, preallocateMemoryPages, useBlockGas)
+    ? prepareProgram(
+        InputKind.SPI,
+        hasMetadata,
+        programInput,
+        [],
+        [],
+        [],
+        spiArgs,
+        preallocateMemoryPages,
+        useBlockGas,
+        useFast,
+      )
     : prepareProgram(
         InputKind.Generic,
         hasMetadata,
@@ -60,6 +73,7 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         [],
         preallocateMemoryPages,
         useBlockGas,
+        useFast,
       );
 
   const id = pvmStart(preparedProgram);

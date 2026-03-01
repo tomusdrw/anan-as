@@ -7,6 +7,7 @@ import { Memory, MemoryBuilder } from "./memory";
 import { RESERVED_MEMORY } from "./memory-page";
 import { portable } from "./portable";
 import { BasicBlocks, decodeArguments, JumpTable, Program, ProgramCounter } from "./program";
+import { Pvm } from "./pvm";
 import { Registers } from "./registers";
 
 export enum Status {
@@ -18,14 +19,14 @@ export enum Status {
   OOG = 4,
 }
 
-enum DjumpStatus {
+export enum DjumpStatus {
   OK = 0,
   HALT = 1,
   PANIC = 2,
 }
 
 // @unmanaged
-class DjumpResult {
+export class DjumpResult {
   status: DjumpStatus = DjumpStatus.OK;
   newPc: ProgramCounter = 0;
 }
@@ -36,7 +37,7 @@ class BranchResult {
   newPc: u32 = 0;
 }
 
-export class Interpreter {
+export class Interpreter implements Pvm {
   public readonly program: Program;
   public readonly registers: Registers;
   public readonly memory: Memory;
