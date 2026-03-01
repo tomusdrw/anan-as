@@ -213,7 +213,17 @@ function benchW3f(dir: string): BenchResult | null {
       const gas = BigInt(data["initial-gas"] || 10000);
       const pc = data["initial-pc"] || 0;
 
-      const exe = prepareProgram(InputKind.Generic, HasMetadata.No, data.program, registers, pageMap, memory, [], 16, values["block-gas"]);
+      const exe = prepareProgram(
+        InputKind.Generic,
+        HasMetadata.No,
+        data.program,
+        registers,
+        pageMap,
+        memory,
+        [],
+        16,
+        values["block-gas"],
+      );
       runProgram(exe, gas, pc, false, false);
     }
   });

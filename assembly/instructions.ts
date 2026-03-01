@@ -21,7 +21,7 @@ export const MISSING_INSTRUCTION = instruction("INVALID", Arguments.Zero, 1, fal
 
 export const SBRK = instruction("SBRK", Arguments.TwoReg, 1);
 
-export const INSTRUCTIONS: Instruction[] = [
+export const INSTRUCTIONS: StaticArray<Instruction> = StaticArray.fromArray<Instruction>([
   /* 000 */ instruction("TRAP", Arguments.Zero, 1, true),
   /* 001 */ instruction("FALLTHROUGH", Arguments.Zero, 1, true),
   MISSING_INSTRUCTION,
@@ -276,4 +276,4 @@ export const INSTRUCTIONS: Instruction[] = [
   /* 229 */ instruction("MIN", Arguments.ThreeReg, 1),
 
   /* 230 */ instruction("MIN_U", Arguments.ThreeReg, 1),
-];
+]);

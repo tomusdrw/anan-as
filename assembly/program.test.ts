@@ -113,10 +113,7 @@ export const TESTS: Test[] = [
       program.basicBlocks.toString(),
       "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
     );
-    assert.isEqual(
-      program.gasCosts.toString(),
-      "GasCosts[0 -> 3, 8 -> 1, 9 -> 2, 15 -> 4, 24 -> 4, 31 -> 1, ]",
-    );
+    assert.isEqual(program.gasCosts.toString(), "GasCosts[0 -> 3, 8 -> 1, 9 -> 2, 15 -> 4, 24 -> 4, 31 -> 1, ]");
     return assert;
   }),
 

@@ -18,9 +18,9 @@ export enum Arguments {
 }
 
 /** How many numbers in `Args` is relevant for given `Arguments`. */
-export const RELEVANT_ARGS = [<i32>0, 1, 2, 1, 2, 3, 3, 3, 2, 3, 3, 4, 3];
+export const RELEVANT_ARGS: StaticArray<i32> = StaticArray.fromArray<i32>([0, 1, 2, 1, 2, 3, 3, 3, 2, 3, 3, 4, 3]);
 /** How many bytes is required by given `Arguments`. */
-export const REQUIRED_BYTES = [<i32>0, 0, 1, 0, 1, 9, 1, 1, 1, 1, 1, 2, 2];
+export const REQUIRED_BYTES: StaticArray<i32> = StaticArray.fromArray<i32>([0, 0, 1, 0, 1, 9, 1, 1, 1, 1, 1, 2, 2]);
 
 // @unmanaged
 export class Args {
@@ -61,7 +61,7 @@ function twoImm(args: Args, code: StaticArray<u8>, offset: u32, end: u32): Args 
   return args.fill(first, second, 0, 0);
 }
 
-export const DECODERS: ArgsDecoder[] = [
+export const DECODERS: StaticArray<ArgsDecoder> = StaticArray.fromArray<ArgsDecoder>([
   // DECODERS[Arguments.Zero] =
   (args, _d, _o, _l) => {
     return args.fill(0, 0, 0, 0);
@@ -135,7 +135,7 @@ export const DECODERS: ArgsDecoder[] = [
     const b = lowNibble(data[o + 1]);
     return args.fill(hig, low, b, 0);
   },
-];
+]);
 
 // @inline
 export function lowNibble(byte: u8): u8 {
