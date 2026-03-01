@@ -118,7 +118,7 @@ export class Interpreter {
       const gasCost = codeAndGas >> 8;
       const iData = <i32>instruction < INSTRUCTIONS.length ? unchecked(INSTRUCTIONS[instruction]) : MISSING_INSTRUCTION;
 
-      if (this.gas.sub(gasCost)) {
+      if (gasCost > 0 && this.gas.sub(gasCost)) {
         this.status = Status.OOG;
         return false;
       }

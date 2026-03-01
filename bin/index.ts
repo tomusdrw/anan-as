@@ -192,7 +192,7 @@ function handleRun(args: string[]) {
 
   try {
     const preallocateMemoryPages = 128;
-    const useBlockGas = false;
+    const useBlockGas = true;
     const program = prepareProgram(
       kind,
       hasMetadata,

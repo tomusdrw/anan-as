@@ -307,16 +307,16 @@ const EXTENDED_BUF: Code = new StaticArray<u8>(16);
 export function decodeArguments(args: Args, kind: Arguments, code: Code, offset: i32, lim: u32): Args {
   if (code.length < offset + REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
-    const reqBytes = REQUIRED_BYTES[kind];
+    const reqBytes = unchecked(REQUIRED_BYTES[kind]);
     for (let i = 0; i < reqBytes; i++) {
       EXTENDED_BUF[i] = 0;
     }
     for (let i = offset; i < code.length; i++) {
-      EXTENDED_BUF[i - offset] = code[i];
+      EXTENDED_BUF[i - offset] = unchecked(code[i]);
     }
-    return DECODERS[kind](args, EXTENDED_BUF, 0, lim);
+    return unchecked(DECODERS[kind])(args, EXTENDED_BUF, 0, lim);
   }
-  return DECODERS[kind](args, code, offset, offset + lim);
+  return unchecked(DECODERS[kind])(args, code, offset, offset + lim);
 }
 
 class ResolvedArguments {
