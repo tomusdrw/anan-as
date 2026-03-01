@@ -18,12 +18,13 @@ export class GasCounter {
   }
 
   @inline
-  sub(g: Gas): boolean {
-    if (g > this.gas) {
+  sub(g: u32): boolean {
+    const cost = u64(g);
+    if (cost > this.gas) {
       this.gas = u64(0);
       return true;
     }
-    this.gas = this.gas - g;
+    this.gas = this.gas - cost;
     return false;
   }
 }

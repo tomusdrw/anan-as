@@ -11,10 +11,17 @@ import { decodeSpi } from "./spi";
 
 let interpreter: Interpreter | null = null;
 
-export function resetJAM(program: u8[], pc: u32, initialGas: Gas, args: u8[], hasMetadata: boolean = false): void {
+export function resetJAM(
+  program: u8[],
+  pc: u32,
+  initialGas: Gas,
+  args: u8[],
+  hasMetadata: boolean = false,
+  useBlockGas: boolean = false,
+): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = decodeSpi(code, liftBytes(args), 128);
+  const p = decodeSpi(code, liftBytes(args), 128, useBlockGas);
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
   int.gas.set(initialGas);
@@ -26,10 +33,16 @@ export function resetJAM(program: u8[], pc: u32, initialGas: Gas, args: u8[], ha
   interpreter = int;
 }
 
-export function resetGeneric(program: u8[], flatRegisters: u8[], initialGas: Gas, hasMetadata: boolean = false): void {
+export function resetGeneric(
+  program: u8[],
+  flatRegisters: u8[],
+  initialGas: Gas,
+  hasMetadata: boolean = false,
+  useBlockGas: boolean = false,
+): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = deblob(code);
+  const p = deblob(code, useBlockGas);
   const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
   const int = new Interpreter(p, registers);
@@ -49,10 +62,11 @@ export function resetGenericWithMemory(
   chunks: Uint8Array,
   initialGas: Gas,
   hasMetadata: boolean = false,
+  useBlockGas: boolean = false,
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = deblob(code);
+  const p = deblob(code, useBlockGas);
   const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
 

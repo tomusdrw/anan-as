@@ -1,11 +1,9 @@
 import { buildMemory, getAssembly, vmDestroy, vmExecute, vmInit, vmRunOnce } from "./api-internal";
 import { InitialChunk, InitialPage, VmInput, VmOutput, VmPause, VmRunOptions } from "./api-types";
 import { Gas } from "./gas";
-import { BlockGasCost, computeGasCosts } from "./gas-costs";
 import { Interpreter } from "./interpreter";
 import { MaybePageFault, MemoryBuilder } from "./memory";
-import { portable } from "./portable";
-import { deblob, extractCodeAndMetadata, liftBytes } from "./program";
+import { deblob, extractCodeAndMetadata, liftBytes, ProgramCounter } from "./program";
 import { NO_OF_REGISTERS, newRegisters, Registers } from "./registers";
 import { decodeSpi, StandardProgram } from "./spi";
 
@@ -19,15 +17,29 @@ export enum HasMetadata {
   No = 1,
 }
 
-export function getGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
-  const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0);
+class BlockGasCost {
+  pc: ProgramCounter = 0;
+  gas: Gas = 0;
+}
 
-  // @ts-ignore: AS returns T[], JS returns iterator - asArray handles both
-  return portable.asArray<BlockGasCost>(computeGasCosts(program.program).values());
+export function getBlockGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
+  const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0, true);
+  const blockCosts: BlockGasCost[] = [];
+  const costs = program.program.gasCosts.codeAndGas;
+  for (let n: i32 = 0; n < costs.length; n += 1) {
+    const gas = costs[n] >> 8;
+    if (gas !== 0) {
+      const x = new BlockGasCost();
+      x.pc = n;
+      x.gas = costs[n];
+      blockCosts.push(x);
+    }
+  }
+  return blockCosts;
 }
 
 export function disassemble(input: u8[], kind: InputKind, withMetadata: HasMetadata): string {
-  const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0);
+  const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0, false);
 
   let output = "";
   if (withMetadata === HasMetadata.Yes) {
@@ -56,6 +68,8 @@ export function prepareProgram(
   args: u8[],
   /** Preallocate a bunch of memory pages for faster execution. */
   preallocateMemoryPages: u32,
+  /** Compute gas per-block instead of per-instruction. */
+  useBlockGas: boolean,
 ): StandardProgram {
   let code = liftBytes(program);
   let metadata = new Uint8Array(0);
@@ -69,7 +83,7 @@ export function prepareProgram(
   }
 
   if (kind === InputKind.Generic) {
-    const program = deblob(code);
+    const program = deblob(code, useBlockGas);
 
     const builder = new MemoryBuilder(preallocateMemoryPages);
     const memory = buildMemory(builder, initialPageMap, initialMemory);
@@ -101,7 +115,6 @@ export function runProgram(
   initialGas: i64 = 0,
   programCounter: u32 = 0,
   logs: boolean = false,
-  useSbrkGas: boolean = false,
   dumpMemory: boolean = false,
 ): VmOutput {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
@@ -110,7 +123,6 @@ export function runProgram(
 
   const vmOptions = new VmRunOptions();
   vmOptions.logs = logs;
-  vmOptions.useSbrkGas = useSbrkGas;
   vmOptions.dumpMemory = dumpMemory;
 
   return vmRunOnce(vmInput, vmOptions);
@@ -126,11 +138,11 @@ const pvms = new Map<u32, Interpreter>();
  *
  * NOTE: the PVM MUST be de-allocated using `pvmDestroy`.
  */
-export function pvmStart(program: StandardProgram, useSbrkGas: boolean = false): u32 {
+export function pvmStart(program: StandardProgram): u32 {
   const vmInput = new VmInput(program.program, program.memory, program.registers);
 
   nextPvmId += 1;
-  pvms.set(nextPvmId, vmInit(vmInput, useSbrkGas));
+  pvms.set(nextPvmId, vmInit(vmInput));
   return nextPvmId;
 }
 

@@ -46,8 +46,8 @@ Options:
   process.exit(0);
 }
 
-const ITERATIONS = parseInt(values.iterations!, 10);
-const WARMUP = parseInt(values.warmup!, 10);
+const ITERATIONS = parseInt(values.iterations ?? "5", 10);
+const WARMUP = parseInt(values.warmup ?? "1", 10);
 
 // Validate iterations and warmup
 if (!Number.isInteger(ITERATIONS) || ITERATIONS < 1) {
@@ -151,6 +151,7 @@ function benchTraces(dir: string): BenchResult[] {
         hasMetadata: HasMetadata.Yes,
         verify: false,
         tracer: new NoOpTracer(),
+        useBlockGas: values["block-gas"],
       });
     });
 
@@ -212,8 +213,18 @@ function benchW3f(dir: string): BenchResult | null {
       const gas = BigInt(data["initial-gas"] || 10000);
       const pc = data["initial-pc"] || 0;
 
-      const exe = prepareProgram(InputKind.Generic, HasMetadata.No, data.program, registers, pageMap, memory, [], 16);
-      runProgram(exe, gas, pc, false, false, false);
+      const exe = prepareProgram(
+        InputKind.Generic,
+        HasMetadata.No,
+        data.program,
+        registers,
+        pageMap,
+        memory,
+        [],
+        16,
+        values["block-gas"],
+      );
+      runProgram(exe, gas, pc, false, false);
     }
   });
 
@@ -237,11 +248,11 @@ function main() {
   };
 
   // Trace benchmarks
-  const traceDirs = [values.traces, "../anan-as2/bench/traces", "./bench/traces"].filter(Boolean);
+  const traceDirs = [values.traces, "./bench/traces"].filter(Boolean);
 
   let traceDir: string | null = null;
   for (const d of traceDirs) {
-    const resolved = resolve(d!);
+    const resolved = resolve(d);
     if (existsSync(resolved)) {
       traceDir = resolved;
       break;
@@ -262,7 +273,7 @@ function main() {
 
   let w3fDir: string | null = null;
   for (const d of w3fDirs) {
-    const resolved = resolve(d!);
+    const resolved = resolve(d);
     if (existsSync(resolved)) {
       w3fDir = resolved;
       break;

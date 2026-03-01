@@ -1,11 +1,10 @@
 import { Args } from "./arguments";
 import { GasCounter, gasCounter } from "./gas";
-import { INSTRUCTIONS, MISSING_INSTRUCTION, SBRK } from "./instructions";
+import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { Outcome, OutcomeData, Result } from "./instructions/outcome";
-import { reg } from "./instructions/utils";
 import { RUN } from "./instructions-exe";
 import { Memory, MemoryBuilder } from "./memory";
-import { PAGE_SIZE, PAGE_SIZE_SHIFT, RESERVED_MEMORY } from "./memory-page";
+import { RESERVED_MEMORY } from "./memory-page";
 import { portable } from "./portable";
 import { BasicBlocks, decodeArguments, JumpTable, Program, ProgramCounter } from "./program";
 import { Registers } from "./registers";
@@ -47,7 +46,6 @@ export class Interpreter {
   public status: Status;
   public exitCode: u32;
   public nextPc: u32;
-  public useSbrkGas: boolean;
 
   private djumpRes: DjumpResult = new DjumpResult();
   private argsRes: Args = new Args();
@@ -63,7 +61,6 @@ export class Interpreter {
     this.status = Status.OK;
     this.exitCode = 0;
     this.nextPc = 0;
-    this.useSbrkGas = false;
   }
 
   nextSteps(nSteps: u32 = 1): boolean {
@@ -88,9 +85,12 @@ export class Interpreter {
       return true;
     }
 
-    const program = this.program;
-    const code = program.code;
-    const mask = program.mask;
+    const code = this.program.code;
+    const mask = this.program.mask;
+    const gasCosts = this.program.gasCosts.codeAndGas;
+    const basicBlocks = this.program.basicBlocks;
+    const jumpTable = this.program.jumpTable;
+
     const argsRes = this.argsRes;
     const outcomeRes = this.outcomeRes;
 
@@ -112,11 +112,13 @@ export class Interpreter {
         return false;
       }
 
-      const instruction = unchecked(code[pc]);
+      // check gas via pre-computed cost table (per-instruction or per-block)
+      const codeAndGas = portable.staticArrayAt(gasCosts, pc);
+      const instruction = codeAndGas & 0xff;
+      const gasCost = codeAndGas >> 8;
       const iData = <i32>instruction < INSTRUCTIONS.length ? unchecked(INSTRUCTIONS[instruction]) : MISSING_INSTRUCTION;
 
-      // check gas (might be done for each block instead).
-      if (this.gas.sub(iData.gas)) {
+      if (gasCost > 0 && this.gas.sub(gasCost)) {
         this.status = Status.OOG;
         return false;
       }
@@ -130,19 +132,6 @@ export class Interpreter {
       const skipBytes = mask.skipBytesToNextInstruction(pc);
       const args = decodeArguments(argsRes, iData.kind, code, pc + 1, skipBytes);
 
-      // additional gas cost of sbrk
-      if (iData === SBRK && this.useSbrkGas) {
-        const alloc = u64(u32(this.registers[reg(u64(args.a))]));
-        const gas = portable.u64_mul(
-          portable.u64_sub(portable.u64_add(alloc, u64(PAGE_SIZE)), u64(1)) >> u64(PAGE_SIZE_SHIFT),
-          u64(16),
-        );
-        if (this.gas.sub(<i64>gas)) {
-          this.status = Status.OOG;
-          return false;
-        }
-      }
-
       const exe = unchecked(RUN[instruction]);
       const outcome = exe(outcomeRes, args, this.registers, this.memory);
 
@@ -154,7 +143,7 @@ export class Interpreter {
 
       switch (outcome.outcome) {
         case Outcome.StaticJump: {
-          const branchResult = branch(this.branchRes, program.basicBlocks, pc, outcome.staticJump);
+          const branchResult = branch(this.branchRes, basicBlocks, pc, outcome.staticJump);
           if (!branchResult.isOkay) {
             this.status = Status.PANIC;
             return false;
@@ -164,7 +153,7 @@ export class Interpreter {
           continue;
         }
         case Outcome.DynamicJump: {
-          const res = dJump(this.djumpRes, program.jumpTable, outcome.dJump);
+          const res = dJump(this.djumpRes, jumpTable, outcome.dJump);
           if (res.status === DjumpStatus.HALT) {
             this.status = Status.HALT;
             return false;
@@ -173,7 +162,7 @@ export class Interpreter {
             this.status = Status.PANIC;
             return false;
           }
-          const branchResult = branch(this.branchRes, program.basicBlocks, res.newPc, 0);
+          const branchResult = branch(this.branchRes, basicBlocks, res.newPc, 0);
           if (!branchResult.isOkay) {
             this.status = Status.PANIC;
             return false;

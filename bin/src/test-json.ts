@@ -16,8 +16,6 @@ export interface TestOptions {
   isDebug: boolean;
   /** don't print anything (jsonin-jsonout mode) */
   isSilent: boolean;
-  /** enable sbrk gas */
-  useSbrkGas: boolean;
 }
 
 type ProcessJsonFn<T extends ProcessableData> = (data: T, options: TestOptions, filePath: string) => T;
@@ -40,9 +38,6 @@ export function run<T extends ProcessableData>(processJson: ProcessJsonFn<T>, op
     if (args[0] === "--debug") {
       args.shift();
       options.isDebug = true;
-    } else if (args[0] === "--sbrk-gas") {
-      args.shift();
-      options.useSbrkGas = true;
     } else {
       break;
     }
@@ -50,8 +45,8 @@ export function run<T extends ProcessableData>(processJson: ProcessJsonFn<T>, op
 
   if (args.length === 0) {
     console.error("Error: No JSON files provided.");
-    console.error("Usage: index.js [--debug] [--sbrk-gas] <file1.json> [file2.json ...]");
-    console.error("read from stdin: index.js [--debug] [--sbrk-gas] -");
+    console.error("Usage: index.js [--debug] <file1.json> [file2.json ...]");
+    console.error("read from stdin: index.js [--debug] -");
     process.exit(1);
   }
 
