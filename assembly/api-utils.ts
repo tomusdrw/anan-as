@@ -25,9 +25,9 @@ class BlockGasCost {
 export function getBlockGasCosts(input: u8[], kind: InputKind, withMetadata: HasMetadata): BlockGasCost[] {
   const program = prepareProgram(kind, withMetadata, input, [], [], [], [], 0, true);
   const blockCosts: BlockGasCost[] = [];
-  const costs = program.program.gasCosts.costs;
+  const costs = program.program.gasCosts.codeAndGas;
   for (let n: i32 = 0; n < costs.length; n += 1) {
-    const gas = costs[n];
+    const gas = costs[n] >> 8;
     if (gas !== 0) {
       const x = new BlockGasCost();
       x.pc = n;

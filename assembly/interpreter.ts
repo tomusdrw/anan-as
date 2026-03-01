@@ -87,7 +87,7 @@ export class Interpreter {
 
     const code = this.program.code;
     const mask = this.program.mask;
-    const gasCosts = this.program.gasCosts.costs;
+    const gasCosts = this.program.gasCosts.codeAndGas;
     const basicBlocks = this.program.basicBlocks;
     const jumpTable = this.program.jumpTable;
 
@@ -112,12 +112,13 @@ export class Interpreter {
         return false;
       }
 
-      const instruction = unchecked(code[pc]);
+      // check gas via pre-computed cost table (per-instruction or per-block)
+      const codeAndGas = portable.staticArrayAt(gasCosts, pc);
+      const instruction = codeAndGas & 0xff;
+      const gasCost = codeAndGas >> 8;
       const iData = <i32>instruction < INSTRUCTIONS.length ? unchecked(INSTRUCTIONS[instruction]) : MISSING_INSTRUCTION;
 
-      // check gas via pre-computed cost table (per-instruction or per-block)
-      const gasCost = portable.staticArrayAt(gasCosts, pc);
-      if (gasCost > 0 && this.gas.sub(gasCost)) {
+      if (this.gas.sub(gasCost)) {
         this.status = Status.OOG;
         return false;
       }

@@ -4,7 +4,7 @@ import { Gas } from "./gas";
 export class Instruction {
   name: string = "";
   kind: Arguments = Arguments.Zero;
-  gas: Gas = u64(0);
+  gas: u32 = u32(0);
   isTerminating: boolean = false;
 }
 
@@ -12,12 +12,14 @@ function instruction(name: string, kind: Arguments, gas: Gas, isTerminating: boo
   const i = new Instruction();
   i.name = name;
   i.kind = kind;
-  i.gas = u64(gas);
+  i.gas = u32(gas);
   i.isTerminating = isTerminating;
   return i;
 }
 
 export const MISSING_INSTRUCTION = instruction("INVALID", Arguments.Zero, 1, false);
+
+export const SBRK = instruction("SBRK", Arguments.TwoReg, 1);
 
 export const INSTRUCTIONS: Instruction[] = [
   /* 000 */ instruction("TRAP", Arguments.Zero, 1, true),
@@ -131,7 +133,7 @@ export const INSTRUCTIONS: Instruction[] = [
   MISSING_INSTRUCTION,
 
   /* 100 */ instruction("MOVE_REG", Arguments.TwoReg, 1),
-  /* 101 */ instruction("SBRK", Arguments.TwoReg, 1),
+  /* 101 */ SBRK,
   /* 102 */ instruction("COUNT_SET_BITS_64", Arguments.TwoReg, 1),
   /* 103 */ instruction("COUNT_SET_BITS_32", Arguments.TwoReg, 1),
   /* 104 */ instruction("LEADING_ZERO_BITS_64", Arguments.TwoReg, 1),

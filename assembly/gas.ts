@@ -18,7 +18,7 @@ export class GasCounter {
   }
 
   @inline
-  sub(g: Gas): boolean {
+  sub(g: u32): boolean {
     if (g > this.gas) {
       this.gas = u64(0);
       return true;

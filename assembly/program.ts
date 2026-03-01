@@ -1,12 +1,12 @@
 import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
 import { Decoder } from "./codec";
-import { Gas } from "./gas";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
 import { reg, u32SignExtend } from "./instructions/utils";
 import { portable } from "./portable";
 import { Registers } from "./registers";
 
 export type ProgramCounter = u32;
+export type Code = StaticArray<u8>;
 
 const MAX_SKIP: u32 = 24;
 
@@ -33,9 +33,9 @@ export function liftBytes(data: u8[]): Uint8Array {
   return p;
 }
 
-/**  Convert `Uint8Array` to `u8` */
-export function lowerBytes(data: Uint8Array): u8[] {
-  const r = new Array<u8>(data.length);
+/**  Convert `Uint8Array` to `Code` (StaticArray<u8>) */
+export function lowerBytes(data: Uint8Array): Code {
+  const r = new StaticArray<u8>(data.length);
   for (let i = 0; i < data.length; i++) {
     r[i] = data[i];
   }
@@ -134,52 +134,55 @@ export class Mask {
 }
 
 export class GasCosts {
-  readonly costs: StaticArray<Gas>;
+  // Since code is just u8, we use the other 24 bytes to store the gas cost.
+  readonly codeAndGas: StaticArray<u32>;
 
-  constructor(code: u8[], mask: Mask, blocks: BasicBlocks, useBlockGasCost: boolean) {
+  constructor(code: Code, mask: Mask, blocks: BasicBlocks, useBlockGasCost: boolean) {
     const len = code.length;
-    const costs = new StaticArray<Gas>(len);
+    const costs = new StaticArray<u32>(len);
     for (let n: i32 = 0; n < len; n += 1) {
       const isInstructionInMask = mask.isInstruction(n);
       if (!isInstructionInMask) {
+        costs[n] = code[n];
         continue;
       }
 
       const skipArgs = mask.skipBytesToNextInstruction(n);
       const iData = code[n] >= <u8>INSTRUCTIONS.length ? MISSING_INSTRUCTION : INSTRUCTIONS[code[n]];
-      costs[n] = iData.gas;
+      costs[n] = code[n] | (iData.gas << 8);
       n += skipArgs;
     }
 
     // sum up costs per block
     if (useBlockGasCost) {
       let previousStart: u32 = 0;
-      let previousSum: u64 = 0;
+      let previousSum: u32 = 0;
       for (let n: i32 = 0; n < len; n += 1) {
-        const current = costs[n];
-        costs[n] = 0;
+        const currentGas = costs[n] >> 8;
+        costs[n] = code[n]; // reset to just opcode (gas=0)
         if (blocks.isStart(n)) {
-          costs[previousStart] = previousSum;
-          previousSum = current;
+          costs[previousStart] = code[previousStart] | (previousSum << 8);
+          previousSum = currentGas;
           previousStart = n;
         } else {
-          previousSum = portable.u64_add(previousSum, current);
+          previousSum += currentGas;
         }
 
         n += mask.skipBytesToNextInstruction(n);
       }
       // final assignment
-      costs[previousStart] = previousSum;
+      costs[previousStart] = code[previousStart] | (previousSum << 8);
     }
 
-    this.costs = costs;
+    this.codeAndGas = costs;
   }
 
   toString(): string {
     let v = "GasCosts[";
-    for (let i = 0; i < this.costs.length; i += 1) {
-      if (this.costs[i] !== 0) {
-        v += `${i} -> ${this.costs[i]}, `;
+    for (let i = 0; i < this.codeAndGas.length; i += 1) {
+      const gas = this.codeAndGas[i] >> 8;
+      if (gas !== 0) {
+        v += `${i} -> ${gas}, `;
       }
     }
     return `${v}]`;
@@ -198,7 +201,7 @@ export enum BasicBlock {
 export class BasicBlocks {
   readonly isStartOrEnd: StaticArray<BasicBlock>;
 
-  constructor(code: u8[], mask: Mask) {
+  constructor(code: Code, mask: Mask) {
     const len = code.length;
     const isStartOrEnd = new StaticArray<BasicBlock>(len);
     if (len > 0) {
@@ -285,7 +288,7 @@ export class JumpTable {
 
 export class Program {
   constructor(
-    public readonly code: u8[],
+    public readonly code: Code,
     public readonly mask: Mask,
     public readonly jumpTable: JumpTable,
     public readonly basicBlocks: BasicBlocks,
@@ -299,9 +302,9 @@ export class Program {
 
 // Pre-allocated buffer for the rare case when code is shorter than needed.
 // Max REQUIRED_BYTES is 9 (OneRegOneExtImm). We allocate 16 for safety.
-const EXTENDED_BUF: u8[] = new Array<u8>(16);
+const EXTENDED_BUF: Code = new StaticArray<u8>(16);
 
-export function decodeArguments(args: Args, kind: Arguments, code: u8[], offset: i32, lim: u32): Args {
+export function decodeArguments(args: Args, kind: Arguments, code: Code, offset: i32, lim: u32): Args {
   if (code.length < offset + REQUIRED_BYTES[kind]) {
     // in case we have less data than needed we extend the data with zeros.
     const reqBytes = REQUIRED_BYTES[kind];
@@ -327,7 +330,7 @@ class ResolvedArguments {
 export function resolveArguments(
   argsRes: Args,
   kind: Arguments,
-  code: u8[],
+  code: Code,
   offset: u32,
   lim: u32,
   registers: Registers,

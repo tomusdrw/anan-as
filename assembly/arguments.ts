@@ -51,10 +51,10 @@ export class Args {
   d: u32 = 0;
 }
 
-type ArgsDecoder = (args: Args, code: u8[], offset: u32, end: u32) => Args;
+type ArgsDecoder = (args: Args, code: StaticArray<u8>, offset: u32, end: u32) => Args;
 
-function twoImm(args: Args, code: u8[], offset: u32, end: u32): Args {
-  const low = lowNibble(portable.arrayAt(code, offset));
+function twoImm(args: Args, code: StaticArray<u8>, offset: u32, end: u32): Args {
+  const low = lowNibble(portable.staticArrayAt(code, offset));
   const split = minI32(4, low) + 1;
   const first = decodeI32(code, offset + 1, offset + split);
   const second = decodeI32(code, offset + split, end);
@@ -146,7 +146,7 @@ export function higNibble(byte: u8): u8 {
 }
 
 //@inline
-function decodeI32(input: u8[], start: u32, end: u32): u32 {
+function decodeI32(input: StaticArray<u8>, start: u32, end: u32): u32 {
   if (end <= start) {
     return 0;
   }
@@ -156,14 +156,14 @@ function decodeI32(input: u8[], start: u32, end: u32): u32 {
   for (let i: u32 = 0; i < len; i++) {
     num |= u32(input[start + i]) << (i * 8);
   }
-  const msb = portable.arrayAt(input, start + len - 1) & 0x80;
+  const msb = portable.staticArrayAt(input, start + len - 1) & 0x80;
   if (len < 4 && msb > 0) {
     num |= 0xffff_ffff << (len * 8);
   }
   return num;
 }
 
-function decodeU32(data: u8[], offset: u32): u32 {
+function decodeU32(data: StaticArray<u8>, offset: u32): u32 {
   let num = u32(data[offset + 0]);
   num |= u32(data[offset + 1]) << 8;
   num |= u32(data[offset + 2]) << 16;
