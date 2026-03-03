@@ -145,8 +145,8 @@ export class FastInterpreter implements Pvm {
       const skipBytes = (meta >> 10) & 0x3f;
       const gasCost = meta >> 16;
 
-      // Check gas
-      if (this.gas.sub(gasCost)) {
+      // Check gas (skip when zero — common with block-gas mode)
+      if (gasCost !== 0 && this.gas.sub(gasCost)) {
         this.pc = originalPc;
         this.status = Status.OOG;
         return false;
