@@ -251,6 +251,7 @@ export class Memory {
 
     const pageIdx = i32(portable.u64_sub(newSbrk, u64(1)) >> u64(PAGE_SIZE_SHIFT));
     if (pageIdx === this.lastAllocatedPage) {
+      faultRes.isFault = false;
       return freeMemoryStart;
     }
 
@@ -262,6 +263,7 @@ export class Memory {
     }
 
     this.lastAllocatedPage = pageIdx;
+    faultRes.isFault = false;
     return freeMemoryStart;
   }
 

@@ -83,10 +83,6 @@ type SuiteResult = {
 const baselineSuite = baseline as SuiteResult;
 const resultsSuite = results as SuiteResult;
 
-// Build maps for easy lookup
-const baselineTraces = new Map(baselineSuite.traces.map((t) => [t.name, t]));
-const resultsTraces = new Map(resultsSuite.traces.map((t) => [t.name, t]));
-
 interface Comparison {
   name: string;
   baselineMs: number;
@@ -96,119 +92,87 @@ interface Comparison {
   status: "improvement" | "regression" | "neutral";
 }
 
-const comparisons: Comparison[] = [];
-const regressions: Comparison[] = [];
-const improvements: Comparison[] = [];
+interface ComparisonResult {
+  comparisons: Comparison[];
+  regressions: Comparison[];
+  improvements: Comparison[];
+}
 
-// Compare fibonacci benchmarks
-const fibComparisons: Comparison[] = [];
-const fibRegressions: Comparison[] = [];
-const fibImprovements: Comparison[] = [];
+function compareBenchmarks(
+  baselineItems: TraceResult[],
+  currentItems: TraceResult[],
+  threshold: number,
+  warnOnMissing = false,
+): ComparisonResult {
+  const baselineMap = new Map(baselineItems.map((t) => [t.name, t]));
+  const currentMap = new Map(currentItems.map((t) => [t.name, t]));
 
-if (baselineSuite.fibonacci && resultsSuite.fibonacci) {
-  const baselineFibs = new Map(baselineSuite.fibonacci.map((t) => [t.name, t]));
-  const resultsFibs = new Map(resultsSuite.fibonacci.map((t) => [t.name, t]));
+  const comparisons: Comparison[] = [];
+  const regressions: Comparison[] = [];
+  const improvements: Comparison[] = [];
 
-  for (const [name, baselineFib] of baselineFibs) {
-    const currentFib = resultsFibs.get(name);
-    if (!currentFib) continue;
+  for (const [name, baseline] of baselineMap) {
+    const current = currentMap.get(name);
+    if (!current) {
+      if (warnOnMissing) {
+        console.warn(`Warning: No results for ${name}, skipping`);
+      }
+      continue;
+    }
 
-    const diffMs = currentFib.medianMs - baselineFib.medianMs;
+    const diffMs = current.medianMs - baseline.medianMs;
     let diffPercent: number;
-    if (baselineFib.medianMs === 0) {
+    if (baseline.medianMs === 0) {
       diffPercent = diffMs === 0 ? 0 : diffMs > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
     } else {
-      diffPercent = (diffMs / baselineFib.medianMs) * 100;
+      diffPercent = (diffMs / baseline.medianMs) * 100;
     }
+
     let status: "improvement" | "regression" | "neutral" = "neutral";
     if (diffPercent > threshold) {
       status = "regression";
-      fibRegressions.push({
+      regressions.push({
         name,
-        baselineMs: baselineFib.medianMs,
-        currentMs: currentFib.medianMs,
+        baselineMs: baseline.medianMs,
+        currentMs: current.medianMs,
         diffMs,
         diffPercent,
         status,
       });
     } else if (diffPercent < -threshold) {
       status = "improvement";
-      fibImprovements.push({
+      improvements.push({
         name,
-        baselineMs: baselineFib.medianMs,
-        currentMs: currentFib.medianMs,
+        baselineMs: baseline.medianMs,
+        currentMs: current.medianMs,
         diffMs,
         diffPercent,
         status,
       });
     }
-    fibComparisons.push({
-      name,
-      baselineMs: baselineFib.medianMs,
-      currentMs: currentFib.medianMs,
-      diffMs,
-      diffPercent,
-      status,
-    });
+
+    comparisons.push({ name, baselineMs: baseline.medianMs, currentMs: current.medianMs, diffMs, diffPercent, status });
   }
 
-  fibRegressions.sort((a, b) => b.diffPercent - a.diffPercent);
-  fibImprovements.sort((a, b) => a.diffPercent - b.diffPercent);
+  regressions.sort((a, b) => b.diffPercent - a.diffPercent);
+  improvements.sort((a, b) => a.diffPercent - b.diffPercent);
+
+  return { comparisons, regressions, improvements };
 }
 
+// Compare fibonacci benchmarks
+const fibResult =
+  baselineSuite.fibonacci && resultsSuite.fibonacci
+    ? compareBenchmarks(baselineSuite.fibonacci, resultsSuite.fibonacci, threshold)
+    : { comparisons: [] as Comparison[], regressions: [] as Comparison[], improvements: [] as Comparison[] };
+const fibComparisons = fibResult.comparisons;
+const fibRegressions = fibResult.regressions;
+const fibImprovements = fibResult.improvements;
 // Compare traces
-for (const [name, baselineTrace] of baselineTraces) {
-  const currentTrace = resultsTraces.get(name);
-  if (!currentTrace) {
-    console.warn(`Warning: No results for trace ${name}, skipping`);
-    continue;
-  }
-
-  const diffMs = currentTrace.medianMs - baselineTrace.medianMs;
-
-  // Guard against division by zero
-  let diffPercent: number;
-  if (baselineTrace.medianMs === 0) {
-    diffPercent = diffMs === 0 ? 0 : diffMs > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
-  } else {
-    diffPercent = (diffMs / baselineTrace.medianMs) * 100;
-  }
-  let status: "improvement" | "regression" | "neutral" = "neutral";
-  if (diffPercent > threshold) {
-    status = "regression";
-    regressions.push({
-      name,
-      baselineMs: baselineTrace.medianMs,
-      currentMs: currentTrace.medianMs,
-      diffMs,
-      diffPercent,
-      status,
-    });
-  } else if (diffPercent < -threshold) {
-    status = "improvement";
-    improvements.push({
-      name,
-      baselineMs: baselineTrace.medianMs,
-      currentMs: currentTrace.medianMs,
-      diffMs,
-      diffPercent,
-      status,
-    });
-  }
-
-  comparisons.push({
-    name,
-    baselineMs: baselineTrace.medianMs,
-    currentMs: currentTrace.medianMs,
-    diffMs,
-    diffPercent,
-    status,
-  });
-}
-
-// Sort by absolute diff percentage
-regressions.sort((a, b) => b.diffPercent - a.diffPercent);
-improvements.sort((a, b) => a.diffPercent - b.diffPercent);
+const traceResult = compareBenchmarks(baselineSuite.traces, resultsSuite.traces, threshold, true);
+const comparisons = traceResult.comparisons;
+const regressions = traceResult.regressions;
+const improvements = traceResult.improvements;
 
 // Print results
 console.log("\n=== Benchmark Comparison ===\n");
