@@ -70,23 +70,25 @@ export function mulUpperSignedUnsigned(a: i64, b: u64): u64 {
   return mulUpperUnsigned(a, b);
 }
 
-// @inline
-export function u8SignExtend(v: u8): i64 {
-  // u64 wrap ensures unsigned representation in JS BigInt (no-op in AS)
-  return u64(i64(i32(i16(i8(v)))));
-}
+export class Inst {
+  @inline
+  static u8SignExtend(v: u8): i64 {
+    // u64 wrap ensures unsigned representation in JS BigInt (no-op in AS)
+    return u64(i64(i32(i16(i8(v)))));
+  }
 
-// @inline
-export function u16SignExtend(v: u16): i64 {
-  return u64(i64(i32(i16(v))));
-}
+  @inline
+  static u16SignExtend(v: u16): i64 {
+    return u64(i64(i32(i16(v))));
+  }
 
-// @inline
-export function u32SignExtend(v: u32): i64 {
-  return u64(i64(i32(v)));
-}
+  @inline
+  static u32SignExtend(v: u32): i64 {
+    return u64(i64(i32(v)));
+  }
 
-// @inline
-export function reg(v: u64): u32 {
-  return v >= u64(NO_OF_REGISTERS) ? NO_OF_REGISTERS - 1 : u32(v);
+  @inline
+  static reg(v: u64): u32 {
+    return v >= u64(NO_OF_REGISTERS) ? NO_OF_REGISTERS - 1 : u32(v);
+  }
 }

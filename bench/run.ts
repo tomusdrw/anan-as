@@ -167,18 +167,7 @@ function benchFibonacci(pvm: PvmApi): BenchResult[] {
     const registers = [4294901760n, 0n, 0n, 0n, 0n, 0n, 0n, BigInt(n), 0n, 0n, 0n, 0n, 0n];
 
     const result = benchRun(name, () => {
-      const exe = prepareProgram(
-        InputKind.Generic,
-        HasMetadata.No,
-        FIB_PROGRAM,
-        registers,
-        [],
-        [],
-        [],
-        16,
-        values["block-gas"],
-        values.fast,
-      );
+      const exe = prepareProgram(InputKind.Generic, HasMetadata.No, FIB_PROGRAM, registers, [], [], [], 16);
       runProgram(exe, gas, 0, false, false);
     });
 

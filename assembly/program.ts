@@ -1,7 +1,7 @@
 import { Args, Arguments, DECODERS, REQUIRED_BYTES } from "./arguments";
 import { Decoder } from "./codec";
 import { INSTRUCTIONS, MISSING_INSTRUCTION } from "./instructions";
-import { reg, u32SignExtend } from "./instructions/utils";
+import { Inst } from "./instructions/utils";
 import { portable } from "./portable";
 import { Registers } from "./registers";
 
@@ -347,57 +347,57 @@ export function resolveArguments(
     case Arguments.Zero:
       return resolved;
     case Arguments.OneImm:
-      resolved.a = u32SignExtend(args.a);
+      resolved.a = Inst.u32SignExtend(args.a);
       return resolved;
     case Arguments.TwoImm:
-      resolved.a = u32SignExtend(args.a);
-      resolved.b = u32SignExtend(args.b);
+      resolved.a = Inst.u32SignExtend(args.a);
+      resolved.b = Inst.u32SignExtend(args.b);
       return resolved;
     case Arguments.OneOff:
-      resolved.a = u32SignExtend(args.a);
+      resolved.a = Inst.u32SignExtend(args.a);
       return resolved;
     case Arguments.OneRegOneImm:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = u32SignExtend(args.b);
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = Inst.u32SignExtend(args.b);
       return resolved;
     case Arguments.OneRegOneExtImm:
-      resolved.a = registers[reg(u64(args.a))];
+      resolved.a = registers[Inst.reg(u64(args.a))];
       resolved.b = portable.u64_add(u64(args.a) << u64(32), u64(args.b));
       return resolved;
     case Arguments.OneRegTwoImm:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = u32SignExtend(args.b);
-      resolved.c = u32SignExtend(args.c);
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = Inst.u32SignExtend(args.b);
+      resolved.c = Inst.u32SignExtend(args.c);
       return resolved;
     case Arguments.OneRegOneImmOneOff:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = u32SignExtend(args.b);
-      resolved.c = u32SignExtend(args.c);
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = Inst.u32SignExtend(args.b);
+      resolved.c = Inst.u32SignExtend(args.c);
       return resolved;
     case Arguments.TwoReg:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = registers[reg(u64(args.b))];
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = registers[Inst.reg(u64(args.b))];
       return resolved;
     case Arguments.TwoRegOneImm:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = registers[reg(u64(args.b))];
-      resolved.c = u32SignExtend(args.c);
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = registers[Inst.reg(u64(args.b))];
+      resolved.c = Inst.u32SignExtend(args.c);
       return resolved;
     case Arguments.TwoRegOneOff:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = registers[reg(u64(args.b))];
-      resolved.c = u32SignExtend(args.c);
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = registers[Inst.reg(u64(args.b))];
+      resolved.c = Inst.u32SignExtend(args.c);
       return resolved;
     case Arguments.TwoRegTwoImm:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = registers[reg(u64(args.b))];
-      resolved.c = u32SignExtend(args.c);
-      resolved.d = u32SignExtend(args.d);
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = registers[Inst.reg(u64(args.b))];
+      resolved.c = Inst.u32SignExtend(args.c);
+      resolved.d = Inst.u32SignExtend(args.d);
       return resolved;
     case Arguments.ThreeReg:
-      resolved.a = registers[reg(u64(args.a))];
-      resolved.b = registers[reg(u64(args.b))];
-      resolved.c = registers[reg(u64(args.c))];
+      resolved.a = registers[Inst.reg(u64(args.a))];
+      resolved.b = registers[Inst.reg(u64(args.b))];
+      resolved.c = registers[Inst.reg(u64(args.c))];
       return resolved;
     default:
       throw new Error(`Unhandled arguments kind: ${kind}`);

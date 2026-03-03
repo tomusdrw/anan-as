@@ -15,7 +15,7 @@ import {
   zero_extend_16,
 } from "./bit";
 import { Outcome, OutcomeData } from "./outcome";
-import { reg } from "./utils";
+import { Inst } from "./utils";
 
 export const TESTS: Test[] = [
   test("count_set_bits_64", () => {
@@ -25,7 +25,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xffff_0000_1111;
+    regs[Inst.reg(args.a)] = 0xffff_0000_1111;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -34,7 +34,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 2 * 8 + 4);
+    assert.isEqual(regs[Inst.reg(0xf)], 2 * 8 + 4);
     return assert;
   }),
   test("count_set_bits_32", () => {
@@ -44,7 +44,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xffff_0000_1111;
+    regs[Inst.reg(args.a)] = 0xffff_0000_1111;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -53,7 +53,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 4);
+    assert.isEqual(regs[Inst.reg(0xf)], 4);
     return assert;
   }),
   test("leading_zero_bits_64", () => {
@@ -63,7 +63,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xfff0_0000_0111;
+    regs[Inst.reg(args.a)] = 0xfff0_0000_0111;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -72,7 +72,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 16);
+    assert.isEqual(regs[Inst.reg(0xf)], 16);
     return assert;
   }),
   test("leading_zero_bits_32", () => {
@@ -82,7 +82,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xffff_0000_1111;
+    regs[Inst.reg(args.a)] = 0xffff_0000_1111;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -91,7 +91,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 19);
+    assert.isEqual(regs[Inst.reg(0xf)], 19);
     return assert;
   }),
   test("trailing_zero_bits_64", () => {
@@ -101,7 +101,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xfff0_0000_0000;
+    regs[Inst.reg(args.a)] = 0xfff0_0000_0000;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -110,7 +110,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 36);
+    assert.isEqual(regs[Inst.reg(0xf)], 36);
     return assert;
   }),
   test("trailing_zero_bits_32", () => {
@@ -120,7 +120,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xfff0_0000_0000;
+    regs[Inst.reg(args.a)] = 0xfff0_0000_0000;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -129,7 +129,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 32);
+    assert.isEqual(regs[Inst.reg(0xf)], 32);
     return assert;
   }),
   test("sign_extend_8", () => {
@@ -139,7 +139,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xdead_beef;
+    regs[Inst.reg(args.a)] = 0xdead_beef;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -148,7 +148,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 0xffff_ffff_ffff_ffef);
+    assert.isEqual(regs[Inst.reg(0xf)], 0xffff_ffff_ffff_ffef);
     return assert;
   }),
   test("sign_extend_16", () => {
@@ -158,7 +158,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xdead_beef;
+    regs[Inst.reg(args.a)] = 0xdead_beef;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -167,7 +167,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 0xffff_ffff_ffff_beef);
+    assert.isEqual(regs[Inst.reg(0xf)], 0xffff_ffff_ffff_beef);
     return assert;
   }),
   test("zero_extend_16", () => {
@@ -177,7 +177,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xdead_beef;
+    regs[Inst.reg(args.a)] = 0xdead_beef;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -186,7 +186,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 0x0000_beef);
+    assert.isEqual(regs[Inst.reg(0xf)], 0x0000_beef);
     return assert;
   }),
   test("reverse_bytes", () => {
@@ -196,7 +196,7 @@ export const TESTS: Test[] = [
     args.a = 0x1;
     args.b = 0xf;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xfff0_dead_beef;
+    regs[Inst.reg(args.a)] = 0xfff0_dead_beef;
     const memo = new MemoryBuilder().build();
 
     // when
@@ -205,7 +205,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(res.outcome, Outcome.Ok, "outcome");
-    assert.isEqual(regs[reg(0xf)], 0xefbe_adde_f0ff_0000);
+    assert.isEqual(regs[Inst.reg(0xf)], 0xefbe_adde_f0ff_0000);
     return assert;
   }),
 ];
