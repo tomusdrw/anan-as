@@ -1,15 +1,5 @@
 import { readFileSync } from "node:fs";
-import {
-  HasMetadata,
-  InputKind,
-  prepareProgram,
-  pvmDestroy,
-  pvmReadMemory,
-  pvmResume,
-  pvmSetRegisters,
-  pvmStart,
-  pvmWriteMemory,
-} from "../../build/release.js";
+import * as defaultPvm from "../../build/release.js";
 import { LOG_HOST_CALL_INDEX, printLogHostCall } from "./log-host-call.js";
 import {
   ARGS_SEGMENT_START,
@@ -26,17 +16,35 @@ import {
 import { ConsoleTracer, Tracer } from "./tracer.js";
 import { hexEncode } from "./utils.js";
 
+export type PvmApi = {
+  HasMetadata: typeof defaultPvm.HasMetadata;
+  InputKind: typeof defaultPvm.InputKind;
+  prepareProgram: typeof defaultPvm.prepareProgram;
+  runProgram: typeof defaultPvm.runProgram;
+  pvmStart: typeof defaultPvm.pvmStart;
+  pvmDestroy: typeof defaultPvm.pvmDestroy;
+  pvmResume: typeof defaultPvm.pvmResume;
+  pvmReadMemory: typeof defaultPvm.pvmReadMemory;
+  pvmWriteMemory: typeof defaultPvm.pvmWriteMemory;
+  pvmSetRegisters: typeof defaultPvm.pvmSetRegisters;
+};
+
 type ReplayOptions = {
   logs: boolean;
-  hasMetadata: HasMetadata;
+  hasMetadata: defaultPvm.HasMetadata;
   verify: boolean;
   logHostCall?: boolean;
   tracer?: Tracer;
   useBlockGas?: boolean;
   useFast?: boolean;
+  pvm?: PvmApi;
 };
 
 export function replayTraceFile(filePath: string, options: ReplayOptions): TraceSummary {
+  const pvm = options.pvm ?? defaultPvm;
+  const { prepareProgram, pvmStart, pvmDestroy, pvmResume, pvmReadMemory, pvmWriteMemory, pvmSetRegisters, InputKind } =
+    pvm;
+
   const input = readFileSync(filePath, "utf8");
   const trace = parseTrace(input);
 
