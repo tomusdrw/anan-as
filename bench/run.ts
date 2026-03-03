@@ -89,9 +89,11 @@ type BenchResult = {
 
 type SuiteResult = {
   timestamp: string;
+  fibonacci: BenchResult[];
   traces: BenchResult[];
   w3f: BenchResult | null;
   summary: {
+    fibonacciMedianMs: Record<string, number>;
     totalTraceMedianMs: number;
     w3fMedianMs: number | null;
   };
@@ -140,6 +142,53 @@ function benchRun(name: string, fn: () => void): BenchResult {
 
 function formatResult(r: BenchResult): string {
   return `  ${r.name.padEnd(40)} median=${r.medianMs.toFixed(1)}ms  min=${r.minMs.toFixed(1)}ms  max=${r.maxMs.toFixed(1)}ms  p95=${r.p95Ms.toFixed(1)}ms`;
+}
+
+// ---- Fibonacci micro-benchmark ----
+
+// A compact PVM program that computes fibonacci(reg[7]).
+// Register 7 is the input (which fibonacci number to compute).
+const FIB_PROGRAM = [
+  0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100, 135,
+  51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
+];
+
+// Each fib(n) loop iteration uses ~8 gas, so n must be large to stress the interpreter.
+const FIB_CASES: Array<{ name: string; n: number; gas: bigint }> = [
+  { name: "fib(10k)", n: 10_000, gas: 1_000_000n },
+  { name: "fib(100k)", n: 100_000, gas: 10_000_000n },
+  { name: "fib(1M)", n: 1_000_000, gas: 100_000_000n },
+  { name: "fib(10M)", n: 10_000_000, gas: 1_000_000_000n },
+];
+
+function benchFibonacci(pvm: PvmApi): BenchResult[] {
+  const { prepareProgram, runProgram, InputKind, HasMetadata } = pvm;
+  const results: BenchResult[] = [];
+
+  for (const { name, n, gas } of FIB_CASES) {
+    const registers = [4294901760n, 0n, 0n, 0n, 0n, 0n, 0n, BigInt(n), 0n, 0n, 0n, 0n, 0n];
+
+    const result = benchRun(name, () => {
+      const exe = prepareProgram(
+        InputKind.Generic,
+        HasMetadata.No,
+        FIB_PROGRAM,
+        registers,
+        [],
+        [],
+        [],
+        16,
+        values["block-gas"],
+        values.fast,
+      );
+      runProgram(exe, gas, 0, false, false);
+    });
+
+    console.log(formatResult(result));
+    results.push(result);
+  }
+
+  return results;
 }
 
 // ---- Trace benchmarks ----
@@ -262,13 +311,23 @@ async function main() {
 
   const suiteResult: SuiteResult = {
     timestamp: new Date().toISOString(),
+    fibonacci: [],
     traces: [],
     w3f: null,
     summary: {
+      fibonacciMedianMs: {},
       totalTraceMedianMs: 0,
       w3fMedianMs: null,
     },
   };
+
+  // Fibonacci micro-benchmarks
+  console.log("Fibonacci micro-benchmarks:");
+  suiteResult.fibonacci = benchFibonacci(pvm);
+  for (const r of suiteResult.fibonacci) {
+    suiteResult.summary.fibonacciMedianMs[r.name] = r.medianMs;
+  }
+  console.log();
 
   // Trace benchmarks
   const traceDirs = [values.traces, "./bench/traces"].filter(Boolean);
@@ -314,6 +373,9 @@ async function main() {
 
   // Summary
   console.log("=== Summary ===");
+  for (const [name, ms] of Object.entries(suiteResult.summary.fibonacciMedianMs)) {
+    console.log(`  ${name.padEnd(22)} ${ms.toFixed(1)}ms`);
+  }
   console.log(`  Trace total median:  ${suiteResult.summary.totalTraceMedianMs.toFixed(1)}ms`);
   if (suiteResult.summary.w3fMedianMs !== null) {
     console.log(`  W3F suite median:    ${suiteResult.summary.w3fMedianMs.toFixed(1)}ms`);
