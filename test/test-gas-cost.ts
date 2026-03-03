@@ -3,7 +3,7 @@
 import "json-bigint-patch";
 import * as assert from "node:assert";
 import { ERR, OK, ProcessableData, read, run, TestOptions } from "../bin/src/test-json.js";
-import { disassemble, getGasCosts, HasMetadata, InputKind } from "../build/release.js";
+import { disassemble, getBlockGasCosts, HasMetadata, InputKind } from "../build/release.js";
 
 // Run the CLI application
 main();
@@ -18,7 +18,6 @@ function main() {
   const options: TestOptions = {
     isDebug: false,
     isSilent: false,
-    useSbrkGas: false,
   };
 
   run(processGasCost, options);
@@ -41,7 +40,7 @@ function processGasCost(data: GasCostTest, options: TestOptions, filePath: strin
     console.info("\n^^^^^^^^^^^\n");
   }
 
-  const result = asMap(getGasCosts(input.program, InputKind.Generic, HasMetadata.No));
+  const result = asMap(getBlockGasCosts(input.program, InputKind.Generic, HasMetadata.No));
 
   // silent mode - just put our vals into expected (comparison done externally)
   if (options.isSilent) {

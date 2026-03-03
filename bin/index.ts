@@ -192,8 +192,19 @@ function handleRun(args: string[]) {
 
   try {
     const preallocateMemoryPages = 128;
-    const program = prepareProgram(kind, hasMetadata, programCode, [], [], [], spiArgs, preallocateMemoryPages);
-    const id = pvmStart(program, false);
+    const useBlockGas = true;
+    const program = prepareProgram(
+      kind,
+      hasMetadata,
+      programCode,
+      [],
+      [],
+      [],
+      spiArgs,
+      preallocateMemoryPages,
+      useBlockGas,
+    );
+    const id = pvmStart(program);
     let gas = initialGas;
     let pc = initialPc;
 

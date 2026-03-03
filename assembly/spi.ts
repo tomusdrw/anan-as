@@ -12,7 +12,12 @@ export const ARGS_SEGMENT_START: u32 = 2 ** 32 - SEGMENT_SIZE - MAX_ARGS_LEN;
 export const STACK_SEGMENT_END: u32 = ARGS_SEGMENT_START - SEGMENT_SIZE;
 
 /** https://graypaper.fluffylabs.dev/#/ab2cdbd/2da3002da300?v=0.7.2 */
-export function decodeSpi(data: Uint8Array, args: Uint8Array, preallocateMemoryPages: u32 = 0): StandardProgram {
+export function decodeSpi(
+  data: Uint8Array,
+  args: Uint8Array,
+  preallocateMemoryPages: u32 = 0,
+  useBlockGas: boolean = false,
+): StandardProgram {
   const argsLength = <u32>args.length;
   if (argsLength > MAX_ARGS_LEN) {
     throw new Error(`Arguments length is too big. Got: ${argsLength}, max: ${MAX_ARGS_LEN}`);
@@ -32,7 +37,7 @@ export function decodeSpi(data: Uint8Array, args: Uint8Array, preallocateMemoryP
   const code = decoder.bytes(codeLength);
   decoder.finish();
 
-  const program = deblob(code);
+  const program = deblob(code, useBlockGas);
 
   // building memory
   const builder = new MemoryBuilder(preallocateMemoryPages);

@@ -22,6 +22,7 @@ export class portable {
       arr.fill(0);
       return arr;
     };
+    g.StaticArray.fromArray = (x: any[]) => x;
 
     g.ASC_TARGET = 0;
 

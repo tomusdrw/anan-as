@@ -32,6 +32,7 @@ type ReplayOptions = {
   verify: boolean;
   logHostCall?: boolean;
   tracer?: Tracer;
+  useBlockGas?: boolean;
 };
 
 export function replayTraceFile(filePath: string, options: ReplayOptions): TraceSummary {
@@ -45,8 +46,10 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
   const programInput = Array.from(program);
   const spiArgs = Array.from(extractSpiArgs(start, initialMemWrites));
 
+  const preallocateMemoryPages = 128;
+  const useBlockGas = options.useBlockGas ?? false;
   const preparedProgram = useSpi
-    ? prepareProgram(InputKind.SPI, hasMetadata, programInput, [], [], [], spiArgs, 128)
+    ? prepareProgram(InputKind.SPI, hasMetadata, programInput, [], [], [], spiArgs, preallocateMemoryPages, useBlockGas)
     : prepareProgram(
         InputKind.Generic,
         hasMetadata,
@@ -55,10 +58,11 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
         buildInitialPages(initialMemWrites),
         buildInitialChunks(initialMemWrites),
         [],
-        128,
+        preallocateMemoryPages,
+        useBlockGas,
       );
 
-  const id = pvmStart(preparedProgram, true);
+  const id = pvmStart(preparedProgram);
   const initialEcalliCount = ecalliEntries.length;
   const tracer = options.tracer ?? new ConsoleTracer();
 

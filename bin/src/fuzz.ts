@@ -26,7 +26,7 @@ export function fuzz(data: Uint8Array | number[]) {
       .join(",")
       .split(",")
       .map(() => BigInt(0));
-    const exe = prepareProgram(InputKind.Generic, HasMetadata.No, Array.from(program), registers, [], [], [], 0);
+    const exe = prepareProgram(InputKind.Generic, HasMetadata.No, Array.from(program), registers, [], [], [], 0, false);
     const output = runProgram(exe, gas, pc, printDebugInfo);
     const vmRegisters = decodeRegistersFromTypeberry(vm);
 

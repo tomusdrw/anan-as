@@ -46,7 +46,7 @@ export const TESTS: Test[] = [
 
   test("should decode arguments correctly", () => {
     const r = new Args();
-    const data: u8[] = [0xff, 0xff, 0xff, 0xff];
+    const data = StaticArray.fromArray<u8>([0xff, 0xff, 0xff, 0xff]);
     const args = decodeArguments(r, Arguments.OneImm, data, 0, 4);
 
     const assert = new Assert();
@@ -59,7 +59,7 @@ export const TESTS: Test[] = [
 
   test("should decode positive bounded by skip", () => {
     const r = new Args();
-    const data: u8[] = [0x05, 0x05];
+    const data = StaticArray.fromArray<u8>([0x05, 0x05]);
     const args = decodeArguments(r, Arguments.OneImm, data, 0, 1);
 
     const assert = new Assert();
@@ -75,7 +75,7 @@ export const TESTS: Test[] = [
       0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100,
       135, 51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
     ]);
-    const program = deblob(raw);
+    const program = deblob(raw, false);
     const assert = new Assert();
     assert.isEqual(
       program.mask.toString(),
@@ -86,11 +86,39 @@ export const TESTS: Test[] = [
       program.basicBlocks.toString(),
       "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
     );
+    assert.isEqual(
+      program.basicBlocks.toString(),
+      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+    );
+    assert.isEqual(
+      program.gasCosts.toString(),
+      "GasCosts[0 -> 1, 3 -> 1, 6 -> 1, 8 -> 1, 9 -> 1, 12 -> 1, 15 -> 1, 17 -> 1, 20 -> 1, 22 -> 1, 24 -> 1, 26 -> 1, 28 -> 1, 30 -> 1, 31 -> 1, ]",
+    );
+    return assert;
+  }),
+
+  test("should deblob with block gas costs", () => {
+    const raw = u8arr([
+      0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100,
+      135, 51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
+    ]);
+    const program = deblob(raw, true);
+    const assert = new Assert();
+    assert.isEqual(
+      program.mask.toString(),
+      "Mask[0, 2, 1, 0, 2, 1, 0, 1, 0, 0, 2, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, ]",
+    );
+    assert.isEqual(program.jumpTable.toString(), "JumpTable[]");
+    assert.isEqual(
+      program.basicBlocks.toString(),
+      "BasicBlocks[0 -> start, 6 -> end, 8 -> startend, 9 -> start, 12 -> end, 15 -> start, 22 -> end, 24 -> start, 30 -> end, 31 -> startend, ]",
+    );
+    assert.isEqual(program.gasCosts.toString(), "GasCosts[0 -> 3, 8 -> 1, 9 -> 2, 15 -> 4, 24 -> 4, 31 -> 1, ]");
     return assert;
   }),
 
   test("should construct basic blocks correctly based on skip", () => {
-    const code: u8[] = [
+    const code = StaticArray.fromArray<u8>([
       opcode(trap),
       0,
       0,
@@ -123,7 +151,7 @@ export const TESTS: Test[] = [
       0,
       0,
       opcode(jump_ind),
-    ];
+    ]);
     const mask = new Mask(u8arr([0b0000_0001, 0b0000_0000, 0b0000_0000, 0b1000_0000]), 32);
     const basicBlocks = new BasicBlocks(code, mask);
     const assert = new Assert();

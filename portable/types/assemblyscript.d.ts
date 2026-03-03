@@ -76,6 +76,7 @@ declare function bool(value: ASPrimitive): bool;
 interface StaticArray<T> extends Array<T> {}
 interface StaticArrayConstructor {
   new <T>(length: number): StaticArray<T>;
+  fromArray<T>(arr: T[]): StaticArray<T>;
 }
 declare const StaticArray: StaticArrayConstructor;
 
