@@ -70,9 +70,11 @@ type TraceResult = {
 
 type SuiteResult = {
   timestamp: string;
+  fibonacci?: TraceResult[];
   traces: TraceResult[];
   w3f: TraceResult | null;
   summary: {
+    fibonacciMedianMs?: Record<string, number>;
     totalTraceMedianMs: number;
     w3fMedianMs: number | null;
   };
@@ -97,6 +99,62 @@ interface Comparison {
 const comparisons: Comparison[] = [];
 const regressions: Comparison[] = [];
 const improvements: Comparison[] = [];
+
+// Compare fibonacci benchmarks
+const fibComparisons: Comparison[] = [];
+const fibRegressions: Comparison[] = [];
+const fibImprovements: Comparison[] = [];
+
+if (baselineSuite.fibonacci && resultsSuite.fibonacci) {
+  const baselineFibs = new Map(baselineSuite.fibonacci.map((t) => [t.name, t]));
+  const resultsFibs = new Map(resultsSuite.fibonacci.map((t) => [t.name, t]));
+
+  for (const [name, baselineFib] of baselineFibs) {
+    const currentFib = resultsFibs.get(name);
+    if (!currentFib) continue;
+
+    const diffMs = currentFib.medianMs - baselineFib.medianMs;
+    let diffPercent: number;
+    if (baselineFib.medianMs === 0) {
+      diffPercent = diffMs === 0 ? 0 : diffMs > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+    } else {
+      diffPercent = (diffMs / baselineFib.medianMs) * 100;
+    }
+    let status: "improvement" | "regression" | "neutral" = "neutral";
+    if (diffPercent > threshold) {
+      status = "regression";
+      fibRegressions.push({
+        name,
+        baselineMs: baselineFib.medianMs,
+        currentMs: currentFib.medianMs,
+        diffMs,
+        diffPercent,
+        status,
+      });
+    } else if (diffPercent < -threshold) {
+      status = "improvement";
+      fibImprovements.push({
+        name,
+        baselineMs: baselineFib.medianMs,
+        currentMs: currentFib.medianMs,
+        diffMs,
+        diffPercent,
+        status,
+      });
+    }
+    fibComparisons.push({
+      name,
+      baselineMs: baselineFib.medianMs,
+      currentMs: currentFib.medianMs,
+      diffMs,
+      diffPercent,
+      status,
+    });
+  }
+
+  fibRegressions.sort((a, b) => b.diffPercent - a.diffPercent);
+  fibImprovements.sort((a, b) => a.diffPercent - b.diffPercent);
+}
 
 // Compare traces
 for (const [name, baselineTrace] of baselineTraces) {
@@ -159,6 +217,19 @@ console.log(`Results:  ${resultsSuite.timestamp}`);
 console.log(`Threshold: ${threshold}%\n`);
 
 console.log("--- Summary ---\n");
+
+// Fibonacci summary
+if (fibComparisons.length > 0) {
+  console.log("Fibonacci benchmarks:");
+  for (const c of fibComparisons) {
+    const sign = c.diffMs >= 0 ? "+" : "";
+    console.log(
+      `  ${c.name.padEnd(20)} ${c.baselineMs.toFixed(1)}ms -> ${c.currentMs.toFixed(1)}ms  (${sign}${c.diffPercent.toFixed(1)}%)`,
+    );
+  }
+  console.log();
+}
+
 console.log(
   `Total trace time: ${baselineSuite.summary.totalTraceMedianMs.toFixed(1)}ms -> ${resultsSuite.summary.totalTraceMedianMs.toFixed(1)}ms`,
 );
@@ -189,8 +260,10 @@ if (baselineSuite.w3f && resultsSuite.w3f) {
   console.log(`Difference:     ${w3fDiff >= 0 ? "+" : ""}${w3fDiff.toFixed(1)}ms (${w3fDiffPercent.toFixed(2)}%)`);
 }
 
-console.log(`\nRegressions: ${regressions.length}`);
-console.log(`Improvements: ${improvements.length}`);
+const allRegressions = regressions.length + fibRegressions.length;
+const allImprovements = improvements.length + fibImprovements.length;
+console.log(`\nRegressions: ${allRegressions}`);
+console.log(`Improvements: ${allImprovements}`);
 
 if (regressions.length > 0) {
   console.log("\n--- Regressions (worst first) ---\n");
@@ -226,6 +299,9 @@ if (values.markdown) {
     comparisons,
     regressions,
     improvements,
+    fibComparisons,
+    fibRegressions,
+    fibImprovements,
     totalDiff,
     totalDiffPercent,
     threshold,
@@ -235,10 +311,10 @@ if (values.markdown) {
 }
 
 // Exit code
-if (regressions.length > 0) {
+if (allRegressions > 0) {
   console.log("\n❌ FAILED: Regressions detected above threshold\n");
   process.exit(1);
-} else if (improvements.length > 0) {
+} else if (allImprovements > 0) {
   console.log("\n✅ PASSED: No regressions (improvements detected)\n");
   process.exit(0);
 } else {
@@ -252,15 +328,20 @@ function formatMarkdown(
   all: Comparison[],
   regs: Comparison[],
   imps: Comparison[],
+  fibAll: Comparison[],
+  fibRegs: Comparison[],
+  fibImps: Comparison[],
   totalDiffMs: number,
   totalDiffPct: number,
   thresh: number,
 ): string {
   const sign = (n: number) => (n >= 0 ? "+" : "");
+  const totalRegs = regs.length + fibRegs.length;
+  const totalImps = imps.length + fibImps.length;
   const status =
-    regs.length > 0
-      ? `### :warning: ${regs.length} regression(s) detected (>${thresh}% threshold)`
-      : imps.length > 0
+    totalRegs > 0
+      ? `### :warning: ${totalRegs} regression(s) detected (>${thresh}% threshold)`
+      : totalImps > 0
         ? "### :white_check_mark: No regressions (improvements detected)"
         : "### :white_check_mark: No significant changes";
 
@@ -270,6 +351,12 @@ function formatMarkdown(
   // Summary table
   md += "| Metric | Baseline | Current | Change |\n";
   md += "|--------|----------|---------|--------|\n";
+
+  // Fibonacci summary rows
+  for (const c of fibAll) {
+    md += `| **${c.name}** | ${c.baselineMs.toFixed(1)}ms | ${c.currentMs.toFixed(1)}ms | ${sign(c.diffPercent)}${c.diffPercent.toFixed(1)}% |\n`;
+  }
+
   md += `| **Trace total** | ${base.summary.totalTraceMedianMs.toFixed(1)}ms | ${current.summary.totalTraceMedianMs.toFixed(1)}ms | ${sign(totalDiffMs)}${totalDiffMs.toFixed(1)}ms (${sign(totalDiffPct)}${totalDiffPct.toFixed(1)}%) |\n`;
 
   if (base.w3f && current.w3f) {
@@ -278,23 +365,25 @@ function formatMarkdown(
     md += `| **W3F suite** | ${base.w3f.medianMs.toFixed(1)}ms | ${current.w3f.medianMs.toFixed(1)}ms | ${sign(w3fDiff)}${w3fDiff.toFixed(1)}ms (${sign(w3fPct)}${w3fPct.toFixed(1)}%) |\n`;
   }
 
-  // Regressions
-  if (regs.length > 0) {
+  // Regressions (combined)
+  const allRegs = [...fibRegs, ...regs];
+  if (allRegs.length > 0) {
     md += "\n<details><summary>Regressions (worst first)</summary>\n\n";
-    md += "| Trace | Baseline | Current | Change |\n";
-    md += "|-------|----------|---------|--------|\n";
-    for (const r of regs) {
+    md += "| Benchmark | Baseline | Current | Change |\n";
+    md += "|-----------|----------|---------|--------|\n";
+    for (const r of allRegs) {
       md += `| ${r.name} | ${r.baselineMs.toFixed(1)}ms | ${r.currentMs.toFixed(1)}ms | +${r.diffPercent.toFixed(1)}% |\n`;
     }
     md += "\n</details>\n";
   }
 
-  // Improvements
-  if (imps.length > 0) {
+  // Improvements (combined)
+  const allImps = [...fibImps, ...imps];
+  if (allImps.length > 0) {
     md += "\n<details><summary>Improvements</summary>\n\n";
-    md += "| Trace | Baseline | Current | Change |\n";
-    md += "|-------|----------|---------|--------|\n";
-    for (const i of imps) {
+    md += "| Benchmark | Baseline | Current | Change |\n";
+    md += "|-----------|----------|---------|--------|\n";
+    for (const i of allImps) {
       md += `| ${i.name} | ${i.baselineMs.toFixed(1)}ms | ${i.currentMs.toFixed(1)}ms | ${i.diffPercent.toFixed(1)}% |\n`;
     }
     md += "\n</details>\n";
