@@ -161,10 +161,50 @@ function compareBenchmarks(
 }
 
 // Compare fibonacci benchmarks
-const fibResult =
-  baselineSuite.fibonacci && resultsSuite.fibonacci
-    ? compareBenchmarks(baselineSuite.fibonacci, resultsSuite.fibonacci, threshold)
-    : { comparisons: [] as Comparison[], regressions: [] as Comparison[], improvements: [] as Comparison[] };
+function getFibResult(): ComparisonResult {
+  if (baselineSuite.fibonacci && resultsSuite.fibonacci) {
+    return compareBenchmarks(baselineSuite.fibonacci, resultsSuite.fibonacci, threshold);
+  }
+  const comparisons: Comparison[] = [];
+  const regressions: Comparison[] = [];
+  const improvements: Comparison[] = [];
+
+  // Baseline has fibonacci but results don't - mark as missing
+  if (baselineSuite.fibonacci) {
+    for (const fib of baselineSuite.fibonacci) {
+      const comparison: Comparison = {
+        name: fib.name,
+        baselineMs: fib.medianMs,
+        currentMs: 0,
+        diffMs: -fib.medianMs,
+        diffPercent: Number.NEGATIVE_INFINITY,
+        status: "regression",
+      };
+      comparisons.push(comparison);
+      regressions.push(comparison);
+    }
+  }
+
+  // Results has fibonacci but baseline doesn't - mark as new
+  if (resultsSuite.fibonacci) {
+    for (const fib of resultsSuite.fibonacci) {
+      const comparison: Comparison = {
+        name: fib.name,
+        baselineMs: 0,
+        currentMs: fib.medianMs,
+        diffMs: fib.medianMs,
+        diffPercent: Number.POSITIVE_INFINITY,
+        status: "improvement",
+      };
+      comparisons.push(comparison);
+      improvements.push(comparison);
+    }
+  }
+
+  return { comparisons, regressions, improvements };
+}
+
+const fibResult = getFibResult();
 const fibComparisons = fibResult.comparisons;
 const fibRegressions = fibResult.regressions;
 const fibImprovements = fibResult.improvements;
