@@ -1,5 +1,5 @@
-import { u8SignExtend, u16SignExtend, u32SignExtend } from "./instructions/utils";
-import { minU32 } from "./math";
+import { Inst } from "./instructions/utils";
+import { IntMath } from "./math";
 import {
   Access,
   Arena,
@@ -251,6 +251,7 @@ export class Memory {
 
     const pageIdx = i32(portable.u64_sub(newSbrk, u64(1)) >> u64(PAGE_SIZE_SHIFT));
     if (pageIdx === this.lastAllocatedPage) {
+      faultRes.isFault = false;
       return freeMemoryStart;
     }
 
@@ -262,6 +263,7 @@ export class Memory {
     }
 
     this.lastAllocatedPage = pageIdx;
+    faultRes.isFault = false;
     return freeMemoryStart;
   }
 
@@ -282,15 +284,15 @@ export class Memory {
   }
 
   getI8(faultRes: MaybePageFault, address: u32): u64 {
-    return u8SignExtend(u8(this.getU8(faultRes, address)));
+    return Inst.u8SignExtend(u8(this.getU8(faultRes, address)));
   }
 
   getI16(faultRes: MaybePageFault, address: u32): u64 {
-    return u16SignExtend(u16(this.getU16(faultRes, address)));
+    return Inst.u16SignExtend(u16(this.getU16(faultRes, address)));
   }
 
   getI32(faultRes: MaybePageFault, address: u32): u64 {
-    return u32SignExtend(u32(this.getU32(faultRes, address)));
+    return Inst.u32SignExtend(u32(this.getU32(faultRes, address)));
   }
 
   setU8(faultRes: MaybePageFault, address: u32, value: u8): void {
@@ -509,7 +511,7 @@ export class Memory {
 
     let bytesLeft = u64(value);
     // write to first page
-    const firstPageEnd = minU32(PAGE_SIZE, r.firstPageOffset + bytes);
+    const firstPageEnd = IntMath.minU32(PAGE_SIZE, r.firstPageOffset + bytes);
     for (let i: u32 = r.firstPageOffset; i < firstPageEnd; i++) {
       r.firstPageData[i] = u8(bytesLeft);
       bytesLeft >>= u64(8);
@@ -529,7 +531,7 @@ export class Memory {
 
     // result (bytes in reverse order)
     let r: u64 = u64(0);
-    const firstPageEnd = minU32(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
+    const firstPageEnd = IntMath.minU32(PAGE_SIZE, this.chunksResult.firstPageOffset + bytes);
 
     // read from first page
     for (let i: u32 = this.chunksResult.firstPageOffset; i < firstPageEnd; i++) {

@@ -1,4 +1,4 @@
-import { minI32 } from "./math";
+import { IntMath } from "./math";
 import { portable } from "./portable";
 
 export enum Arguments {
@@ -55,7 +55,7 @@ type ArgsDecoder = (args: Args, code: StaticArray<u8>, offset: u32, end: u32) =>
 
 function twoImm(args: Args, code: StaticArray<u8>, offset: u32, end: u32): Args {
   const low = lowNibble(portable.staticArrayAt(code, offset));
-  const split = minI32(4, low) + 1;
+  const split = IntMath.minI32(4, low) + 1;
   const first = decodeI32(code, offset + 1, offset + split);
   const second = decodeI32(code, offset + split, end);
   return args.fill(first, second, 0, 0);
@@ -91,7 +91,7 @@ export const DECODERS: StaticArray<ArgsDecoder> = StaticArray.fromArray<ArgsDeco
   (args, data, o, lim) => {
     const h = higNibble(data[o]);
     const l = lowNibble(data[o]);
-    const split = minI32(4, h) + 1;
+    const split = IntMath.minI32(4, h) + 1;
     const immA = decodeI32(data, o + 1, o + split);
     const immB = decodeI32(data, o + split, lim);
     return args.fill(l, immA, immB, 0);
@@ -100,7 +100,7 @@ export const DECODERS: StaticArray<ArgsDecoder> = StaticArray.fromArray<ArgsDeco
   (args, data, o, lim) => {
     const h = higNibble(data[o]);
     const l = lowNibble(data[o]);
-    const split = minI32(4, h) + 1;
+    const split = IntMath.minI32(4, h) + 1;
     const immA = decodeI32(data, o + 1, o + split);
     const offs = decodeI32(data, o + split, lim);
     return args.fill(l, immA, offs, 0);

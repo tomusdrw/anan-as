@@ -15,9 +15,10 @@ import { performance } from "node:perf_hooks";
 import { parseArgs } from "node:util";
 import "json-bigint-patch";
 
+import type { PvmApi } from "../bin/src/trace-replay.js";
 import { replayTraceFile } from "../bin/src/trace-replay.js";
 import { NoOpTracer } from "../bin/src/tracer.js";
-import { HasMetadata, InputKind, prepareProgram, runProgram } from "../build/release.js";
+import * as wasmPvm from "../build/release.js";
 
 // ---- CLI ----
 
@@ -29,6 +30,7 @@ const { values } = parseArgs({
     warmup: { type: "string", default: "1" },
     output: { type: "string", default: "" },
     "block-gas": { type: "boolean", default: false },
+    portable: { type: "boolean", default: false },
     help: { type: "boolean", short: "h", default: false },
   },
 });
@@ -42,6 +44,7 @@ Options:
   --iterations <n>    Number of timed iterations (default: 5)
   --warmup <n>        Number of warmup iterations (default: 1)
   --output <file>     Write JSON results to file
+  --portable          Use portable JS build instead of WASM
   -h, --help          Show this help`);
   process.exit(0);
 }
@@ -60,6 +63,17 @@ if (!Number.isInteger(WARMUP) || WARMUP < 0 || WARMUP >= ITERATIONS) {
   );
   process.exit(1);
 }
+
+// ---- Load PVM API ----
+
+async function loadPvm(): Promise<PvmApi> {
+  if (values.portable) {
+    // The portable build exposes the same API surface but has different nominal types.
+    return (await import("../dist/build/js/portable-bundle.js")) as unknown as PvmApi;
+  }
+  return wasmPvm;
+}
+
 // ---- Types ----
 
 type BenchResult = {
@@ -73,9 +87,11 @@ type BenchResult = {
 
 type SuiteResult = {
   timestamp: string;
+  fibonacci: BenchResult[];
   traces: BenchResult[];
   w3f: BenchResult | null;
   summary: {
+    fibonacciMedianMs: Record<string, number>;
     totalTraceMedianMs: number;
     w3fMedianMs: number | null;
   };
@@ -126,9 +142,45 @@ function formatResult(r: BenchResult): string {
   return `  ${r.name.padEnd(40)} median=${r.medianMs.toFixed(1)}ms  min=${r.minMs.toFixed(1)}ms  max=${r.maxMs.toFixed(1)}ms  p95=${r.p95Ms.toFixed(1)}ms`;
 }
 
+// ---- Fibonacci micro-benchmark ----
+
+// A compact PVM program that computes fibonacci(reg[7]).
+// Register 7 is the input (which fibonacci number to compute).
+const FIB_PROGRAM = [
+  0, 0, 33, 51, 8, 1, 51, 9, 1, 40, 3, 0, 149, 119, 255, 81, 7, 12, 100, 138, 200, 152, 8, 100, 169, 40, 243, 100, 135,
+  51, 8, 51, 9, 1, 50, 0, 73, 147, 82, 213, 0,
+];
+
+// Each fib(n) loop iteration uses ~8 gas, so n must be large to stress the interpreter.
+const FIB_CASES: Array<{ name: string; n: number; gas: bigint }> = [
+  { name: "fib(10k)", n: 10_000, gas: 1_000_000n },
+  { name: "fib(100k)", n: 100_000, gas: 10_000_000n },
+  { name: "fib(1M)", n: 1_000_000, gas: 100_000_000n },
+  { name: "fib(10M)", n: 10_000_000, gas: 1_000_000_000n },
+];
+
+function benchFibonacci(pvm: PvmApi): BenchResult[] {
+  const { prepareProgram, runProgram, InputKind, HasMetadata } = pvm;
+  const results: BenchResult[] = [];
+
+  for (const { name, n, gas } of FIB_CASES) {
+    const registers = [4294901760n, 0n, 0n, 0n, 0n, 0n, 0n, BigInt(n), 0n, 0n, 0n, 0n, 0n];
+
+    const result = benchRun(name, () => {
+      const exe = prepareProgram(InputKind.Generic, HasMetadata.No, FIB_PROGRAM, registers, [], [], [], 16);
+      runProgram(exe, gas, 0, false, false);
+    });
+
+    console.log(formatResult(result));
+    results.push(result);
+  }
+
+  return results;
+}
+
 // ---- Trace benchmarks ----
 
-function benchTraces(dir: string): BenchResult[] {
+function benchTraces(dir: string, pvm: PvmApi): BenchResult[] {
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".log"))
     .sort();
@@ -148,10 +200,11 @@ function benchTraces(dir: string): BenchResult[] {
     const result = benchRun(name, () => {
       replayTraceFile(filePath, {
         logs: false,
-        hasMetadata: HasMetadata.Yes,
+        hasMetadata: pvm.HasMetadata.Yes,
         verify: false,
         tracer: new NoOpTracer(),
         useBlockGas: values["block-gas"],
+        pvm,
       });
     });
 
@@ -174,7 +227,9 @@ type W3fTest = {
   program: number[];
 };
 
-function benchW3f(dir: string): BenchResult | null {
+function benchW3f(dir: string, pvm: PvmApi): BenchResult | null {
+  const { prepareProgram, runProgram, InputKind, HasMetadata } = pvm;
+
   let files: string[];
   try {
     files = readdirSync(dir)
@@ -201,15 +256,15 @@ function benchW3f(dir: string): BenchResult | null {
 
   const result = benchRun("w3f-all", () => {
     for (const data of tests) {
-      const pageMap = (data["initial-page-map"] || []).map((p) => ({
+      const pageMap = (data["initial-page-map"] || []).map((p: W3fTest["initial-page-map"][0]) => ({
         ...p,
         access: p["is-writable"] ? 2 : 1,
       }));
-      const memory = (data["initial-memory"] || []).map((c) => ({
+      const memory = (data["initial-memory"] || []).map((c: W3fTest["initial-memory"][0]) => ({
         address: c.address,
         data: c.contents || [],
       }));
-      const registers = (data["initial-regs"] || []).map((x) => BigInt(x));
+      const registers = (data["initial-regs"] || []).map((x: bigint | number) => BigInt(x));
       const gas = BigInt(data["initial-gas"] || 10000);
       const pc = data["initial-pc"] || 0;
 
@@ -234,18 +289,30 @@ function benchW3f(dir: string): BenchResult | null {
 
 // ---- Main ----
 
-function main() {
-  console.log(`\nPVM Benchmark (${ITERATIONS} iterations, ${WARMUP} warmup)\n`);
+async function main() {
+  const pvm = await loadPvm();
+  const mode = values.portable ? "portable JS" : "interpreter";
+  console.log(`\nPVM Benchmark [${mode}] (${ITERATIONS} iterations, ${WARMUP} warmup)\n`);
 
   const suiteResult: SuiteResult = {
     timestamp: new Date().toISOString(),
+    fibonacci: [],
     traces: [],
     w3f: null,
     summary: {
+      fibonacciMedianMs: {},
       totalTraceMedianMs: 0,
       w3fMedianMs: null,
     },
   };
+
+  // Fibonacci micro-benchmarks
+  console.log("Fibonacci micro-benchmarks:");
+  suiteResult.fibonacci = benchFibonacci(pvm);
+  for (const r of suiteResult.fibonacci) {
+    suiteResult.summary.fibonacciMedianMs[r.name] = r.medianMs;
+  }
+  console.log();
 
   // Trace benchmarks
   const traceDirs = [values.traces, "./bench/traces"].filter(Boolean);
@@ -261,7 +328,7 @@ function main() {
 
   if (traceDir) {
     console.log(`Trace replays (${traceDir}):`);
-    suiteResult.traces = benchTraces(traceDir);
+    suiteResult.traces = benchTraces(traceDir, pvm);
     suiteResult.summary.totalTraceMedianMs = suiteResult.traces.reduce((sum, r) => sum + r.medianMs, 0);
     console.log(`\n  TOTAL trace median: ${suiteResult.summary.totalTraceMedianMs.toFixed(1)}ms\n`);
   } else {
@@ -282,7 +349,7 @@ function main() {
 
   if (w3fDir) {
     console.log(`W3F test vectors (${w3fDir}):`);
-    suiteResult.w3f = benchW3f(w3fDir);
+    suiteResult.w3f = benchW3f(w3fDir, pvm);
     suiteResult.summary.w3fMedianMs = suiteResult.w3f?.medianMs ?? null;
     console.log();
   } else {
@@ -291,6 +358,9 @@ function main() {
 
   // Summary
   console.log("=== Summary ===");
+  for (const [name, ms] of Object.entries(suiteResult.summary.fibonacciMedianMs)) {
+    console.log(`  ${name.padEnd(22)} ${ms.toFixed(1)}ms`);
+  }
   console.log(`  Trace total median:  ${suiteResult.summary.totalTraceMedianMs.toFixed(1)}ms`);
   if (suiteResult.summary.w3fMedianMs !== null) {
     console.log(`  W3F suite median:    ${suiteResult.summary.w3fMedianMs.toFixed(1)}ms`);

@@ -4,7 +4,7 @@ import { newRegisters } from "../registers";
 import { Assert, Test, test } from "../test";
 import * as math from "./math";
 import { Outcome, OutcomeData } from "./outcome";
-import { reg } from "./utils";
+import { Inst } from "./utils";
 
 export const TESTS: Test[] = [
   test("max", () => {
@@ -12,8 +12,8 @@ export const TESTS: Test[] = [
     const r = new OutcomeData();
     const args = new Args().fill(0x0, 0x1, 0x3);
     const regs = newRegisters();
-    regs[reg(args.a)] = -(2 ** 63);
-    regs[reg(args.b)] = 2;
+    regs[Inst.reg(args.a)] = -(2 ** 63);
+    regs[Inst.reg(args.b)] = 2;
 
     const memo = new MemoryBuilder().build();
 
@@ -23,7 +23,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(ret.outcome, Outcome.Ok, "outcome");
-    assert.isEqual<u64>(regs[reg(args.c)], 2);
+    assert.isEqual<u64>(regs[Inst.reg(args.c)], 2);
     return assert;
   }),
   test("max_u", () => {
@@ -31,8 +31,8 @@ export const TESTS: Test[] = [
     const r = new OutcomeData();
     const args = new Args().fill(0x0, 0x1, 0x3);
     const regs = newRegisters();
-    regs[reg(args.a)] = -(2 ** 63);
-    regs[reg(args.b)] = 2;
+    regs[Inst.reg(args.a)] = -(2 ** 63);
+    regs[Inst.reg(args.b)] = 2;
 
     const memo = new MemoryBuilder().build();
 
@@ -42,7 +42,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(ret.outcome, Outcome.Ok, "outcome");
-    assert.isEqual<u64>(regs[reg(args.c)], -(2 ** 63));
+    assert.isEqual<u64>(regs[Inst.reg(args.c)], -(2 ** 63));
     return assert;
   }),
   test("min", () => {
@@ -50,8 +50,8 @@ export const TESTS: Test[] = [
     const r = new OutcomeData();
     const args = new Args().fill(0x0, 0x1, 0x3);
     const regs = newRegisters();
-    regs[reg(args.a)] = -(2 ** 63);
-    regs[reg(args.b)] = 2;
+    regs[Inst.reg(args.a)] = -(2 ** 63);
+    regs[Inst.reg(args.b)] = 2;
 
     const memo = new MemoryBuilder().build();
 
@@ -61,7 +61,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(ret.outcome, Outcome.Ok, "outcome");
-    assert.isEqual<u64>(regs[reg(args.c)], -(2 ** 63));
+    assert.isEqual<u64>(regs[Inst.reg(args.c)], -(2 ** 63));
     return assert;
   }),
   test("min_u", () => {
@@ -69,8 +69,8 @@ export const TESTS: Test[] = [
     const r = new OutcomeData();
     const args = new Args().fill(0x0, 0x1, 0x3);
     const regs = newRegisters();
-    regs[reg(args.a)] = -(2 ** 63);
-    regs[reg(args.b)] = 2;
+    regs[Inst.reg(args.a)] = -(2 ** 63);
+    regs[Inst.reg(args.b)] = 2;
 
     const memo = new MemoryBuilder().build();
 
@@ -80,7 +80,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(ret.outcome, Outcome.Ok, "outcome");
-    assert.isEqual<u64>(regs[reg(args.c)], 2);
+    assert.isEqual<u64>(regs[Inst.reg(args.c)], 2);
     return assert;
   }),
   test("add_32", () => {
@@ -88,8 +88,8 @@ export const TESTS: Test[] = [
     const r = new OutcomeData();
     const args = new Args().fill(0x0, 0x1, 0x3);
     const regs = newRegisters();
-    regs[reg(args.a)] = 2 ** 64 - 1;
-    regs[reg(args.b)] = 2 ** 64 - 1;
+    regs[Inst.reg(args.a)] = 2 ** 64 - 1;
+    regs[Inst.reg(args.b)] = 2 ** 64 - 1;
 
     const memo = new MemoryBuilder().build();
 
@@ -99,7 +99,7 @@ export const TESTS: Test[] = [
     // then
     const assert = new Assert();
     assert.isEqual(ret.outcome, Outcome.Ok, "outcome");
-    assert.isEqual<u64>(regs[reg(args.c)], 0xffff_ffff_ffff_fffe);
+    assert.isEqual<u64>(regs[Inst.reg(args.c)], 0xffff_ffff_ffff_fffe);
     return assert;
   }),
 ];

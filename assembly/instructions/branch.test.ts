@@ -4,7 +4,7 @@ import { newRegisters } from "../registers";
 import { Assert, Test, test } from "../test";
 import { branch_eq_imm } from "./branch";
 import { Outcome, OutcomeData } from "./outcome";
-import { reg } from "./utils";
+import { Inst } from "./utils";
 
 export const TESTS: Test[] = [
   test("branch_eq_imm", () => {
@@ -15,7 +15,7 @@ export const TESTS: Test[] = [
     args.b = 0xfe;
     args.c = 0xdeadbeef;
     const regs = newRegisters();
-    regs[reg(args.a)] = 0xfe;
+    regs[Inst.reg(args.a)] = 0xfe;
 
     const memo = new MemoryBuilder().build();
 

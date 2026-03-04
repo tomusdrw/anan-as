@@ -1,40 +1,40 @@
-import { InstructionRun, ok } from "./outcome";
-import { reg, u32SignExtend } from "./utils";
+import { InstructionRun, OutcomeData } from "./outcome";
+import { Inst } from "./utils";
 
 // MOVE_REG
 export const move_reg: InstructionRun = (r, args, registers) => {
-  registers[reg(args.b)] = registers[reg(args.a)];
-  return ok(r);
+  registers[Inst.reg(args.b)] = registers[Inst.reg(args.a)];
+  return OutcomeData.ok(r);
 };
 
 // CMOV_IZ_IMM
 export const cmov_iz_imm: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === u64(0)) {
-    registers[reg(args.b)] = u32SignExtend(args.c);
+  if (registers[Inst.reg(args.a)] === u64(0)) {
+    registers[Inst.reg(args.b)] = Inst.u32SignExtend(args.c);
   }
-  return ok(r);
+  return OutcomeData.ok(r);
 };
 
 // CMOV_NZ_IMM
 export const cmov_nz_imm: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] !== u64(0)) {
-    registers[reg(args.b)] = u32SignExtend(args.c);
+  if (registers[Inst.reg(args.a)] !== u64(0)) {
+    registers[Inst.reg(args.b)] = Inst.u32SignExtend(args.c);
   }
-  return ok(r);
+  return OutcomeData.ok(r);
 };
 
 // CMOV_IZ
 export const cmov_iz: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] === u64(0)) {
-    registers[reg(args.c)] = registers[reg(args.b)];
+  if (registers[Inst.reg(args.a)] === u64(0)) {
+    registers[Inst.reg(args.c)] = registers[Inst.reg(args.b)];
   }
-  return ok(r);
+  return OutcomeData.ok(r);
 };
 
 // CMOV_NZ
 export const cmov_nz: InstructionRun = (r, args, registers) => {
-  if (registers[reg(args.a)] !== u64(0)) {
-    registers[reg(args.c)] = registers[reg(args.b)];
+  if (registers[Inst.reg(args.a)] !== u64(0)) {
+    registers[Inst.reg(args.c)] = registers[Inst.reg(args.b)];
   }
-  return ok(r);
+  return OutcomeData.ok(r);
 };
