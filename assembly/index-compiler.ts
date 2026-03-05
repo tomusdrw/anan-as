@@ -23,22 +23,31 @@
 import { HasMetadata, InputKind, prepareProgram, runProgram } from "./api-utils";
 import { Status } from "./interpreter";
 
-// Globals for result pointer and length (SPI convention)
-// These must be mutable globals that the compiler can read
-export let result_ptr: u32 = 0;
-export let result_len: u32 = 0;
+/**
+ * Pack a WASM pointer and length into a single i64 for the SPI result convention.
+ * Lower 32 bits = pointer, upper 32 bits = length.
+ */
+function packResult(ptr: u32, len: u32): i64 {
+  return (ptr as i64) | ((len as i64) << 32);
+}
+
+function setPanicResult(): i64 {
+  const buf: u32 = <u32>heap.alloc(1);
+  store<u8>(buf, Status.PANIC);
+  return packResult(buf, 1);
+}
 
 /**
  * Main entry point following SPI convention.
  * @param argsPtr Pointer to input arguments (PVM address 0xFEFF0000)
  * @param argsLen Length of arguments in bytes
+ * @returns Packed i64: lower 32 bits = result pointer, upper 32 bits = result length
  */
-export function main(argsPtr: u32, argsLen: u32): void {
+export function main(argsPtr: u32, argsLen: u32): i64 {
   // 8 (gas) + 4 (pc) + 4 (spi-program-len) + 4 (inner-args-len) + ? (spi-program) + ? (inner-args) = 20 + ? bytes
   if (argsLen < 20) {
     // Invalid input - return error status
-    setPanicResult();
-    return;
+    return setPanicResult();
   }
 
   let offset: u32 = 0;
@@ -61,8 +70,7 @@ export function main(argsPtr: u32, argsLen: u32): void {
   // we don't have enough data - prevent u32 overflow by casting to u64
   if (u64(argsLen) - u64(offset) !== u64(programLen) + u64(innerArgsLen)) {
     // Invalid input - return error status
-    setPanicResult();
-    return;
+    return setPanicResult();
   }
 
   // Read program code
@@ -125,14 +133,5 @@ export function main(argsPtr: u32, argsLen: u32): void {
     store<u8>(buf + pos + i, result.result[i]);
   }
 
-  // Set result pointer and length
-  result_ptr = buf;
-  result_len = totalLen;
-}
-
-function setPanicResult(): void {
-  const buf: u32 = <u32>heap.alloc(1);
-  store<u8>(buf, Status.PANIC);
-  result_ptr = buf;
-  result_len = 1;
+  return packResult(buf, totalLen);
 }
