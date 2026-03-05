@@ -53,13 +53,13 @@
 		"node": ">=18.3.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.3",
-		"@typeberry/lib": "^0.5.1",
-		"@types/node": "^25.0.0",
-		"assemblyscript": "^0.28.8",
-		"esbuild": "^0.27.0",
+		"@biomejs/biome": "^2.4.5",
+		"@typeberry/lib": "^0.5.8",
+		"@types/node": "^25.3.3",
+		"assemblyscript": "^0.28.9",
+		"esbuild": "^0.27.3",
 		"json-bigint-patch": "^0.0.8",
-		"tsx": "^4.20.6",
+		"tsx": "^4.21.0",
 		"typescript": "^5.9.3"
 	},
 	"files": [
