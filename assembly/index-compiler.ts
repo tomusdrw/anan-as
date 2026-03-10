@@ -120,18 +120,19 @@ function readHostState(statePtr: u32): void {
  * For other statuses: [status, exitCode, gas, pc, ...resultData]
  */
 function createOutput(int: Interpreter, resultData: u8[] = []): i64 {
-  const isHost = int.status === Status.HOST;
+  const status = int.status;
+  const isShort = status === Status.HOST || status === Status.PANIC || status === Status.FAULT || status === Status.OOG;
   const dataLen: u32 = <u32>resultData.length;
-  const totalLen: u32 = isHost ? 5 : 1 + 4 + 8 + 4 + dataLen;
+  const totalLen: u32 = isShort ? 5 : 1 + 4 + 8 + 4 + dataLen;
   const buf: u32 = <u32>heap.alloc(totalLen);
 
   // Status (1 byte)
-  store<u8>(buf, int.status);
+  store<u8>(buf, status);
 
-  // exitCode / host_call_id (4 bytes)
+  // exitCode / host_call_id / fault_addr (4 bytes)
   store<u32>(buf + 1, int.exitCode);
 
-  if (!isHost) {
+  if (!isShort) {
     // Gas left (8 bytes)
     store<u64>(buf + 5, int.gas.get());
     // PC (4 bytes)
