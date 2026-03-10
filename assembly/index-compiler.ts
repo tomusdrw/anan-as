@@ -184,26 +184,9 @@ function readResultData(int: Interpreter): u8[] {
 
 /** Execute interpreter until it stops (host call, halt, or error) */
 function runUntilStop(int: Interpreter): void {
-  let isOk = true;
-  while (isOk) {
-    // resuming after host call
-    if (int.status === Status.HOST) {
-      int.status = Status.OK;
-      int.pc = int.nextPc;
-      int.nextPc = -1;
-    }
-
-    if (int.status !== Status.OK) {
-      break;
-    }
-
-    // Handle nextPc for initial start
-    if (int.nextPc !== -1) {
-      int.pc = int.nextPc;
-      int.nextPc = -1;
-    }
-
-    isOk = int.nextSteps();
+  while (int.nextSteps(u32.MAX_VALUE)) {
+    // nextSteps() handles HOST resuming and nextPc updates internally
+    // so we just run as much as we can and then exit
   }
 }
 
@@ -362,9 +345,12 @@ export function host_read_memory(addr: u32, len: u32): i64 {
  * @returns 1 on success, 0 on page fault
  */
 export function host_write_memory(addr: u32, dataPtr: u32, dataLen: u32): u32 {
-  const int = interpreter;
-  if (int === null || dataLen === 0) {
+  if (dataLen === 0) {
     return 1; // Writing 0 bytes always succeeds
+  }
+  const int = interpreter;
+  if (int === null) {
+    return 0; // No interpreter available
   }
 
   // Read data from interpreter memory
