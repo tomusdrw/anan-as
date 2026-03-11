@@ -6,10 +6,16 @@
  * testing and execution, where the inner PVM program runs inside an interpreter
  * that is itself running on PVM.
  *
- * The compiled WASM module can be used to:
- * 1. Run SPI programs directly (for testing/conformance)
- * 2. Execute programs that make host calls, with the host environment
- *    handling those calls via the exported functions
+ * == Host Call Handling ==
+ * When the inner program executes an `ecalli` instruction, this module calls the
+ * imported `host_call_6b(ecalli, r7..r12) -> r7` and `host_call_r8() -> r8`
+ * functions. The import adapter is responsible for:
+ *   - Determining which registers contain pointers for each ecalli
+ *   - Translating inner PVM addresses using `host_read_memory` / `host_write_memory`
+ *   - Implementing the actual host call logic
+ *
+ * The `host_read_memory` and `host_write_memory` exports are only valid to call
+ * from within `host_call_6b` (i.e. while the interpreter is paused on a host call).
  *
  * == Input Format (main) ==
  * [8:gas][4:pc][4:spi-program-len][4:inner-args-len][...spi-program][...inner-args]
@@ -17,17 +23,15 @@
  * == Output Format ==
  * All functions return packed i64: lower 32 bits = pointer, upper 32 bits = length
  *
- * For HOST status (host call pending):
- *   [1:status][4:host_call_id]
- *
  * For HALT (successful completion):
  *   [1:status][4:exit_code][8:gas][4:pc][...result]
  *
  * For PANIC/FAULT/OOG (errors):
- *   [1:status][4:exit_code/fault_addr]
+ *   [1:status][4:exit_code]
  */
 
 import { HasMetadata, InputKind, prepareProgram } from "./api-utils";
+import { host_call_6b, host_call_r8 } from "./env";
 import { Interpreter, Status } from "./interpreter";
 import { MaybePageFault } from "./memory";
 
@@ -38,112 +42,14 @@ function packResult(ptr: u32, len: u32): i64 {
   return (ptr as i64) | ((len as i64) << 32);
 }
 
-/** Size of the host state struct: pc(4) + pad(4) + gas(8) + regs(13*8) = 120 bytes */
-const HOST_STATE_SIZE: u32 = 4 + 4 + 8 + 13 * 8;
-
-/** Persistent interpreter instance for host call handling */
+/** Persistent interpreter instance (accessible by host_read_memory / host_write_memory) */
 let interpreter: Interpreter | null = null;
 
-/** Host state struct buffer (pc, gas, registers) */
-let hostStatePtr: u32 = 0;
-
-/** Allocate or get the host state buffer */
-function getHostStateBuffer(): u32 {
-  if (hostStatePtr === 0) {
-    hostStatePtr = <u32>heap.alloc(HOST_STATE_SIZE);
-  }
-  return hostStatePtr;
-}
-
-/** Write current interpreter state to the host state buffer */
-function writeHostState(): void {
-  const int = interpreter;
-  if (int === null) {
-    return;
-  }
-  const ptr = hostStatePtr;
-  let offset: u32 = 0;
-
-  // pc (4 bytes)
-  store<u32>(ptr + offset, int.pc);
-  offset += 4;
-
-  // padding (4 bytes)
-  store<u32>(ptr + offset, 0);
-  offset += 4;
-
-  // gas (8 bytes)
-  store<u64>(ptr + offset, int.gas.get());
-  offset += 8;
-
-  // registers (13 x 8 bytes)
-  for (let i: u32 = 0; i < 13; i++) {
-    store<u64>(ptr + offset, int.registers[i]);
-    offset += 8;
-  }
-}
-
-/** Read host state from the buffer and apply to interpreter */
-function readHostState(statePtr: u32): void {
-  const int = interpreter;
-  if (int === null) {
-    return;
-  }
-  let offset: u32 = 0;
-
-  // pc (4 bytes)
-  const pc = load<u32>(statePtr + offset);
-  offset += 4;
-
-  // skip padding (4 bytes)
-  offset += 4;
-
-  // gas (8 bytes)
-  const gas = load<u64>(statePtr + offset);
-  offset += 8;
-
-  // Set gas
-  int.gas.set(gas);
-
-  // registers (13 x 8 bytes)
-  for (let i: u32 = 0; i < 13; i++) {
-    int.registers[i] = load<u64>(statePtr + offset);
-    offset += 8;
-  }
-
-  // Set the next PC to resume from
-  int.nextPc = pc;
-}
-
-/** Create output buffer and return packed result.
- * For HOST status: [status, exitCode] (5 bytes)
- * For other statuses: [status, exitCode, gas, pc, ...resultData]
- */
-function createOutput(int: Interpreter, resultData: u8[] = []): i64 {
-  const status = int.status;
-  const isShort = status === Status.HOST || status === Status.PANIC || status === Status.FAULT || status === Status.OOG;
-  const dataLen: u32 = <u32>resultData.length;
-  const totalLen: u32 = isShort ? 5 : 1 + 4 + 8 + 4 + dataLen;
-  const buf: u32 = <u32>heap.alloc(totalLen);
-
-  // Status (1 byte)
-  store<u8>(buf, status);
-
-  // exitCode / host_call_id / fault_addr (4 bytes)
-  store<u32>(buf + 1, int.exitCode);
-
-  if (!isShort) {
-    // Gas left (8 bytes)
-    store<u64>(buf + 5, int.gas.get());
-    // PC (4 bytes)
-    store<u32>(buf + 13, int.pc);
-    // Result data
-    for (let i: u32 = 0; i < dataLen; i++) {
-      store<u8>(buf + 17 + i, resultData[i]);
-    }
-  }
-
-  return packResult(buf, totalLen);
+function setPanicResult(): i64 {
+  const buf: u32 = <u32>heap.alloc(5);
+  store<u8>(buf, Status.PANIC);
+  store<u32>(buf + 1, 0);
+  return packResult(buf, 5);
 }
 
 /** Read the result data from a halted interpreter */
@@ -183,14 +89,6 @@ function readResultData(int: Interpreter): u8[] {
   return out;
 }
 
-/** Execute interpreter until it stops (host call, halt, or error) */
-function runUntilStop(int: Interpreter): void {
-  while (int.nextSteps(u32.MAX_VALUE)) {
-    // nextSteps() handles HOST resuming and nextPc updates internally
-    // so we just run as much as we can and then exit
-  }
-}
-
 /**
  * Main entry point following wasm-pvm convention.
  * @param argsPtr Pointer to input arguments (PVM address 0xFEFF0000)
@@ -200,7 +98,6 @@ function runUntilStop(int: Interpreter): void {
 export function main(argsPtr: u32, argsLen: u32): i64 {
   // 8 (gas) + 4 (pc) + 4 (spi-program-len) + 4 (inner-args-len) + ? (spi-program) + ? (inner-args) = 20 + ? bytes
   if (argsLen < 20) {
-    // Invalid input - return error status
     return setPanicResult();
   }
 
@@ -223,7 +120,6 @@ export function main(argsPtr: u32, argsLen: u32): i64 {
 
   // we don't have enough data - prevent u32 overflow by casting to u64
   if (u64(argsLen) - u64(offset) !== u64(programLen) + u64(innerArgsLen)) {
-    // Invalid input - return error status
     return setPanicResult();
   }
 
@@ -262,50 +158,65 @@ export function main(argsPtr: u32, argsLen: u32): i64 {
   int.gas.set(gas);
   int.nextPc = pc;
 
-  // Ensure host state buffer is allocated
-  getHostStateBuffer();
+  // Run until terminal status, handling host calls along the way
+  while (true) {
+    // Execute until the interpreter stops
+    while (int.nextSteps(u32.MAX_VALUE)) {}
 
-  // Run until we stop
-  runUntilStop(int);
+    if (int.status !== Status.HOST) {
+      // Terminal status: HALT, PANIC, FAULT, or OOG
+      break;
+    }
 
-  // Handle result based on status
-  if (int.status === Status.HOST) {
-    // Write current state to host state buffer
-    writeHostState();
-    return createOutput(int);
+    // Handle host call: pass ecalli index + r7-r12 to the imported host_call_6b
+    const ecalli = i64(int.exitCode);
+    const r7 = host_call_6b(
+      ecalli,
+      int.registers[7],
+      int.registers[8],
+      int.registers[9],
+      int.registers[10],
+      int.registers[11],
+      int.registers[12],
+    );
+    const r8 = host_call_r8();
+
+    // Write results back to registers
+    int.registers[7] = r7;
+    int.registers[8] = r8;
+    // Resume: nextPc was already set by the interpreter when it hit HOST status
   }
 
-  // Final result
+  // Build output
   const resultData = readResultData(int);
-  const result = createOutput(int, resultData);
+  const status = int.status;
+  const isShort = status === Status.PANIC || status === Status.FAULT || status === Status.OOG;
+  const dataLen: u32 = <u32>resultData.length;
+  const totalLen: u32 = isShort ? 5 : 1 + 4 + 8 + 4 + dataLen;
+  const buf: u32 = <u32>heap.alloc(totalLen);
 
-  // Clean up interpreter
+  // Status (1 byte)
+  store<u8>(buf, status);
+
+  // exitCode (4 bytes)
+  store<u32>(buf + 1, int.exitCode);
+
+  if (!isShort) {
+    // Gas left (8 bytes)
+    store<u64>(buf + 5, int.gas.get());
+    // PC (4 bytes)
+    store<u32>(buf + 13, int.pc);
+    // Result data
+    for (let i: u32 = 0; i < dataLen; i++) {
+      store<u8>(buf + 17 + i, resultData[i]);
+    }
+  }
+
+  // Clean up
   int.memory.free();
   interpreter = null;
 
-  return result;
-}
-
-function setPanicResult(): i64 {
-  const buf: u32 = <u32>heap.alloc(1);
-  store<u8>(buf, Status.PANIC);
-  return packResult(buf, 1);
-}
-
-/**
- * Get the current interpreter state.
- * Returns a pointer to a struct in interpreter memory:
- *   offset 0:  pc: u32
- *   offset 4:  _pad: u32
- *   offset 8:  gas: i64
- *   offset 16: regs: u64[13]  // 104 bytes
- * Total: 120 bytes
- *
- * The host can read and write this struct directly.
- * Only valid after main() returns HOST status.
- */
-export function host_state(): u32 {
-  return hostStatePtr;
+  return packResult(buf, totalLen);
 }
 
 /**
@@ -347,11 +258,11 @@ export function host_read_memory(addr: u32, len: u32): i64 {
  */
 export function host_write_memory(addr: u32, dataPtr: u32, dataLen: u32): u32 {
   if (dataLen === 0) {
-    return 1; // Writing 0 bytes always succeeds
+    return 1;
   }
   const int = interpreter;
   if (int === null) {
-    return 0; // No interpreter available
+    return 0;
   }
 
   // Read data from interpreter memory
@@ -364,40 +275,4 @@ export function host_write_memory(addr: u32, dataPtr: u32, dataLen: u32): u32 {
   int.memory.bytesWrite(faultRes, addr, data, 0);
 
   return faultRes.isFault ? 0 : 1;
-}
-
-/**
- * Resume execution after host call.
- * @param statePtr Pointer to state struct (same format as host_state())
- * @returns Packed i64: lower 32 bits = result pointer, upper 32 bits = result length
- *          Same format as main() - either HOST status or final result.
- */
-export function host_resume(statePtr: u32): i64 {
-  const int = interpreter;
-  if (int === null) {
-    return setPanicResult();
-  }
-
-  // Read new state from the provided pointer
-  readHostState(statePtr);
-
-  // Run until we stop again
-  runUntilStop(int);
-
-  // Handle result based on status
-  if (int.status === Status.HOST) {
-    // Write current state to host state buffer
-    writeHostState();
-    return createOutput(int);
-  }
-
-  // Final result
-  const resultData = readResultData(int);
-  const result = createOutput(int, resultData);
-
-  // Clean up interpreter
-  int.memory.free();
-  interpreter = null;
-
-  return result;
 }
