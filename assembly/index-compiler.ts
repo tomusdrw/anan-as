@@ -51,7 +51,6 @@ function setPanicResult(): i64 {
   store<u32>(buf + 1, 0);
   return packResult(buf, 5);
 }
-}
 
 /** Read the result data from a halted interpreter */
 function readResultData(int: Interpreter): u8[] {
