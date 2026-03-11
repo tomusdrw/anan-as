@@ -46,9 +46,11 @@ function packResult(ptr: u32, len: u32): i64 {
 let interpreter: Interpreter | null = null;
 
 function setPanicResult(): i64 {
-  const buf: u32 = <u32>heap.alloc(1);
+  const buf: u32 = <u32>heap.alloc(5);
   store<u8>(buf, Status.PANIC);
-  return packResult(buf, 1);
+  store<u32>(buf + 1, 0);
+  return packResult(buf, 5);
+}
 }
 
 /** Read the result data from a halted interpreter */
