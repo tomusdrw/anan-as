@@ -402,13 +402,11 @@ function parseRegs(regsStr?: string): bigint[] {
   return parts.map((s, i) => {
     const trimmed = s.trim();
     try {
-      const val = trimmed.startsWith("0x") || trimmed.startsWith("0X")
-        ? BigInt(trimmed)
-        : BigInt(trimmed);
+      const val = BigInt(trimmed);
       return BigInt.asUintN(64, val);
     } catch (_e) {
       console.error(`Error: --regs value at index ${i} ("${trimmed}") is not a valid integer.`);
-      process.exit(1);
+      return process.exit(1);
     }
   });
 }
