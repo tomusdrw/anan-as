@@ -8,6 +8,7 @@ import {
   InputKind,
   prepareProgram,
   pvmDestroy,
+  pvmReadMemory,
   pvmResume,
   pvmSetRegisters,
   pvmStart,
@@ -19,7 +20,7 @@ import { hexDecode, hexEncode } from "./src/utils.js";
 
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
-  anan-as run [--spi] [--no-logs] [--no-metadata] [--no-log-host-call] [--pc <number>] [--gas <number>] <file.jam> [spi-args.bin or hex]
+  anan-as run [--spi] [--no-logs] [--no-metadata] [--no-log-host-call] [--pc <number>] [--gas <number>] [--regs <r0,r1,...,r12>] <file.jam> [spi-args.bin or hex]
   anan-as replay-trace [--no-metadata] [--no-verify] [--no-logs] [--no-log-host-call] <trace.log>
 
 Commands:
@@ -35,6 +36,10 @@ Flags:
   --no-verify         Skip verification against trace data (replay-trace only)
   --pc <number>       Set initial program counter (default: 0)
   --gas <number>      Set initial gas amount (default: 10_000)
+  --regs <values>     Set initial registers (comma-separated, 13 values: r0,r1,...,r12; supports decimal and 0x hex)
+  --pages <specs>     Add writable memory pages (semicolon-separated: "addr:size;addr:size"; addr/size in hex or decimal)
+  --mem <specs>       Initialize memory (semicolon-separated: "addr:hex_bytes;addr:hex_bytes")
+  --dump <specs>      Dump memory after execution (semicolon-separated: "addr:len;addr:len")
   --help, -h          Show this help message`;
 
 main();
@@ -133,6 +138,10 @@ function handleRun(args: string[]) {
       help: { type: "boolean", short: "h", default: false },
       pc: { type: "string" },
       gas: { type: "string" },
+      regs: { type: "string" },
+      pages: { type: "string" },
+      mem: { type: "string" },
+      dump: { type: "string" },
     },
   });
 
@@ -185,6 +194,10 @@ function handleRun(args: string[]) {
   // Parse and validate PC and gas options
   const initialPc = parsePc(values.pc);
   const initialGas = parseGas(values.gas);
+  const initialRegisters = parseRegs(values.regs);
+  const initialPages = parsePages(values.pages);
+  const initialMemory = parseMem(values.mem);
+  const dumpRegions = parseDump(values.dump);
 
   const programCode = Array.from(readFileSync(programFile));
   const name = kind === InputKind.Generic ? "generic PVM" : "JAM SPI";
@@ -197,9 +210,9 @@ function handleRun(args: string[]) {
       kind,
       hasMetadata,
       programCode,
-      [],
-      [],
-      [],
+      initialRegisters,
+      initialPages,
+      initialMemory,
       spiArgs,
       preallocateMemoryPages,
       useBlockGas,
@@ -228,6 +241,24 @@ function handleRun(args: string[]) {
       } else {
         console.warn(`Unhandled host call: ecalli ${pause.exitCode}. Finishing.`);
         break;
+      }
+    }
+
+    // Dump memory regions before destroying the VM
+    for (const region of dumpRegions) {
+      const data = pvmReadMemory(id, region.address, region.length);
+      const addrHex = `0x${region.address.toString(16)}`;
+      if (data) {
+        console.log(`\nMemory @ ${addrHex} (${region.length} bytes):`);
+        for (let off = 0; off < data.length; off += 16) {
+          const addr = region.address + off;
+          const slice = Array.from(data.slice(off, Math.min(off + 16, data.length)));
+          const hex = slice.map((b: number) => b.toString(16).padStart(2, "0")).join(" ");
+          const ascii = slice.map((b: number) => (b >= 0x20 && b < 0x7f ? String.fromCharCode(b) : ".")).join("");
+          console.log(`  ${addr.toString(16).padStart(8, "0")}:  ${hex.padEnd(47)}  ${ascii}`);
+        }
+      } else {
+        console.log(`\nMemory @ ${addrHex}: <page fault>`);
       }
     }
 
@@ -354,4 +385,136 @@ function parsePc(pcStr?: string): number {
     process.exit(1);
   }
   return pcValue;
+}
+
+function parseRegs(regsStr?: string): bigint[] {
+  if (regsStr === undefined) {
+    return [];
+  }
+
+  const parts = regsStr.split(",");
+  if (parts.length !== 13) {
+    console.error(`Error: --regs must have exactly 13 comma-separated values (got ${parts.length}).`);
+    console.error("Format: --regs r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12");
+    process.exit(1);
+  }
+
+  return parts.map((s, i) => {
+    const trimmed = s.trim();
+    try {
+      const val = trimmed.startsWith("0x") || trimmed.startsWith("0X")
+        ? BigInt(trimmed)
+        : BigInt(trimmed);
+      return BigInt.asUintN(64, val);
+    } catch (_e) {
+      console.error(`Error: --regs value at index ${i} ("${trimmed}") is not a valid integer.`);
+      process.exit(1);
+    }
+  });
+}
+
+function parseNum(s: string): number {
+  const trimmed = s.trim();
+  if (trimmed.startsWith("0x") || trimmed.startsWith("0X")) {
+    return parseInt(trimmed, 16);
+  }
+  return parseInt(trimmed, 10);
+}
+
+function parsePages(pagesStr?: string): { address: number; length: number; access: number }[] {
+  if (pagesStr === undefined) {
+    return [];
+  }
+
+  // Format: "addr:size;addr:size" — all pages are writable (access=2)
+  // Or "addr:size:r" for read-only (access=1)
+  const specs = pagesStr.split(";").filter((s) => s.trim().length > 0);
+  return specs.map((spec, i) => {
+    const parts = spec.split(":");
+    if (parts.length < 2 || parts.length > 3) {
+      console.error(`Error: --pages entry ${i} ("${spec}") must be "addr:size" or "addr:size:r".`);
+      process.exit(1);
+    }
+
+    const address = parseNum(parts[0]);
+    const length = parseNum(parts[1]);
+    const access = parts[2]?.trim() === "r" ? 1 : 2; // 1=Read, 2=Write
+
+    if (Number.isNaN(address) || Number.isNaN(length) || length <= 0) {
+      console.error(`Error: --pages entry ${i} ("${spec}") has invalid address or size.`);
+      process.exit(1);
+    }
+
+    return { address, length, access };
+  });
+}
+
+function parseMem(memStr?: string): { address: number; data: number[] }[] {
+  if (memStr === undefined) {
+    return [];
+  }
+
+  // Format: "addr:hexbytes;addr:hexbytes"
+  // Example: "0x20000:0500000000000000;0x20008:0300000000000000"
+  const specs = memStr.split(";").filter((s) => s.trim().length > 0);
+  return specs.map((spec, i) => {
+    const colonIdx = spec.indexOf(":");
+    if (colonIdx === -1) {
+      console.error(`Error: --mem entry ${i} ("${spec}") must be "addr:hexbytes".`);
+      process.exit(1);
+    }
+
+    const addrStr = spec.substring(0, colonIdx).trim();
+    let hexStr = spec.substring(colonIdx + 1).trim();
+
+    const address = parseNum(addrStr);
+    if (Number.isNaN(address)) {
+      console.error(`Error: --mem entry ${i} has invalid address "${addrStr}".`);
+      process.exit(1);
+    }
+
+    // Strip 0x prefix from hex data
+    if (hexStr.startsWith("0x") || hexStr.startsWith("0X")) {
+      hexStr = hexStr.substring(2);
+    }
+
+    if (hexStr.length % 2 !== 0) {
+      console.error(`Error: --mem entry ${i} hex data has odd length.`);
+      process.exit(1);
+    }
+
+    const data: number[] = [];
+    for (let j = 0; j < hexStr.length; j += 2) {
+      data.push(parseInt(hexStr.substring(j, j + 2), 16));
+    }
+
+    return { address, data };
+  });
+}
+
+function parseDump(dumpStr?: string): { address: number; length: number }[] {
+  if (dumpStr === undefined) {
+    return [];
+  }
+
+  // Format: "addr:len;addr:len"
+  // Example: "0x20000:64;0x20100:32"
+  const specs = dumpStr.split(";").filter((s) => s.trim().length > 0);
+  return specs.map((spec, i) => {
+    const parts = spec.split(":");
+    if (parts.length !== 2) {
+      console.error(`Error: --dump entry ${i} ("${spec}") must be "addr:len".`);
+      process.exit(1);
+    }
+
+    const address = parseNum(parts[0]);
+    const length = parseNum(parts[1]);
+
+    if (Number.isNaN(address) || Number.isNaN(length) || length <= 0) {
+      console.error(`Error: --dump entry ${i} ("${spec}") has invalid address or length.`);
+      process.exit(1);
+    }
+
+    return { address, length };
+  });
 }
