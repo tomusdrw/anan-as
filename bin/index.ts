@@ -18,6 +18,10 @@ import { STATUS } from "./src/trace-parse.js";
 import { replayTraceFile } from "./src/trace-replay.js";
 import { hexDecode, hexEncode } from "./src/utils.js";
 
+// Page access modes (matches assembly/memory-page.ts Access enum)
+const ACCESS_READ = 1;
+const ACCESS_WRITE = 2;
+
 const HELP_TEXT = `Usage:
   anan-as disassemble [--spi] [--no-metadata] <file.(jam|pvm|spi|bin)>
   anan-as run [--spi] [--no-logs] [--no-metadata] [--no-log-host-call] [--pc <number>] [--gas <number>] [--regs <r0,r1,...,r12>] <file.jam> [spi-args.bin or hex]
@@ -37,7 +41,7 @@ Flags:
   --pc <number>       Set initial program counter (default: 0)
   --gas <number>      Set initial gas amount (default: 10_000)
   --regs <values>     Set initial registers (comma-separated, 13 values: r0,r1,...,r12; supports decimal and 0x hex)
-  --pages <specs>     Add writable memory pages (semicolon-separated: "addr:size;addr:size"; addr/size in hex or decimal)
+  --pages <specs>     Add memory pages (semicolon-separated: "addr:size;addr:size:ro"; append ":r" or ":ro" for read-only)
   --mem <specs>       Initialize memory (semicolon-separated: "addr:hex_bytes;addr:hex_bytes")
   --dump <specs>      Dump memory after execution (semicolon-separated: "addr:len;addr:len")
   --help, -h          Show this help message`;
@@ -394,29 +398,22 @@ function parseRegs(regsStr?: string): bigint[] {
 
   const parts = regsStr.split(",");
   if (parts.length !== 13) {
-    console.error(`Error: --regs must have exactly 13 comma-separated values (got ${parts.length}).`);
-    console.error("Format: --regs r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12");
-    process.exit(1);
+    throw new Error(
+      `--regs must have exactly 13 comma-separated values (got ${parts.length}).\nFormat: --regs r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12`,
+    );
   }
 
   return parts.map((s, i) => {
-    const trimmed = s.trim();
     try {
-      const val = BigInt(trimmed);
-      return BigInt.asUintN(64, val);
+      return BigInt.asUintN(64, BigInt(s.trim()));
     } catch (_e) {
-      console.error(`Error: --regs value at index ${i} ("${trimmed}") is not a valid integer.`);
-      return process.exit(1);
+      throw new Error(`--regs value at index ${i} ("${s.trim()}") is not a valid integer.`);
     }
   });
 }
 
 function parseNum(s: string): number {
-  const trimmed = s.trim();
-  if (trimmed.startsWith("0x") || trimmed.startsWith("0X")) {
-    return parseInt(trimmed, 16);
-  }
-  return parseInt(trimmed, 10);
+  return Number(s.trim());
 }
 
 function parsePages(pagesStr?: string): { address: number; length: number; access: number }[] {
@@ -424,23 +421,22 @@ function parsePages(pagesStr?: string): { address: number; length: number; acces
     return [];
   }
 
-  // Format: "addr:size;addr:size" — all pages are writable (access=2)
-  // Or "addr:size:r" for read-only (access=1)
+  // Format: "addr:size;addr:size" — all pages are writable
+  // Or "addr:size:ro" (or "addr:size:r") for read-only
   const specs = pagesStr.split(";").filter((s) => s.trim().length > 0);
   return specs.map((spec, i) => {
     const parts = spec.split(":");
     if (parts.length < 2 || parts.length > 3) {
-      console.error(`Error: --pages entry ${i} ("${spec}") must be "addr:size" or "addr:size:r".`);
-      process.exit(1);
+      throw new Error(`--pages entry ${i} ("${spec}") must be "addr:size" or "addr:size:ro" (or "addr:size:r").`);
     }
 
     const address = parseNum(parts[0]);
     const length = parseNum(parts[1]);
-    const access = parts[2]?.trim() === "r" ? 1 : 2; // 1=Read, 2=Write
+    const flag = parts[2]?.trim();
+    const access = flag === "ro" || flag === "r" ? ACCESS_READ : ACCESS_WRITE;
 
     if (Number.isNaN(address) || Number.isNaN(length) || length <= 0) {
-      console.error(`Error: --pages entry ${i} ("${spec}") has invalid address or size.`);
-      process.exit(1);
+      throw new Error(`--pages entry ${i} ("${spec}") has invalid address or size.`);
     }
 
     return { address, length, access };
@@ -458,8 +454,7 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
   return specs.map((spec, i) => {
     const colonIdx = spec.indexOf(":");
     if (colonIdx === -1) {
-      console.error(`Error: --mem entry ${i} ("${spec}") must be "addr:hexbytes".`);
-      process.exit(1);
+      throw new Error(`--mem entry ${i} ("${spec}") must be "addr:hexbytes".`);
     }
 
     const addrStr = spec.substring(0, colonIdx).trim();
@@ -467,8 +462,7 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
 
     const address = parseNum(addrStr);
     if (Number.isNaN(address)) {
-      console.error(`Error: --mem entry ${i} has invalid address "${addrStr}".`);
-      process.exit(1);
+      throw new Error(`--mem entry ${i} has invalid address "${addrStr}".`);
     }
 
     // Strip 0x prefix from hex data
@@ -477,13 +471,16 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
     }
 
     if (hexStr.length % 2 !== 0) {
-      console.error(`Error: --mem entry ${i} hex data has odd length.`);
-      process.exit(1);
+      throw new Error(`--mem entry ${i} hex data has odd length.`);
     }
 
     const data: number[] = [];
     for (let j = 0; j < hexStr.length; j += 2) {
-      data.push(parseInt(hexStr.substring(j, j + 2), 16));
+      const byte = parseInt(hexStr.substring(j, j + 2), 16);
+      if (Number.isNaN(byte)) {
+        throw new Error(`--mem entry ${i} has invalid hex byte at position ${j}: "${hexStr.substring(j, j + 2)}".`);
+      }
+      data.push(byte);
     }
 
     return { address, data };
@@ -501,16 +498,14 @@ function parseDump(dumpStr?: string): { address: number; length: number }[] {
   return specs.map((spec, i) => {
     const parts = spec.split(":");
     if (parts.length !== 2) {
-      console.error(`Error: --dump entry ${i} ("${spec}") must be "addr:len".`);
-      process.exit(1);
+      throw new Error(`--dump entry ${i} ("${spec}") must be "addr:len".`);
     }
 
     const address = parseNum(parts[0]);
     const length = parseNum(parts[1]);
 
     if (Number.isNaN(address) || Number.isNaN(length) || length <= 0) {
-      console.error(`Error: --dump entry ${i} ("${spec}") has invalid address or length.`);
-      process.exit(1);
+      throw new Error(`--dump entry ${i} ("${spec}") has invalid address or length.`);
     }
 
     return { address, length };
