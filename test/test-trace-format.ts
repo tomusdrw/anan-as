@@ -24,11 +24,7 @@ import { parseTrace } from "../bin/src/trace-parse.js";
   const trace = parseTrace(input);
 
   // Program
-  assert.deepStrictEqual(
-    Array.from(trace.program),
-    [0x01, 0x02, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff],
-    "program bytes",
-  );
+  assert.deepStrictEqual(Array.from(trace.program), [0x01, 0x02, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff], "program bytes");
 
   // Initial memwrite
   assert.strictEqual(trace.initialMemWrites.length, 1, "one initial memwrite");
@@ -83,11 +79,7 @@ import { parseTrace } from "../bin/src/trace-parse.js";
 
 // Test: PANIC=0 (argument must always be present)
 {
-  const input = [
-    "program 0x00",
-    "start pc=0 gas=100",
-    "PANIC=0 pc=5 gas=50 r00=0x1",
-  ].join("\n");
+  const input = ["program 0x00", "start pc=0 gas=100", "PANIC=0 pc=5 gas=50 r00=0x1"].join("\n");
 
   const trace = parseTrace(input);
   assert.strictEqual(trace.termination.type, "PANIC", "panic type");
@@ -100,11 +92,7 @@ import { parseTrace } from "../bin/src/trace-parse.js";
 
 // Test: PANIC with non-zero argument
 {
-  const input = [
-    "program 0x00",
-    "start pc=0 gas=100",
-    "PANIC=42 pc=10 gas=0",
-  ].join("\n");
+  const input = ["program 0x00", "start pc=0 gas=100", "PANIC=42 pc=10 gas=0"].join("\n");
 
   const trace = parseTrace(input);
   assert.strictEqual(trace.termination.panicArg, 42, "panic arg 42");
@@ -115,11 +103,7 @@ import { parseTrace } from "../bin/src/trace-parse.js";
 
 // Test: OOG termination
 {
-  const input = [
-    "program 0x00",
-    "start pc=0 gas=100",
-    "OOG pc=99 gas=0",
-  ].join("\n");
+  const input = ["program 0x00", "start pc=0 gas=100", "OOG pc=99 gas=0"].join("\n");
 
   const trace = parseTrace(input);
   assert.strictEqual(trace.termination.type, "OOG", "OOG type");
@@ -163,11 +147,7 @@ import { parseTrace } from "../bin/src/trace-parse.js";
 
 // Test: zero-padded register indices in register dump
 {
-  const input = [
-    "program 0x00",
-    "start pc=0 gas=100 r00=0xff r12=0x1",
-    "HALT pc=5 gas=90 r00=0xff r12=0x1",
-  ].join("\n");
+  const input = ["program 0x00", "start pc=0 gas=100 r00=0xff r12=0x1", "HALT pc=5 gas=90 r00=0xff r12=0x1"].join("\n");
 
   const trace = parseTrace(input);
   assert.strictEqual(trace.start.registers.get(0), 0xffn, "r00 parsed");
@@ -178,11 +158,7 @@ import { parseTrace } from "../bin/src/trace-parse.js";
 
 // Test: empty register dump (all zeros)
 {
-  const input = [
-    "program 0x00",
-    "start pc=0 gas=100",
-    "HALT pc=5 gas=90",
-  ].join("\n");
+  const input = ["program 0x00", "start pc=0 gas=100", "HALT pc=5 gas=90"].join("\n");
 
   const trace = parseTrace(input);
   assert.strictEqual(trace.start.registers.size, 0, "empty register dump");
@@ -217,36 +193,15 @@ import { parseTrace } from "../bin/src/trace-parse.js";
 }
 
 // Test: missing program throws
-{
-  assert.throws(
-    () => parseTrace("start pc=0 gas=100\nHALT pc=5 gas=90"),
-    /Missing program/,
-    "missing program",
-  );
-
-  console.log("PASS: missing program throws");
-}
+assert.throws(() => parseTrace("start pc=0 gas=100\nHALT pc=5 gas=90"), /Missing program/, "missing program");
+console.log("PASS: missing program throws");
 
 // Test: missing start throws
-{
-  assert.throws(
-    () => parseTrace("program 0x00\nHALT pc=5 gas=90"),
-    /Missing start/,
-    "missing start",
-  );
-
-  console.log("PASS: missing start throws");
-}
+assert.throws(() => parseTrace("program 0x00\nHALT pc=5 gas=90"), /Missing start/, "missing start");
+console.log("PASS: missing start throws");
 
 // Test: missing termination throws
-{
-  assert.throws(
-    () => parseTrace("program 0x00\nstart pc=0 gas=100"),
-    /Missing termination/,
-    "missing termination",
-  );
-
-  console.log("PASS: missing termination throws");
-}
+assert.throws(() => parseTrace("program 0x00\nstart pc=0 gas=100"), /Missing termination/, "missing termination");
+console.log("PASS: missing termination throws");
 
 console.log("\nAll trace format tests passed.");
