@@ -1,3 +1,4 @@
+// Trace format: https://github.com/FluffyLabs/jam-ecalli-trace/blob/main/ecalli-trace-jip.md
 const NO_OF_REGISTERS = 13;
 
 // Access.Write = 2 from assembly/memory-page.ts
