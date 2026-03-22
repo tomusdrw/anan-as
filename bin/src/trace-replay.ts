@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import * as defaultPvm from "../../build/release.js";
 import { LOG_HOST_CALL_INDEX, printLogHostCall } from "./log-host-call.js";
 import {
-  ARGS_SEGMENT_START,
   buildInitialChunks,
   buildInitialPages,
   encodeRegistersFromDump,
@@ -78,11 +77,12 @@ export function replayTraceFile(filePath: string, options: ReplayOptions): Trace
     let gas = start.gas;
     let pc = start.pc;
 
-    // Print start line
-    tracer.start(pc, gas, start.registers);
-    if (spiArgs.length > 0) {
-      tracer.spiArgs(ARGS_SEGMENT_START, spiArgs);
+    // Print prelude: program, initial memwrites, start
+    tracer.program(program);
+    for (const write of initialMemWrites) {
+      tracer.memwrite(write.address, write.data);
     }
+    tracer.start(pc, gas, start.registers);
 
     for (;;) {
       const pause = pvmResume(id, gas, pc, options.logs);
