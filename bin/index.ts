@@ -114,7 +114,7 @@ function handleDisassemble(args: string[]) {
     console.error("Supported extensions: .jam, .pvm, .spi, .bin");
     process.exit(1);
   }
-  const ext = file.substring(dotIndex);
+  const ext = file.slice(dotIndex);
   if (!validExtensions.includes(ext)) {
     console.error(`Error: Invalid file extension '${ext}' for disassemble command.`);
     console.error("Supported extensions: .jam, .pvm, .spi, .bin");
@@ -457,8 +457,8 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
       throw new Error(`--mem entry ${i} ("${spec}") must be "addr:hexbytes".`);
     }
 
-    const addrStr = spec.substring(0, colonIdx).trim();
-    let hexStr = spec.substring(colonIdx + 1).trim();
+    const addrStr = spec.slice(0, colonIdx).trim();
+    let hexStr = spec.slice(colonIdx + 1).trim();
 
     const address = parseNum(addrStr);
     if (Number.isNaN(address)) {
@@ -467,7 +467,7 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
 
     // Strip 0x prefix from hex data
     if (hexStr.startsWith("0x") || hexStr.startsWith("0X")) {
-      hexStr = hexStr.substring(2);
+      hexStr = hexStr.slice(2);
     }
 
     if (hexStr.length % 2 !== 0) {
@@ -476,9 +476,9 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
 
     const data: number[] = [];
     for (let j = 0; j < hexStr.length; j += 2) {
-      const byte = parseInt(hexStr.substring(j, j + 2), 16);
+      const byte = parseInt(hexStr.slice(j, j + 2), 16);
       if (Number.isNaN(byte)) {
-        throw new Error(`--mem entry ${i} has invalid hex byte at position ${j}: "${hexStr.substring(j, j + 2)}".`);
+        throw new Error(`--mem entry ${i} has invalid hex byte at position ${j}: "${hexStr.slice(j, j + 2)}".`);
       }
       data.push(byte);
     }

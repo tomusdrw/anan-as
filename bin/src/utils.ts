@@ -8,7 +8,7 @@ export function hexDecode(data: string) {
     throw new Error("hex input must start with 0x");
   }
 
-  const hex = data.substring(2);
+  const hex = data.slice(2);
   const len = hex.length;
   if (len % 2 === 1) {
     throw new Error("Odd number of nibbles");
@@ -16,7 +16,7 @@ export function hexDecode(data: string) {
 
   const bytes = new Uint8Array(len / 2);
   for (let i = 0; i < len; i += 2) {
-    const c = hex.substring(i, i + 2);
+    const c = hex.slice(i, i + 2);
     const byteIndex = i / 2;
     if (!/^[0-9a-fA-F]{2}$/.test(c)) {
       throw new Error(`hexDecode: invalid hex pair "${c}" in data "${data}" for bytes[${byteIndex}]`);
