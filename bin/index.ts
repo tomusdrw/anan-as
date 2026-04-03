@@ -476,10 +476,11 @@ function parseMem(memStr?: string): { address: number; data: number[] }[] {
 
     const data: number[] = [];
     for (let j = 0; j < hexStr.length; j += 2) {
-      const byte = parseInt(hexStr.slice(j, j + 2), 16);
-      if (Number.isNaN(byte)) {
-        throw new Error(`--mem entry ${i} has invalid hex byte at position ${j}: "${hexStr.slice(j, j + 2)}".`);
+      const pair = hexStr.slice(j, j + 2);
+      if (!/^[0-9a-fA-F]{2}$/.test(pair)) {
+        throw new Error(`--mem entry ${i} has invalid hex byte at position ${j}: "${pair}".`);
       }
+      const byte = parseInt(pair, 16);
       data.push(byte);
     }
 
