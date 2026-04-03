@@ -53,14 +53,14 @@
 		"node": ">=18.3.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.5",
+		"@biomejs/biome": "^2.4.10",
 		"@typeberry/lib": "^0.5.8",
 		"@types/node": "^25.3.3",
 		"assemblyscript": "^0.28.9",
 		"esbuild": "^0.28.0",
 		"json-bigint-patch": "^0.0.8",
 		"tsx": "^4.21.0",
-		"typescript": "^5.9.3"
+		"typescript": "^6.0.2"
 	},
 	"files": [
 		"dist/**/*.wasm",
