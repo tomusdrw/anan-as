@@ -18,10 +18,11 @@ export function resetJAM(
   args: u8[],
   hasMetadata: boolean = false,
   useBlockGas: boolean = false,
+  preallocateMemoryPages: u32 = 128,
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
-  const p = decodeSpi(code, liftBytes(args), 128, useBlockGas);
+  const p = decodeSpi(code, liftBytes(args), preallocateMemoryPages, useBlockGas);
   const int = new Interpreter(p.program, p.registers, p.memory);
   int.nextPc = <u32>pc;
   int.gas.set(initialGas);
@@ -63,6 +64,7 @@ export function resetGenericWithMemory(
   initialGas: Gas,
   hasMetadata: boolean = false,
   useBlockGas: boolean = false,
+  preallocateMemoryPages: u32 = 0,
 ): void {
   const code = hasMetadata ? extractCodeAndMetadata(liftBytes(program)).code : liftBytes(program);
 
@@ -70,7 +72,7 @@ export function resetGenericWithMemory(
   const registers: Registers = newRegisters();
   fillRegisters(registers, flatRegisters);
 
-  const builder = new MemoryBuilder();
+  const builder = new MemoryBuilder(preallocateMemoryPages);
   const memory = buildMemory(builder, readPages(pageMap), readChunks(chunks));
 
   const int = new Interpreter(p, registers, memory);
