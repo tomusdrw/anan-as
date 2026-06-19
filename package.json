@@ -55,7 +55,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.10",
 		"@typeberry/lib": "^0.9.0",
-		"@types/node": "^25.3.3",
+		"@types/node": "^26.0.0",
 		"assemblyscript": "^0.28.9",
 		"esbuild": "^0.28.0",
 		"json-bigint-patch": "^0.0.8",
