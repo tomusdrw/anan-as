@@ -1,5 +1,5 @@
 # Use the official Node.js image based on Ubuntu
-FROM node:20-bullseye-slim
+FROM node:20.20-bullseye-slim
 
 # Set the working directory inside the container
 WORKDIR /app
