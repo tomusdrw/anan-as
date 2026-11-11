@@ -58,7 +58,7 @@
 		"@types/node": "^26.6.6",
 		"assemblyscript": "^0.28.20",
 		"esbuild": "^0.28.2",
-		"json-bigint-patch": "^0.0.9",
+		"json-bigint-patch": "0.0.8",
 		"tsx": "^4.23.15",
 		"typescript": "^7.0.2"
 	},
